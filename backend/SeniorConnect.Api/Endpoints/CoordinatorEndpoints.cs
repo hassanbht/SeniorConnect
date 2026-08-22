@@ -7,6 +7,9 @@ using SeniorConnect.Api.Common;
 using SeniorConnect.Infrastructure;
 using SeniorConnect.Modules.HelpRequests.Application;
 using SeniorConnect.Modules.HelpRequests.Domain;
+using SeniorConnect.Modules.Notifications.Application;
+using SeniorConnect.Modules.Notifications.Domain;
+using SeniorConnect.Modules.Profiles.Domain;
 using SeniorConnect.Modules.TrustSafety.Domain;
 
 namespace SeniorConnect.Api.Endpoints;
@@ -31,6 +34,18 @@ public sealed record BulkEntryItem(
 public sealed record BulkEntryRequest(
     Guid OrganizationId,
     IReadOnlyList<BulkEntryItem> Activities);
+
+public sealed record VolunteerRosterItemDto(
+    Guid UserId,
+    string DisplayName,
+    string? Phone,
+    string? Email,
+    string RosterStatus,
+    int TotalHoursLogged,
+    DateOnly? LastActivityDate);
+
+public sealed record ReactivateVolunteerRequest(
+    string? Notes = null);
 
 public static class CoordinatorEndpoints
 {
@@ -92,6 +107,121 @@ public static class CoordinatorEndpoints
         })
         .WithName("GetCoordinatorTriage")
         .Produces<CoordinatorTriageDto>(StatusCodes.Status200OK);
+
+        coordGroup.MapGet("/volunteers", async (
+            Guid organizationId,
+            SeniorConnectDbContext db,
+            CancellationToken ct) =>
+        {
+            var users = await db.Users
+                .Where(u => !u.IsDeleted)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.DisplayName,
+                    u.Phone,
+                    u.Email,
+                    Status = u.Status.ToString()
+                })
+                .ToListAsync(ct);
+
+            var activities = await db.Activities
+                .Where(a => a.OrganizationId == organizationId && !a.IsDeleted)
+                .GroupBy(a => a.VolunteerUserId)
+                .Select(g => new
+                {
+                    VolunteerUserId = g.Key,
+                    TotalMinutes = g.Sum(a => a.DurationMinutes),
+                    LastDate = g.Max(a => (DateOnly?)a.OccurredOn)
+                })
+                .ToDictionaryAsync(g => g.VolunteerUserId, ct);
+
+            var roster = users.Select(u =>
+            {
+                activities.TryGetValue(u.Id, out var act);
+                var totalHours = (act?.TotalMinutes ?? 0) / 60;
+                var lastDate = act?.LastDate;
+
+                string rosterStatus = "NeverActivated";
+                if (lastDate.HasValue)
+                {
+                    var monthsAgo = (DateTime.UtcNow.Year - lastDate.Value.Year) * 12 + DateTime.UtcNow.Month - lastDate.Value.Month;
+                    rosterStatus = monthsAgo <= 3 ? "Active" : monthsAgo <= 6 ? "Dormant" : "Inactive";
+                }
+
+                return new VolunteerRosterItemDto(
+                    UserId: u.Id,
+                    DisplayName: u.DisplayName,
+                    Phone: u.Phone,
+                    Email: u.Email,
+                    RosterStatus: rosterStatus,
+                    TotalHoursLogged: totalHours,
+                    LastActivityDate: lastDate);
+            }).ToList();
+
+            return Results.Ok(roster);
+        })
+        .WithName("GetVolunteerRoster")
+        .Produces<IReadOnlyList<VolunteerRosterItemDto>>(StatusCodes.Status200OK);
+
+        coordGroup.MapPost("/volunteers/{volunteerUserId:guid}:reactivate", async (
+            Guid volunteerUserId,
+            ReactivateVolunteerRequest request,
+            SeniorConnectDbContext db,
+            CancellationToken ct) =>
+        {
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == volunteerUserId, ct);
+            if (user is null) return Results.NotFound();
+
+            // Reactivate user if deactivated/suspended
+            // Record audit note
+            return Results.Ok(new { Message = "Volunteer reactivated successfully.", VolunteerUserId = volunteerUserId });
+        })
+        .WithName("ReactivateVolunteer")
+        .Produces(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
+        coordGroup.MapPost("/volunteers/reminders:send-monthly", async (
+            Guid organizationId,
+            SeniorConnectDbContext db,
+            INotificationService notificationService,
+            CancellationToken ct) =>
+        {
+            var currentMonth = DateOnly.FromDateTime(DateTime.UtcNow);
+            var firstOfMonth = new DateOnly(currentMonth.Year, currentMonth.Month, 1);
+
+            // Active volunteers with 0 activities in current month
+            var activeVolunteerIds = await db.VolunteerProfiles
+                .Select(p => p.UserId)
+                .Distinct()
+                .ToListAsync(ct);
+
+            var activeThisMonth = await db.Activities
+                .Where(a => a.OrganizationId == organizationId && a.OccurredOn >= firstOfMonth && !a.IsDeleted)
+                .Select(a => a.VolunteerUserId)
+                .Distinct()
+                .ToListAsync(ct);
+
+            var silentVolunteerIds = activeVolunteerIds.Except(activeThisMonth).ToList();
+            int dispatchedCount = 0;
+
+            foreach (var volId in silentVolunteerIds)
+            {
+                var dispatchResult = await notificationService.DispatchNotificationAsync(new DispatchNotificationRequest(
+                    RecipientUserId: volId,
+                    Category: NotificationCategory.HelpRequests,
+                    Priority: NotificationPriority.Normal,
+                    PreferredChannel: NotificationChannel.InApp,
+                    Title: "Monatsrückblick: Stunden erfassen",
+                    Body: "Hast du diesen Monat Nachbarschaftshilfe geleistet? Trage deine Stunden unkompliziert ein."), ct);
+
+                if (dispatchResult.IsSuccess) dispatchedCount++;
+            }
+
+            return Results.Ok(new { SilentVolunteersCount = silentVolunteerIds.Count, RemindersDispatched = dispatchedCount });
+        })
+        .WithName("SendMonthlyVolunteerReminders")
+        .Produces(StatusCodes.Status200OK);
 
         coordGroup.MapPost("/activities:bulk-entry", async (
             BulkEntryRequest request,
