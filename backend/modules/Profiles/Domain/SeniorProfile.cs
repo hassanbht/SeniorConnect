@@ -91,6 +91,27 @@ public sealed class SeniorProfile : Entity, IAuditable
         };
     }
 
+    public void UpdateDetails(
+        string? addressLine,
+        string? postalCode,
+        string? city,
+        double? latitude,
+        double? longitude,
+        string? mobilityNote,
+        string? livingSituation,
+        ContactMethod preferredContactMethod)
+    {
+        AddressLine = addressLine;
+        PostalCode = postalCode;
+        City = city;
+        Latitude = latitude;
+        Longitude = longitude;
+        MobilityNote = mobilityNote;
+        LivingSituation = livingSituation;
+        PreferredContactMethod = preferredContactMethod;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
     public void SetVulnerability(Guid staffUserId, string reason)
     {
         VulnerabilityFlag = true;

@@ -82,6 +82,27 @@ public sealed class VolunteerProfile : Entity, IAuditable
         };
     }
 
+    public void UpdatePreferences(
+        string? bio,
+        string? postalCode,
+        double? latitude,
+        double? longitude,
+        int maxDistanceKm,
+        short maxActivitiesPerWeek,
+        bool hasCar,
+        bool isAcceptingRequests)
+    {
+        Bio = bio;
+        PostalCode = postalCode;
+        Latitude = latitude;
+        Longitude = longitude;
+        MaxDistanceKm = maxDistanceKm;
+        MaxActivitiesPerWeek = maxActivitiesPerWeek;
+        HasCar = hasCar;
+        IsAcceptingRequests = isAcceptingRequests;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
     public void UpdateStatus(bool isAcceptingRequests)
     {
         IsAcceptingRequests = isAcceptingRequests;

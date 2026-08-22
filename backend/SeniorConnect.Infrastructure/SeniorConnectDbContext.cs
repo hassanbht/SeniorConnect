@@ -15,6 +15,7 @@ using SeniorConnect.Domain;
 using FunderEntity = SeniorConnect.Modules.Reporting.Domain.Funder;
 
 using SeniorConnect.Modules.Identity.Application;
+using SeniorConnect.Modules.Profiles.Application;
 
 namespace SeniorConnect.Infrastructure;
 
@@ -31,7 +32,7 @@ public interface ITenantContext
 
 public sealed class SeniorConnectDbContext(
     DbContextOptions<SeniorConnectDbContext> options,
-    ITenantContext tenant) : DbContext(options), IIdentityDbContext
+    ITenantContext tenant) : DbContext(options), IIdentityDbContext, IProfilesDbContext
 {
     // --- Identity ---
     public DbSet<User> Users => Set<User>();

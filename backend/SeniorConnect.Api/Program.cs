@@ -6,6 +6,8 @@ using SeniorConnect.Api.Endpoints;
 using SeniorConnect.Infrastructure;
 using SeniorConnect.Modules.Identity.Application;
 using SeniorConnect.Modules.Identity.Infrastructure;
+using SeniorConnect.Modules.Profiles.Application;
+using SeniorConnect.Modules.Profiles.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,9 +22,11 @@ builder.Services.AddDbContext<SeniorConnectDbContext>(options =>
 });
 
 builder.Services.AddScoped<IIdentityDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
+builder.Services.AddScoped<IProfilesDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 
-// Add Identity Module services
+// Add Module services
 builder.Services.AddIdentityModule();
+builder.Services.AddProfilesModule();
 
 // Configure JWT Authentication
 var jwtSecret = builder.Configuration["Jwt:SecretKey"] ?? "SeniorConnect_jwt_super_secret_signing_key_2026_default_secure_key_123456";
@@ -68,5 +72,7 @@ app.UseAuthorization();
 
 // Map Endpoints
 app.MapAuthEndpoints();
+app.MapProfileEndpoints();
+app.MapReferenceEndpoints();
 
 app.Run();
