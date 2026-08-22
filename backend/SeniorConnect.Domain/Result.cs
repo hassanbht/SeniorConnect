@@ -105,6 +105,9 @@ public sealed record Error(
     public static Error Forbidden(string detail) =>
         new("FORBIDDEN", detail, ErrorKind.Forbidden);
 
+    public static Error Conflict(string detail) =>
+        new("CONFLICT", detail, ErrorKind.Conflict);
+
     public static Error Conflict(string code, string detail) =>
         new(code, detail, ErrorKind.Conflict);
 

@@ -1,6 +1,2 @@
+// SeniorConnect Family Module
 namespace SeniorConnect.Modules.Family;
-
-public static class Placeholder
-{
-}
-

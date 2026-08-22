@@ -16,6 +16,7 @@ public static class IdentityModuleExtensions
         services.AddScoped<ITrustLevelCalculator, TrustLevelCalculator>();
         services.AddScoped<ICapabilityService, CapabilityService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IPrivacyService, PrivacyService>();
 
         return services;
     }

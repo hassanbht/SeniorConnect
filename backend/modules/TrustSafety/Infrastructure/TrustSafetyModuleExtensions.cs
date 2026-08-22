@@ -8,6 +8,8 @@ public static class TrustSafetyModuleExtensions
     public static IServiceCollection AddTrustSafetyModule(this IServiceCollection services)
     {
         services.AddScoped<IOnboardingService, OnboardingService>();
+        services.AddScoped<ITrustSafetyService, TrustSafetyService>();
+        services.AddScoped<ISafeguardingService, SafeguardingService>();
         return services;
     }
 }

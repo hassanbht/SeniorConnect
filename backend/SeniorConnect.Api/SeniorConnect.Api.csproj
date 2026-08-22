@@ -17,5 +17,8 @@
     <ProjectReference Include="..\modules\HelpRequests\SeniorConnect.Modules.HelpRequests.csproj" />
     <ProjectReference Include="..\modules\Matching\SeniorConnect.Modules.Matching.csproj" />
     <ProjectReference Include="..\modules\Reporting\SeniorConnect.Modules.Reporting.csproj" />
+    <ProjectReference Include="..\modules\Community\SeniorConnect.Modules.Community.csproj" />
+    <ProjectReference Include="..\modules\Family\SeniorConnect.Modules.Family.csproj" />
+    <ProjectReference Include="..\modules\Notifications\SeniorConnect.Modules.Notifications.csproj" />
   </ItemGroup>
 </Project>

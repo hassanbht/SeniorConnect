@@ -21,6 +21,13 @@ using SeniorConnect.Modules.HelpRequests.Application;
 using SeniorConnect.Modules.TrustSafety.Application;
 using SeniorConnect.Modules.Reporting.Application;
 
+using SeniorConnect.Modules.Community.Domain;
+using SeniorConnect.Modules.Community.Application;
+using SeniorConnect.Modules.Family.Domain;
+using SeniorConnect.Modules.Family.Application;
+using SeniorConnect.Modules.Notifications.Domain;
+using SeniorConnect.Modules.Notifications.Application;
+
 namespace SeniorConnect.Infrastructure;
 
 public interface ITenantContext
@@ -36,9 +43,9 @@ public interface ITenantContext
 
 public sealed class SeniorConnectDbContext(
     DbContextOptions<SeniorConnectDbContext> options,
-    ITenantContext tenant) : DbContext(options), IIdentityDbContext, IProfilesDbContext, IOrganizationsDbContext, IHelpRequestsDbContext, ITrustSafetyDbContext, IReportingDbContext
+    ITenantContext tenant) : DbContext(options), IIdentityDbContext, IProfilesDbContext, IOrganizationsDbContext, IHelpRequestsDbContext, ITrustSafetyDbContext, IReportingDbContext, ICommunityDbContext, IFamilyDbContext, INotificationsDbContext
 {
-    // --- Identity ---
+    // --- Identity & GDPR ---
     public DbSet<User> Users => Set<User>();
     public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -46,6 +53,7 @@ public sealed class SeniorConnectDbContext(
     public DbSet<Verification> Verifications => Set<Verification>();
     public DbSet<TrustLevelSnapshot> TrustLevelSnapshots => Set<TrustLevelSnapshot>();
     public DbSet<Consent> Consents => Set<Consent>();
+    public DbSet<AccountDeletionRequest> AccountDeletionRequests => Set<AccountDeletionRequest>();
 
     // --- Profiles ---
     public DbSet<SeniorProfile> SeniorProfiles => Set<SeniorProfile>();
@@ -73,9 +81,39 @@ public sealed class SeniorConnectDbContext(
     public DbSet<HelpRequest> HelpRequests => Set<HelpRequest>();
     public DbSet<HelpRequestStatusHistory> HelpRequestStatusHistories => Set<HelpRequestStatusHistory>();
 
-    // --- Onboarding ---
+    // --- Trust & Safety ---
     public DbSet<VolunteerApplication> VolunteerApplications => Set<VolunteerApplication>();
     public DbSet<VolunteerApplicationStep> VolunteerApplicationSteps => Set<VolunteerApplicationStep>();
+    public DbSet<BuddyAssignment> BuddyAssignments => Set<BuddyAssignment>();
+    public DbSet<KeyCustody> KeyCustodies => Set<KeyCustody>();
+    public DbSet<ExpenseRecord> ExpenseRecords => Set<ExpenseRecord>();
+    public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
+
+    // --- Safeguarding (Isolated Schema) ---
+    public DbSet<SafeguardingCase> SafeguardingCases => Set<SafeguardingCase>();
+    public DbSet<SafeguardingCaseNote> SafeguardingCaseNotes => Set<SafeguardingCaseNote>();
+    public DbSet<SafeguardingAccessLog> SafeguardingAccessLogs => Set<SafeguardingAccessLog>();
+
+    // --- Community ---
+    public DbSet<CommunityGroup> CommunityGroups => Set<CommunityGroup>();
+    public DbSet<GroupMembership> GroupMemberships => Set<GroupMembership>();
+    public DbSet<CommunityEvent> CommunityEvents => Set<CommunityEvent>();
+    public DbSet<EventRegistration> EventRegistrations => Set<EventRegistration>();
+    public DbSet<MessageThread> MessageThreads => Set<MessageThread>();
+    public DbSet<ThreadMessage> ThreadMessages => Set<ThreadMessage>();
+
+    // --- Family ---
+    public DbSet<FamilyRelationship> FamilyRelationships => Set<FamilyRelationship>();
+    public DbSet<FamilyPermission> FamilyPermissions => Set<FamilyPermission>();
+    public DbSet<SeniorAccessLog> SeniorAccessLogs => Set<SeniorAccessLog>();
+    public DbSet<TrustedContact> TrustedContacts => Set<TrustedContact>();
+    public DbSet<SafetyAlert> SafetyAlerts => Set<SafetyAlert>();
+    public DbSet<Zugangskarte> Zugangskarten => Set<Zugangskarte>();
+
+    // --- Notifications ---
+    public DbSet<NotificationMessage> NotificationMessages => Set<NotificationMessage>();
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+    public DbSet<NotificationBudgetTracker> NotificationBudgetTrackers => Set<NotificationBudgetTracker>();
 
     // --- Funders ---
     public DbSet<FunderEntity> Funders => Set<FunderEntity>();
@@ -104,6 +142,21 @@ public sealed class SeniorConnectDbContext(
         // Note: OrganizationId == null admits community-scoped rows.
         modelBuilder.Entity<Organization>().HasQueryFilter(o => !o.IsDeleted);
         modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
+
+        modelBuilder.Entity<CommunityGroup>().HasQueryFilter(g =>
+            !g.IsDeleted
+            && (tenant.IsPlatformScope
+                || g.OrganizationId == null
+                || g.OrganizationId == tenant.OrganizationId));
+
+        modelBuilder.Entity<CommunityEvent>().HasQueryFilter(e =>
+            !e.IsDeleted
+            && (tenant.IsPlatformScope
+                || e.OrganizationId == null
+                || e.OrganizationId == tenant.OrganizationId));
+
+        modelBuilder.Entity<ThreadMessage>().HasQueryFilter(m => !m.IsDeleted);
+        modelBuilder.Entity<TrustedContact>().HasQueryFilter(c => !c.IsDeleted);
 
         modelBuilder.Entity<OrganizationBranch>().HasQueryFilter(b =>
             tenant.IsPlatformScope
@@ -156,6 +209,11 @@ public sealed class SeniorConnectDbContext(
                     j.Property<Guid>("interest_id").HasColumnName("interest_id");
                     j.HasKey("user_id", "interest_id");
                 });
+
+        // --- Safeguarding (Schema Isolation ADR-004) -------------------------
+        modelBuilder.Entity<SafeguardingCase>().ToTable("safeguarding_cases", "safeguarding");
+        modelBuilder.Entity<SafeguardingCaseNote>().ToTable("safeguarding_case_notes", "safeguarding");
+        modelBuilder.Entity<SafeguardingAccessLog>().ToTable("safeguarding_access_logs", "safeguarding");
 
         base.OnModelCreating(modelBuilder);
     }

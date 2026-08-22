@@ -19,6 +19,12 @@ using SeniorConnect.Modules.TrustSafety.Application;
 using SeniorConnect.Modules.TrustSafety.Infrastructure;
 using SeniorConnect.Modules.Reporting.Application;
 using SeniorConnect.Modules.Reporting.Infrastructure;
+using SeniorConnect.Modules.Community.Application;
+using SeniorConnect.Modules.Community.Infrastructure;
+using SeniorConnect.Modules.Family.Application;
+using SeniorConnect.Modules.Family.Infrastructure;
+using SeniorConnect.Modules.Notifications.Application;
+using SeniorConnect.Modules.Notifications.Infrastructure;
 
 // Load environment variables from .env file
 DotNetEnv.Env.TraversePath().Load();
@@ -51,6 +57,9 @@ builder.Services.AddScoped<IOrganizationsDbContext>(sp => sp.GetRequiredService<
 builder.Services.AddScoped<IHelpRequestsDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 builder.Services.AddScoped<ITrustSafetyDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 builder.Services.AddScoped<IReportingDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
+builder.Services.AddScoped<ICommunityDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
+builder.Services.AddScoped<IFamilyDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
+builder.Services.AddScoped<INotificationsDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 
 // Add Module services
 builder.Services.AddIdentityModule();
@@ -60,6 +69,9 @@ builder.Services.AddHelpRequestsModule();
 builder.Services.AddMatchingModule();
 builder.Services.AddTrustSafetyModule();
 builder.Services.AddReportingModule();
+builder.Services.AddCommunityModule();
+builder.Services.AddFamilyModule();
+builder.Services.AddNotificationModule();
 
 // Configure JWT Authentication
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
@@ -133,6 +145,12 @@ app.MapActivityEndpoints();
 app.MapHelpRequestEndpoints();
 app.MapMatchingEndpoints();
 app.MapOnboardingEndpoints();
+app.MapTrustSafetyEndpoints();
+app.MapSafeguardingEndpoints();
+app.MapCommunityEndpoints();
+app.MapFamilyEndpoints();
+app.MapNotificationEndpoints();
+app.MapPrivacyEndpoints();
 app.MapCoordinatorEndpoints();
 app.MapFunderEndpoints();
 app.MapReportingEndpoints();
