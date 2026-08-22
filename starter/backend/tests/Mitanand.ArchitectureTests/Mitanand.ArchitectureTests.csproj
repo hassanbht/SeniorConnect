@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Verify current versions on nuget.org when you scaffold — these are
+         indicative, not pinned by verification. -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="xunit" Version="2.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
+    <PackageReference Include="FluentAssertions" Version="7.*" />
+    <PackageReference Include="NetArchTest.Rules" Version="1.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/SeniorConnect.Api/SeniorConnect.Api.csproj" />
+    <ProjectReference Include="../../src/SeniorConnect.Infrastructure/SeniorConnect.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/SeniorConnect.SharedKernel/SeniorConnect.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <NoWarn>$(NoWarn);CA1861</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0-*" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SeniorConnect.Domain\SeniorConnect.Domain.csproj" />
+    <ProjectReference Include="..\modules\HelpRequests\SeniorConnect.Modules.HelpRequests.csproj" />
+    <ProjectReference Include="..\modules\Reporting\SeniorConnect.Modules.Reporting.csproj" />
+    <ProjectReference Include="..\modules\Organizations\SeniorConnect.Modules.Organizations.csproj" />
+    <ProjectReference Include="..\modules\TrustSafety\SeniorConnect.Modules.TrustSafety.csproj" />
+    <ProjectReference Include="..\modules\Identity\SeniorConnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\modules\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+  </ItemGroup>
+</Project>

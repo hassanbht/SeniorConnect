@@ -1,0 +1,199 @@
+{
+  "app": {
+    "name": "SeniorConnect", "tagline": "کمک از همین نزدیکی" },"common": {
+      "save": "ذخیره",
+      "cancel": "انصراف",
+      "next": "بعدی",
+      "back": "بازگشت",
+      "confirm": "تأیید",
+      "yes": "بله",
+      "no": "خیر",
+      "close": "بستن",
+      "retry": "تلاش دوباره",
+      "loading": "در حال بارگذاری …",
+      "search": "جستجو",
+      "today": "امروز",
+      "tomorrow": "فردا",
+      "this_week": "این هفته",
+      "km_away": "{count} کیلومتر فاصله"
+    },
+    "errors": {
+      "generic": "متأسفانه انجام نشد. لطفاً دوباره تلاش کنید.",
+      "no_internet": "اتصال برقرار نیست. لطفاً اینترنت خود را بررسی کنید.",
+      "session_expired": "از حساب خارج شدید. لطفاً دوباره وارد شوید.",
+      "not_allowed": "شما اجازه این کار را ندارید.",
+      "already_taken": "شخص دیگری زودتر اقدام کرد. درخواست‌های مشابه را نشان می‌دهیم."
+    },
+    "auth": {
+      "phone": "شماره تلفن",
+      "phone_field_label": "شماره تلفن خود را وارد کنید",
+      "phone_required": "لطفاً شماره تلفن وارد کنید.",
+      "phone_invalid": "لطفاً یک شماره تلفن معتبر وارد کنید.",
+      "request_code": "دریافت کد",
+      "request_code_semantic": "دریافت کد از طریق پیامک. فرم بعدی را باز می‌کند.",
+      "privacy_note": "شماره شما را به اشتراک نمی‌گذاریم.",
+      "otp_field_label": "کد شش رقمی را وارد کنید",
+      "otp_attempts_left": "{n} تلاش باقیمانده",
+      "otp_too_many_attempts": "تعداد تلاش‌های ناموفق بیش از حد. لطفاً کد جدیدی درخواست کنید.",
+      "otp": {
+        "rate_limited": "درخواست‌های زیاد. لطفاً كمی صبر کنید."
+      },
+      "verify_phone": {
+        "title": "وارد کردن کد",
+        "description": "کدی به {phone} فرستادیم.",
+        "submit": "تأیید",
+        "resend": "درخواست کد جدید"
+      },
+      "verify_semantic": "تأیید کد",
+      "login": {
+        "title": "خوش آمدید",
+        "email": "نشانی ایمیل",
+        "password": "گذرواژه",
+        "submit": "ورود",
+        "forgot": "گذرواژه را فراموش کرده‌اید؟"
+      },
+      "register": {
+        "title": "ساخت حساب",
+        "who_are_you": "شما چه کسی هستید؟",
+        "i_need_help": "به کمک نیاز دارم",
+        "i_want_to_help": "می‌خواهم کمک کنم",
+        "i_support_someone": "از کسی پشتیبانی می‌کنم"
+      }
+    },
+    "home": {
+      "greeting": "سلام {name}",
+      "senior": {
+        "request_help": "درخواست کمک",
+        "my_activities": "قرارهای من",
+        "my_groups": "گروه‌های من",
+        "my_contacts": "مخاطبان من",
+        "emergency": "اورژانس"
+      }
+    },
+    "help": {
+      "create": {
+        "title": "درخواست کمک",
+        "what": "در چه کاری به کمک نیاز دارید؟",
+        "when": "چه زمانی؟",
+        "details": "توضیحی دارید؟",
+        "details_hint": "مثلاً: طبقه سوم، بدون آسانسور",
+        "review_title": "درست است؟",
+        "submit": "بله، درخواست بده",
+        "submitted": "درخواست شما ارسال شد.",
+        "submitted_detail": "در حال یافتن فرد مناسب هستیم. حداکثر تا فردا خبر می‌دهیم."
+      },
+      "category": {
+        "shopping": "خرید",
+        "doctor": "نوبت پزشک",
+        "authority": "کارهای اداری",
+        "accompaniment": "همراهی یا پیاده‌روی",
+        "home_small": "کمک کوچک در خانه",
+        "other": "چیز دیگر"
+      },
+      "status": {
+        "open": "در حال جستجو",
+        "offered": "پیشنهاد شده",
+        "assigned": "تأیید شده",
+        "in_progress": "در حال انجام",
+        "completed": "انجام شد",
+        "cancelled": "لغو شد",
+        "expired": "منقضی شد"
+      },
+      "blocked": {
+        "title": "این کار نیاز به پرستار آموزش‌دیده دارد.",
+        "description": "ما اجازه واسطه‌گری برای این کار را نداریم. مراکز نزدیک شما در فهرست زیر است.",
+        "other_request": "می‌خواهم چیز دیگری درخواست کنم"
+      },
+      "checkin": "رسیدم",
+      "checkout": "تمام شد"
+    },
+    "emergency": {
+      "title": "همین حالا به کمک نیاز دارید؟",
+      "call_144": "تماس با ۱۴۴ (اورژانس)",
+      "call_112": "تماس با ۱۱۲",
+      "call_contacts": "تماس با مخاطبان من",
+      "no": "خیر، به کمک اورژانسی نیاز ندارم"
+    },
+    "trust": {
+      "title": "تأییدیه‌ها",
+      "identity_verified": "هویت تأیید شد",
+      "phone_verified": "تلفن تأیید شد",
+      "address_verified": "نشانی تأیید شد",
+      "organization_verified": "تأیید شده توسط {organization}",
+      "training_completed": "دوره «{training}» گذرانده شد",
+      "background_checked": "گواهی سوءپیشینه بررسی شد",
+      "verified_on": "تأیید در {date}",
+      "missing_title": "هنوز لازم است:",
+      "how_to_get_it": "چگونه به دست بیاورید"
+    },
+    "community": {
+      "groups": "گروه‌ها",
+      "create_group": "ساخت گروه",
+      "join": "پیوستن",
+      "leave": "خروج از گروه",
+      "members": "{count} از {capacity} ظرفیت",
+      "next_meeting": "دیدار بعدی: {date}"
+    },
+    "family": {
+      "title": "بستگان",
+      "invite": "دعوت از بستگان",
+      "create_senior_account": "ساخت حساب برای شخص دیگر",
+      "permissions": "این شخص چه کارهایی می‌تواند انجام دهد؟",
+      "permission": {
+        "view_activities": "دیدن قرارهای من",
+        "view_help_requests": "دیدن درخواست‌های من",
+        "create_help_requests": "درخواست کمک به جای من",
+        "receive_safety_notifications": "دریافت اطلاع در رویدادهای مهم",
+        "emergency_contact": "مخاطب اضطراری باشد"
+      },
+      "access_log": "چه کسی چه چیزی را دیده است؟"
+    },
+    "safeguarding": {
+      "report": "گزارش یک نگرانی",
+      "thanks": "ممنون. فرد مسئول پیگیری می‌کند."
+    },
+    "settings": {
+      "title": "تنظیمات",
+      "appearance": "نمایش",
+      "theme": {
+        "system": "مطابق تنظیم دستگاه",
+        "light": "روشن",
+        "dark": "تیره",
+        "high_contrast_light": "کنتراست بالا (روشن)",
+        "high_contrast_dark": "کنتراست بالا (تیره)"
+      },
+      "senior_mode": "نمای بزرگ",
+      "senior_mode_hint": "متن و دکمه‌های بزرگ‌تر",
+      "language": "زبان",
+      "notifications": "اعلان‌ها",
+      "my_data": "داده‌های من",
+      "privacy": "حریم خصوصی"
+    },
+    "profile": {
+      "title": "پروفیل من",
+      "edit": "ویرایش",
+      "edit_semantic": "ویرایش پروفیل",
+      "contact": "تماس",
+      "email": "نشانی ایمیل",
+      "email_optional": "اختیاری",
+      "email_invalid": "لطفاً یک آدرس ایمیل معتبر وارد کنید.",
+      "display_name": "نام نمایشی",
+      "name_required": "لطفاً نام خود را وارد کنید.",
+      "interests": "علایق",
+      "interests_coming_soon": "علایق به زودی قابل افزودن خواهد بود.",
+      "languages": "زبان‌ها",
+      "languages_coming_soon": "زبان‌ها به زودی قابل افزودن خواهد بود."
+    },
+    "empty": {
+      "no_activities": "هنوز قراری ندارید.",
+      "no_activities_action": "دیدن گروه‌های نزدیک",
+      "no_requests": "در حال حاضر درخواستی در نزدیکی شما نیست.",
+      "no_groups": "هنوز گروهی اینجا نیست. اولین گروه را بسازید.",
+      "no_interests": "هنوز علاقه‌ای اضافه نشده."
+    },
+    "semantic": {
+      "request_help_button": "درخواست کمک. فرم را باز می‌کند.",
+      "emergency_button": "اورژانس. صفحه کمک اضطراری را باز می‌کند.",
+      "back_button": "بازگشت به صفحه قبل."
+    }
+  }

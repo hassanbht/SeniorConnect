@@ -1,0 +1,202 @@
+{
+  "app": {
+    "name": "SeniorConnect
+","tagline": "Hilfe von nebenan."
+  },
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "next": "Weiter",
+    "back": "Zurück",
+    "confirm": "Bestätigen",
+    "yes": "Ja",
+    "no": "Nein",
+    "close": "Schließen",
+    "retry": "Nochmal versuchen",
+    "loading": "Wird geladen …",
+    "search": "Suchen",
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "this_week": "Diese Woche",
+    "km_away": "{count} km entfernt"
+  },
+  "errors": {
+    "generic": "Das hat leider nicht geklappt. Bitte versuchen Sie es nochmal.",
+    "no_internet": "Keine Verbindung. Bitte prüfen Sie Ihr Internet.",
+    "session_expired": "Sie wurden abgemeldet. Bitte melden Sie sich wieder an.",
+    "not_allowed": "Das dürfen Sie hier nicht.",
+    "already_taken": "Jemand anderes war schneller. Wir zeigen Ihnen ähnliche Anfragen."
+  },
+  "auth": {
+    "phone": "Telefonnummer",
+    "phone_field_label": "Telefonnummer eingeben",
+    "phone_required": "Bitte geben Sie Ihre Telefonnummer ein.",
+    "phone_invalid": "Bitte geben Sie eine gültige Telefonnummer ein.",
+    "request_code": "Code anfordern",
+    "request_code_semantic": "Code per SMS anfordern. Öffnet das nächste Formular.",
+    "privacy_note": "Wir teilen Ihre Nummer nicht weiter.",
+    "otp_field_label": "Sechsstelligen Code eingeben",
+    "otp_attempts_left": "Noch {n} Versuche",
+    "otp_too_many_attempts": "Zu viele Fehlversuche. Bitte fordern Sie einen neuen Code an.",
+    "otp": {
+      "rate_limited": "Zu viele Anfragen. Bitte warten Sie kurz."
+    },
+    "verify_phone": {
+      "title": "Code eingeben",
+      "description": "Wir haben Ihnen einen Code an {phone} geschickt.",
+      "submit": "Bestätigen",
+      "resend": "Neuen Code anfordern"
+    },
+    "verify_semantic": "Code bestätigen",
+    "login": {
+      "title": "Willkommen",
+      "email": "E-Mail-Adresse",
+      "password": "Passwort",
+      "submit": "Anmelden",
+      "forgot": "Passwort vergessen?"
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "who_are_you": "Wer sind Sie?",
+      "i_need_help": "Ich suche Unterstützung",
+      "i_want_to_help": "Ich möchte helfen",
+      "i_support_someone": "Ich unterstütze jemanden"
+    }
+  },
+  "home": {
+    "greeting": "Hallo {name}",
+    "senior": {
+      "request_help": "Hilfe anfragen",
+      "my_activities": "Meine Termine",
+      "my_groups": "Meine Gruppen",
+      "my_contacts": "Meine Kontakte",
+      "emergency": "Notfall"
+    }
+  },
+  "help": {
+    "create": {
+      "title": "Hilfe anfragen",
+      "what": "Wobei brauchen Sie Hilfe?",
+      "when": "Wann?",
+      "details": "Möchten Sie etwas dazu sagen?",
+      "details_hint": "Zum Beispiel: dritter Stock, kein Aufzug",
+      "review_title": "Stimmt das so?",
+      "submit": "Ja, anfragen",
+      "submitted": "Ihre Anfrage ist unterwegs.",
+      "submitted_detail": "Wir suchen jemanden. Sie hören spätestens morgen von uns."
+    },
+    "category": {
+      "shopping": "Einkaufen",
+      "doctor": "Arzttermin",
+      "authority": "Behördengang",
+      "accompaniment": "Begleitung oder Spaziergang",
+      "home_small": "Kleine Hilfe zu Hause",
+      "other": "Etwas anderes"
+    },
+    "status": {
+      "open": "Wird gesucht",
+      "offered": "Angefragt",
+      "assigned": "Bestätigt",
+      "in_progress": "Läuft gerade",
+      "completed": "Abgeschlossen",
+      "cancelled": "Abgesagt",
+      "expired": "Abgelaufen"
+    },
+    "blocked": {
+      "title": "Dafür braucht es ausgebildete Pflege.",
+      "description": "Das dürfen wir nicht vermitteln. Hier sind Stellen in Ihrer Nähe, die das können.",
+      "other_request": "Ich möchte stattdessen etwas anderes anfragen"
+    },
+    "checkin": "Angekommen",
+    "checkout": "Fertig"
+  },
+  "emergency": {
+    "title": "Brauchen Sie sofort Hilfe?",
+    "call_144": "144 anrufen (Rettung)",
+    "call_112": "112 anrufen (Notruf)",
+    "call_contacts": "Meine Kontakte anrufen",
+    "no": "Nein, ich brauche keine Notfallhilfe"
+  },
+  "trust": {
+    "title": "Bestätigungen",
+    "identity_verified": "Identität bestätigt",
+    "phone_verified": "Telefon bestätigt",
+    "address_verified": "Adresse bestätigt",
+    "organization_verified": "Von {organization} bestätigt",
+    "training_completed": "Schulung „{training}\" abgeschlossen",
+    "background_checked": "Strafregisterbescheinigung geprüft",
+    "verified_on": "Bestätigt am {date}",
+    "missing_title": "Dafür fehlt noch:",
+    "how_to_get_it": "So bekommen Sie das"
+  },
+  "community": {
+    "groups": "Gruppen",
+    "create_group": "Gruppe gründen",
+    "join": "Mitmachen",
+    "leave": "Nicht mehr mitmachen",
+    "members": "{count} von {capacity} Plätzen",
+    "next_meeting": "Nächstes Treffen: {date}"
+  },
+  "family": {
+    "title": "Angehörige",
+    "invite": "Angehörige einladen",
+    "create_senior_account": "Konto für jemanden einrichten",
+    "permissions": "Was darf diese Person?",
+    "permission": {
+      "view_activities": "Meine Termine sehen",
+      "view_help_requests": "Meine Anfragen sehen",
+      "create_help_requests": "Für mich Hilfe anfragen",
+      "receive_safety_notifications": "Bei wichtigen Ereignissen benachrichtigt werden",
+      "emergency_contact": "Notfallkontakt sein"
+    },
+    "access_log": "Wer hat was gesehen?"
+  },
+  "safeguarding": {
+    "report": "Etwas melden",
+    "thanks": "Danke. Eine zuständige Person kümmert sich darum."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "appearance": "Darstellung",
+    "theme": {
+      "system": "Wie am Gerät eingestellt",
+      "light": "Hell",
+      "dark": "Dunkel",
+      "high_contrast_light": "Hoher Kontrast (hell)",
+      "high_contrast_dark": "Hoher Kontrast (dunkel)"
+    },
+    "senior_mode": "Große Ansicht",
+    "senior_mode_hint": "Größere Schrift und größere Schaltflächen",
+    "language": "Sprache",
+    "notifications": "Benachrichtigungen",
+    "my_data": "Meine Daten",
+    "privacy": "Datenschutz"
+  },
+  "profile": {
+    "title": "Mein Profil",
+    "edit": "Bearbeiten",
+    "edit_semantic": "Profil bearbeiten",
+    "contact": "Kontakt",
+    "email": "E-Mail-Adresse",
+    "email_optional": "Optional",
+    "email_invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+    "display_name": "Anzeigename",
+    "name_required": "Bitte geben Sie Ihren Namen ein.",
+    "interests": "Interessen",
+    "interests_coming_soon": "Interessen können bald hinzugefügt werden.",
+    "languages": "Sprachen",
+    "languages_coming_soon": "Sprachen können bald hinzugefügt werden."
+  },
+  "empty": {
+    "no_activities": "Sie haben noch keine Termine.",
+    "no_activities_action": "Gruppen in Ihrer Nähe ansehen",
+    "no_requests": "Es gibt gerade keine Anfragen in Ihrer Nähe.",
+    "no_groups": "Hier gibt es noch keine Gruppe. Gründen Sie die erste.",
+    "no_interests": "Noch keine Interessen hinzugefügt."
+  },
+  "semantic": {
+    "request_help_button": "Hilfe anfragen. Öffnet das Formular.",
+    "emergency_button": "Notfall. Öffnet die Notfallhilfe.",
+    "back_button": "Zurück zur vorherigen Seite."
+  }
+}

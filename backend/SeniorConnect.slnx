@@ -1,0 +1,18 @@
+<Solution>
+  <Project Path="SeniorConnect.Domain/SeniorConnect.Domain.csproj" />
+  <Project Path="SeniorConnect.Application/SeniorConnect.Application.csproj" />
+  <Project Path="SeniorConnect.Infrastructure/SeniorConnect.Infrastructure.csproj" />
+  <Project Path="SeniorConnect.Api/SeniorConnect.Api.csproj" />
+  <Project Path="modules/Identity/SeniorConnect.Modules.Identity.csproj" />
+  <Project Path="modules/Profiles/SeniorConnect.Modules.Profiles.csproj" />
+  <Project Path="modules/Organizations/SeniorConnect.Modules.Organizations.csproj" />
+  <Project Path="modules/TrustSafety/SeniorConnect.Modules.TrustSafety.csproj" />
+  <Project Path="modules/HelpRequests/SeniorConnect.Modules.HelpRequests.csproj" />
+  <Project Path="modules/Reporting/SeniorConnect.Modules.Reporting.csproj" />
+  <Project Path="modules/Community/SeniorConnect.Modules.Community.csproj" />
+  <Project Path="modules/Matching/SeniorConnect.Modules.Matching.csproj" />
+  <Project Path="modules/Family/SeniorConnect.Modules.Family.csproj" />
+  <Project Path="modules/Notifications/SeniorConnect.Modules.Notifications.csproj" />
+  <Project Path="../tests/architecture/SeniorConnect.ArchitectureTests/SeniorConnect.ArchitectureTests.csproj" />
+  <Project Path="../tests/backend/SeniorConnect.Modules.Identity.Tests/SeniorConnect.Modules.Identity.Tests.csproj" />
+</Solution>
