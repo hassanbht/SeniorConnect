@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SeniorConnect.Infrastructure\SeniorConnect.Infrastructure.csproj" />
     <ProjectReference Include="..\modules\HelpRequests\SeniorConnect.Modules.HelpRequests.csproj" />
+    <ProjectReference Include="..\modules\Matching\SeniorConnect.Modules.Matching.csproj" />
     <ProjectReference Include="..\modules\Reporting\SeniorConnect.Modules.Reporting.csproj" />
   </ItemGroup>
 </Project>

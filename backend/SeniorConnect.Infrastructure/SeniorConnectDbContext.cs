@@ -66,10 +66,12 @@ public sealed class SeniorConnectDbContext(
     public DbSet<OrganizationMembership> OrganizationMemberships => Set<OrganizationMembership>();
     public DbSet<OrganizationPolicy> OrganizationPolicies => Set<OrganizationPolicy>();
 
-    // --- Activities ---
+    // --- Activities & Help Requests ---
     public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<ActivityCategory> ActivityCategories => Set<ActivityCategory>();
     public DbSet<ReferralDirectory> ReferralDirectories => Set<ReferralDirectory>();
+    public DbSet<HelpRequest> HelpRequests => Set<HelpRequest>();
+    public DbSet<HelpRequestStatusHistory> HelpRequestStatusHistories => Set<HelpRequestStatusHistory>();
 
     // --- Onboarding ---
     public DbSet<VolunteerApplication> VolunteerApplications => Set<VolunteerApplication>();
@@ -123,6 +125,12 @@ public sealed class SeniorConnectDbContext(
             && (tenant.IsPlatformScope
                 || a.OrganizationId == null
                 || a.OrganizationId == tenant.OrganizationId));
+
+        modelBuilder.Entity<HelpRequest>().HasQueryFilter(h =>
+            !h.IsDeleted
+            && (tenant.IsPlatformScope
+                || h.OrganizationId == null
+                || h.OrganizationId == tenant.OrganizationId));
 
         modelBuilder.Entity<VolunteerApplication>().HasQueryFilter(v =>
             tenant.IsPlatformScope

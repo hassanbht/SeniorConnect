@@ -1,9 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);CA1848;CA1873;CA1305</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\SeniorConnect.Domain\SeniorConnect.Domain.csproj" />
+    <ProjectReference Include="..\HelpRequests\SeniorConnect.Modules.HelpRequests.csproj" />
+    <ProjectReference Include="..\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0-*" />
   </ItemGroup>
 </Project>

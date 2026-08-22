@@ -102,6 +102,12 @@ public sealed record Error(
     public static Error Validation(string detail) =>
         new("VALIDATION_FAILED", detail, ErrorKind.Validation);
 
+    public static Error Forbidden(string detail) =>
+        new("FORBIDDEN", detail, ErrorKind.Forbidden);
+
+    public static Error Conflict(string code, string detail) =>
+        new(code, detail, ErrorKind.Conflict);
+
     /// <summary>
     /// Cross-tenant misses use NotFound, never Forbidden. A 403 confirms the
     /// resource exists. docs/architecture/authorization.md §2.
