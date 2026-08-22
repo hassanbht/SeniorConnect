@@ -62,6 +62,31 @@ public sealed class VolunteerApplication : Entity, IOrganizationScoped, IAuditab
             UpdatedBy = userId
         };
     }
+
+    public void Approve(Guid decidedByUserId)
+    {
+        Status = ApplicationStatus.Approved;
+        DecidedAtUtc = DateTimeOffset.UtcNow;
+        DecidedByUserId = decidedByUserId;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+        UpdatedBy = decidedByUserId;
+    }
+
+    public void Decline(Guid decidedByUserId, string? reason)
+    {
+        Status = ApplicationStatus.Declined;
+        DecidedAtUtc = DateTimeOffset.UtcNow;
+        DecidedByUserId = decidedByUserId;
+        DeclineReason = reason;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+        UpdatedBy = decidedByUserId;
+    }
+
+    public void Withdraw()
+    {
+        Status = ApplicationStatus.Withdrawn;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
 }
 
 public enum ApplicationStatus

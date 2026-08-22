@@ -61,6 +61,32 @@ public sealed class OrganizationMembership : Entity, IOrganizationScoped, IAudit
             UpdatedBy = createdBy
         };
     }
+
+    public void Activate()
+    {
+        Status = MembershipStatus.Active;
+        JoinedAtUtc ??= DateTimeOffset.UtcNow;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
+    public void Suspend()
+    {
+        Status = MembershipStatus.Suspended;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
+    public void Leave()
+    {
+        Status = MembershipStatus.Left;
+        LeftAtUtc = DateTimeOffset.UtcNow;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
+    public void ChangeRole(MembershipRole newRole)
+    {
+        Role = newRole;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
 }
 
 public enum MembershipRole

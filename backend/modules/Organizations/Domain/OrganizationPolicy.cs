@@ -37,4 +37,11 @@ public sealed class OrganizationPolicy : Entity, IOrganizationScoped
             UpdatedBy = updatedBy
         };
     }
+
+    public void UpdateValue(string policyValueJson, Guid? updatedBy = null)
+    {
+        PolicyValueJson = policyValueJson;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+        UpdatedBy = updatedBy;
+    }
 }

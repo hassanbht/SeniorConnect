@@ -49,6 +49,33 @@ public sealed class VolunteerApplicationStep : Entity
             SlaDays = slaDays
         };
     }
+
+    public void Start()
+    {
+        Status = StepStatus.InProgress;
+        OpenedAtUtc ??= DateTimeOffset.UtcNow;
+    }
+
+    public void Complete(Guid completedByUserId, string? note = null)
+    {
+        Status = StepStatus.Completed;
+        CompletedAtUtc = DateTimeOffset.UtcNow;
+        CompletedByUserId = completedByUserId;
+        Note = note;
+    }
+
+    public void Block(string? note = null)
+    {
+        Status = StepStatus.Blocked;
+        Note = note;
+    }
+
+    public void Skip(string? note = null)
+    {
+        Status = StepStatus.Skipped;
+        CompletedAtUtc = DateTimeOffset.UtcNow;
+        Note = note;
+    }
 }
 
 public enum ApplicationStepType

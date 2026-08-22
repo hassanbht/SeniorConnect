@@ -227,6 +227,11 @@ public sealed class Activity : Entity, IOrganizationScoped, IAuditable, ISoftDel
             return Error.InvalidStateTransition(Status.ToString(), nameof(ActivityStatus.Confirmed));
         }
 
+        if (confirmedByUserId == VolunteerUserId)
+        {
+            return new Error("SELF_CONFIRMATION_FORBIDDEN", "A volunteer cannot confirm their own hours.", ErrorKind.Forbidden);
+        }
+
         // BR-TRANSPORT-04. This is the primary guard; the database CHECK
         // constraint is the backstop. Both exist on purpose — F4 records a real
         // insurance dispute between a Gemeinde and an association.

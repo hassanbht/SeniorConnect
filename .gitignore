@@ -188,3 +188,4 @@ obj/
 *.suo
 
 Document/
+backend/.env.example

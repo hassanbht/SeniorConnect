@@ -16,6 +16,10 @@ using FunderEntity = SeniorConnect.Modules.Reporting.Domain.Funder;
 
 using SeniorConnect.Modules.Identity.Application;
 using SeniorConnect.Modules.Profiles.Application;
+using SeniorConnect.Modules.Organizations.Application;
+using SeniorConnect.Modules.HelpRequests.Application;
+using SeniorConnect.Modules.TrustSafety.Application;
+using SeniorConnect.Modules.Reporting.Application;
 
 namespace SeniorConnect.Infrastructure;
 
@@ -32,7 +36,7 @@ public interface ITenantContext
 
 public sealed class SeniorConnectDbContext(
     DbContextOptions<SeniorConnectDbContext> options,
-    ITenantContext tenant) : DbContext(options), IIdentityDbContext, IProfilesDbContext
+    ITenantContext tenant) : DbContext(options), IIdentityDbContext, IProfilesDbContext, IOrganizationsDbContext, IHelpRequestsDbContext, ITrustSafetyDbContext, IReportingDbContext
 {
     // --- Identity ---
     public DbSet<User> Users => Set<User>();
@@ -54,7 +58,7 @@ public sealed class SeniorConnectDbContext(
     public DbSet<AvailabilitySlot> AvailabilitySlots => Set<AvailabilitySlot>();
 
     // --- Audit ---
-    public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<SeniorConnect.Modules.Reporting.Domain.AuditEntry> AuditEntries => Set<SeniorConnect.Modules.Reporting.Domain.AuditEntry>();
 
     // --- Organizations ---
     public DbSet<Organization> Organizations => Set<Organization>();

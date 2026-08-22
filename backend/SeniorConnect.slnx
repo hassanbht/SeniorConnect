@@ -15,4 +15,5 @@
   <Project Path="modules/Notifications/SeniorConnect.Modules.Notifications.csproj" />
   <Project Path="../tests/architecture/SeniorConnect.ArchitectureTests/SeniorConnect.ArchitectureTests.csproj" />
   <Project Path="../tests/backend/SeniorConnect.Modules.Identity.Tests/SeniorConnect.Modules.Identity.Tests.csproj" />
+  <Project Path="../tests/backend/SeniorConnect.Modules.HelpRequests.Tests/SeniorConnect.Modules.HelpRequests.Tests.csproj" />
 </Solution>
