@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 
 abstract class AuthRepository {
@@ -9,7 +8,7 @@ abstract class AuthRepository {
 }
 
 class AuthRepositoryImpl implements AuthRepository {
-  AuthRepositoryImpl({required ApiClient apiClient}) : _apiClient = apiClient;
+  AuthRepositoryImpl(this._apiClient);
 
   final ApiClient _apiClient;
 

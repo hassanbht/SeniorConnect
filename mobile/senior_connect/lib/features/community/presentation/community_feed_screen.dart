@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_tokens.dart';
+
+import '../../../core/design_system/app_tokens.dart';
 
 class CommunityFeedScreen extends StatelessWidget {
   const CommunityFeedScreen({super.key});
@@ -35,18 +35,18 @@ class CommunityFeedScreen extends StatelessWidget {
         title: const Text('Gemeinschaft & Treffen'),
       ),
       body: ListView.separated(
-        padding: const EdgeInsets.all(AppTokens.paddingMd),
+        padding: const EdgeInsets.all(AppSpacing.md),
         itemCount: events.length,
-        separatorBuilder: (_, __) => const SizedBox(height: AppTokens.paddingMd),
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
         itemBuilder: (context, index) {
           final ev = events[index];
           return Card(
             elevation: 1,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(AppTokens.paddingMd),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -54,13 +54,13 @@ class CommunityFeedScreen extends StatelessWidget {
                     ev['title']!,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                      color: theme.colorScheme.primary,
                     ),
                   ),
-                  const SizedBox(height: AppTokens.paddingSm),
+                  const SizedBox(height: AppSpacing.sm),
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                      Icon(Icons.calendar_today, size: 16, color: theme.colorScheme.onSurfaceVariant),
                       const SizedBox(width: 6),
                       Text(ev['date']!, style: theme.textTheme.bodyMedium),
                     ],
@@ -68,22 +68,22 @@ class CommunityFeedScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                      Icon(Icons.location_on, size: 16, color: theme.colorScheme.onSurfaceVariant),
                       const SizedBox(width: 6),
                       Text(ev['location']!, style: theme.textTheme.bodyMedium),
                     ],
                   ),
-                  const SizedBox(height: AppTokens.paddingSm),
+                  const SizedBox(height: AppSpacing.sm),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: theme.colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       ev['spots']!,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.primary,
+                        color: theme.colorScheme.onPrimaryContainer,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

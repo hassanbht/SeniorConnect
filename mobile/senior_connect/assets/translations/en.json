@@ -105,12 +105,19 @@
         "other_request": "I would like to request something else instead"
       },
       "checkin": "Arrived",
-      "checkout": "Finished"
+      "checkout": "Finished",
+      "emergency_detected_msg": "Your text contains indications of an emergency. In case of acute danger, please call emergency services immediately."
     },
     "emergency": {
       "title": "Do you need help right now?",
+      "disclaimer": "Important: The app initiates a direct phone call to official emergency services and does not monitor emergencies itself.",
       "call_144": "Call 144 (ambulance)",
       "call_112": "Call 112 (emergency)",
+      "call_confirm_title": "Call {0}?",
+      "call_confirm_desc": "Would you like to call {0} directly at {1} now?",
+      "call_now": "Call now",
+      "call_144_semantic": "Call ambulance 144. Starts an emergency call.",
+      "call_112_semantic": "Call emergency 112. Starts an emergency call.",
       "call_contacts": "Call my contacts",
       "no": "No, I do not need emergency help"
     },

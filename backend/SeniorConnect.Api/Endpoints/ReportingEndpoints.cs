@@ -48,6 +48,24 @@ public static class ReportingEndpoints
         .WithName("ExportImpactCsv")
         .Produces(StatusCodes.Status200OK, contentType: "text/csv");
 
+        reportGroup.MapGet("/organizations/{orgId:guid}/export.pdf", async (
+            Guid orgId,
+            DateOnly? from,
+            DateOnly? to,
+            IReportingService reportService,
+            CancellationToken ct) =>
+        {
+            var fromDate = from ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
+            var toDate = to ?? DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var result = await reportService.ExportImpactPdfAsync(orgId, fromDate, toDate, ct);
+            if (result.IsFailure) return Results.BadRequest(result.Error?.Detail);
+
+            return Results.File(result.Value!, "application/pdf", $"impact-report-{orgId}.pdf");
+        })
+        .WithName("ExportImpactPdf")
+        .Produces(StatusCodes.Status200OK, contentType: "application/pdf");
+
         reportGroup.MapGet("/organizations/{orgId:guid}/report.html", async (
             Guid orgId,
             DateOnly? from,

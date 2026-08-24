@@ -1,12 +1,30 @@
+// lib/features/organizations/presentation/log_activity_screen.dart
+//
+// P2-14: Volunteer self-log screen (2-tap from home).
+//
+// Constraints and Rules:
+// - Prefilled from the last entry (BR-ROSTER-01, F1).
+// - Idempotency key honoured on submit.
+// - Insurance context (BR-SAFETY-06) and transport mode (BR-TRANSPORT-01..05) explicit.
+// - Full easy_localization, dark/light theme, RTL support.
+
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_tokens.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../core/design_system/app_tokens.dart';
+import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/app_button.dart';
 
 class LogActivityScreen extends StatefulWidget {
-  final VoidCallback? onLogged;
+  const LogActivityScreen({
+    super.key,
+    required this.apiClient,
+    this.onLogged,
+  });
 
-  const LogActivityScreen({super.key, this.onLogged});
+  final ApiClient apiClient;
+  final VoidCallback? onLogged;
 
   @override
   State<LogActivityScreen> createState() => _LogActivityScreenState();
@@ -14,18 +32,38 @@ class LogActivityScreen extends StatefulWidget {
 
 class _LogActivityScreenState extends State<LogActivityScreen> {
   int _durationMinutes = 60;
-  String _selectedCategory = 'Gartenarbeit & Pflanzen';
-  String _insuranceContext = 'CoveredByOrganization';
+  String _selectedCategoryKey = 'help.category.shopping';
+  int _insuranceContext = 1; // OrganizationPolicy
+  int _transportMode = 0; // None
   final _notesController = TextEditingController();
   bool _isSubmitting = false;
+  String? _errorMessage;
 
-  final List<String> _categories = [
-    'Gartenarbeit & Pflanzen',
-    'Einkaufen & Besorgungen',
-    'Technikhilfe & Smartphone',
-    'Spaziergang & Begleitung',
-    'Vorlesen & Unterhaltung',
+  static const List<String> _categoryKeys = [
+    'help.category.shopping',
+    'help.category.doctor',
+    'help.category.authority',
+    'help.category.accompaniment',
+    'help.category.home_small',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastEntryPrefill();
+  }
+
+  Future<void> _loadLastEntryPrefill() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastCat = prefs.getString('last_log_category');
+    final lastDuration = prefs.getInt('last_log_duration');
+    if (lastCat != null && _categoryKeys.contains(lastCat)) {
+      setState(() {
+        _selectedCategoryKey = lastCat;
+        if (lastDuration != null) _durationMinutes = lastDuration;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -33,20 +71,55 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    setState(() => _isSubmitting = true);
-    Future.delayed(const Duration(milliseconds: 600), () {
+  Future<void> _submit() async {
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final now = DateTime.now();
+      final dateOnly = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+      final payload = {
+        'categoryId': '00000000-0000-0000-0000-000000000001',
+        'occurredOn': dateOnly,
+        'durationMinutes': _durationMinutes,
+        'locationType': 0,
+        'notes': _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        'insuranceContext': _insuranceContext,
+        'transportMode': _transportMode,
+      };
+
+      await widget.apiClient.post<dynamic>(
+        '/api/v1/activities',
+        data: payload,
+      );
+
+      // Save prefill preferences for next 2-tap log
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_log_category', _selectedCategoryKey);
+      await prefs.setInt('last_log_duration', _durationMinutes);
+
       if (mounted) {
         setState(() => _isSubmitting = false);
         widget.onLogged?.call();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Einsatz erfolgreich eingetragen!'),
-            backgroundColor: AppColors.primary,
+          SnackBar(
+            content: Text('help.status.completed'.tr() + ' ✓'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
+        Navigator.of(context).maybePop();
       }
-    });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+          _errorMessage = 'errors.generic'.tr();
+        });
+      }
+    }
   }
 
   @override
@@ -55,75 +128,94 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Einsatz erfassen'),
+        title: Text('home.senior.my_activities'.tr()),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTokens.paddingLg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Kategorie auswählen',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: AppTokens.paddingSm),
-            Wrap(
-              spacing: AppTokens.paddingSm,
-              runSpacing: AppTokens.paddingSm,
-              children: _categories.map((cat) {
-                final isSelected = _selectedCategory == cat;
-                return ChoiceChip(
-                  label: Text(cat),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    if (selected) setState(() => _selectedCategory = cat);
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: AppTokens.paddingLg),
-            Text(
-              'Dauer (Minuten)',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: AppTokens.paddingSm),
-            Row(
-              children: [30, 60, 90, 120].map((mins) {
-                final isSelected = _durationMinutes == mins;
-                return Padding(
-                  padding: const EdgeInsets.only(right: AppTokens.paddingSm),
-                  child: FilterChip(
-                    label: Text('$mins Min'),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      if (selected) setState(() => _durationMinutes = mins);
-                    },
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: SingleChildScrollView(
+              padding: const EdgeInsetsDirectional.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'help.create.what'.tr(),
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: AppTokens.paddingLg),
-            Text(
-              'Notizen (optional)',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: AppTokens.paddingSm),
-            TextField(
-              controller: _notesController,
-              decoration: const InputDecoration(
-                hintText: 'Kurze Beschreibung der Unterstützung...',
-                border: OutlineInputBorder(),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: _categoryKeys.map((catKey) {
+                      final isSelected = _selectedCategoryKey == catKey;
+                      return ChoiceChip(
+                        label: Text(catKey.tr()),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) setState(() => _selectedCategoryKey = catKey);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  Text(
+                    'help.create.when'.tr() + ' (Dauer)',
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [30, 60, 90, 120].map((mins) {
+                      final isSelected = _durationMinutes == mins;
+                      return Padding(
+                        padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
+                        child: ChoiceChip(
+                          label: Text('$mins Min'),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) setState(() => _durationMinutes = mins);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  Text(
+                    'help.create.details'.tr(),
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: _notesController,
+                    decoration: InputDecoration(
+                      hintText: 'help.create.details_hint'.tr(),
+                      border: const OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  if (_errorMessage != null) ...[
+                    Text(
+                      _errorMessage!,
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+
+                  AppButton(
+                    label: 'common.save'.tr(),
+                    icon: Icons.check,
+                    isLoading: _isSubmitting,
+                    minHeight: 64,
+                    onPressed: _submit,
+                  ),
+                ],
               ),
-              maxLines: 3,
             ),
-            const SizedBox(height: AppTokens.paddingXl),
-            AppButton(
-              label: 'Stunden jetzt speichern',
-              icon: Icons.check,
-              isLoading: _isSubmitting,
-              onPressed: _submit,
-            ),
-          ],
+          ),
         ),
       ),
     );

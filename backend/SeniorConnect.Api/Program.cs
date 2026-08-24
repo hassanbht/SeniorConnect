@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -111,6 +112,26 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+// P7-09: Rate Limiting & Lockout across the general API
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("auth_policy", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+    options.AddFixedWindowLimiter("general_policy", opt =>
+    {
+        opt.PermitLimit = 100;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 10;
+    });
+});
+
 // Configure OpenAPI specification
 builder.Services.AddOpenApi();
 
@@ -132,6 +153,7 @@ app.MapScalarApiReference(options =>
 app.MapGet("/swagger", () => Results.Redirect("/scalar/v1"));
 
 app.UseHttpsRedirection();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

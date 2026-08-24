@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_tokens.dart';
+
+import '../../../core/design_system/app_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
 
 class CreateHelpRequestScreen extends StatefulWidget {
@@ -42,9 +42,9 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
         setState(() => _isSubmitting = false);
         widget.onCreated?.call();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Hilfeanfrage erfolgreich veröffentlicht!'),
-            backgroundColor: AppColors.primary,
+          SnackBar(
+            content: const Text('Hilfeanfrage erfolgreich veröffentlicht!'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -60,7 +60,7 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
         title: const Text('Hilfe anfragen'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTokens.paddingLg),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -68,7 +68,7 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
               'Wobei benötigen Sie Unterstützung?',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: AppTokens.paddingSm),
+            const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _titleController,
               decoration: const InputDecoration(
@@ -76,15 +76,15 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: AppTokens.paddingLg),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               'Kategorie',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: AppTokens.paddingSm),
+            const SizedBox(height: AppSpacing.sm),
             Wrap(
-              spacing: AppTokens.paddingSm,
-              runSpacing: AppTokens.paddingSm,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: _categories.map((cat) {
                 final isSelected = _selectedCategory == cat;
                 return ChoiceChip(
@@ -96,12 +96,12 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: AppTokens.paddingLg),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               'Details zur Anfrage',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: AppTokens.paddingSm),
+            const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _descriptionController,
               decoration: const InputDecoration(
@@ -110,7 +110,7 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
               ),
               maxLines: 4,
             ),
-            const SizedBox(height: AppTokens.paddingXl),
+            const SizedBox(height: AppSpacing.xl),
             AppButton(
               label: 'Anfrage veröffentlichen',
               icon: Icons.send,

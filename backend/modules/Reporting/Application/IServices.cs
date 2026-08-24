@@ -28,4 +28,10 @@ public interface IReportingService
         DateOnly from,
         DateOnly to,
         CancellationToken cancellationToken = default);
+
+    Task<Result<byte[]>> ExportImpactPdfAsync(
+        Guid organizationId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
 }

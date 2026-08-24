@@ -108,12 +108,19 @@
       "other_request": "Ich möchte stattdessen etwas anderes anfragen"
     },
     "checkin": "Angekommen",
-    "checkout": "Fertig"
+    "checkout": "Fertig",
+    "emergency_detected_msg": "Ihr Text enthält Hinweise auf einen Notfall. Bei akuter Gefahr rufen Sie bitte sofort den Notruf."
   },
   "emergency": {
     "title": "Brauchen Sie sofort Hilfe?",
+    "disclaimer": "Wichtig: Die App leitet direkt einen Telefonanruf an offizielle Notrufstellen ein und überwacht keine Notfälle selbst.",
     "call_144": "144 anrufen (Rettung)",
     "call_112": "112 anrufen (Notruf)",
+    "call_confirm_title": "{0} anrufen?",
+    "call_confirm_desc": "Möchten Sie jetzt direkt {0} unter {1} anrufen?",
+    "call_now": "Jetzt anrufen",
+    "call_144_semantic": "Rettung 144 anrufen. Startet einen Notruf.",
+    "call_112_semantic": "Euro-Notruf 112 anrufen. Startet einen Notruf.",
     "call_contacts": "Meine Kontakte anrufen",
     "no": "Nein, ich brauche keine Notfallhilfe"
   },
