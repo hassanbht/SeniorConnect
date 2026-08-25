@@ -1,637 +1,1210 @@
 # SeniorConnect
 
-> Eine offene Plattform für soziale Teilhabe, gegenseitige Unterstützung und freiwilliges Engagement.
+> **Menschen verbinden. Gemeinschaft stärken. Hilfe geben und erhalten.**
 
-SeniorConnect ist ein geplantes Open-Source-Projekt für Senioren, Angehörige, Freiwillige, lokale Gemeinschaften und soziale Organisationen.
+SeniorConnect ist eine Open-Source-Plattform für lokale Gemeinschaften, gegenseitige Unterstützung und soziale Teilhabe.
 
-Das Ziel der Plattform ist es, soziale Kontakte zu fördern, Einsamkeit zu reduzieren und die Organisation von alltäglicher Unterstützung zu vereinfachen.
+Die Plattform verbindet Menschen, die Unterstützung suchen, mit Menschen, die helfen möchten. Sie schafft außerdem Raum für Begegnungen, lokale Gruppen, Veranstaltungen, Lernangebote und gemeinschaftliche Aktivitäten.
 
-SeniorConnect soll nicht ausschließlich für Organisationen wie Wohlfahrtsverbände entwickelt werden.
+SeniorConnect richtet sich nicht ausschließlich an Senior:innen.
 
-Die Plattform soll auch dann sinnvoll nutzbar sein, wenn keine Organisation beteiligt ist.
+Die Plattform soll langfristig Menschen unterschiedlicher Generationen und Lebenssituationen miteinander verbinden:
 
----
+* 👴 Senior:innen
+* 👨‍👩‍👧 Familien und Angehörige
+* 🤝 Freiwillige
+* 🌍 Migrant:innen und internationale Communities
+* 🏢 Soziale Organisationen und NGOs
+* 🏘️ Vereine und Gemeinden
+* 👩‍🏫 Menschen, die Wissen und Fähigkeiten weitergeben möchten
 
-## 🚧 Projektstatus
+## 🌍 Unsere Vision
 
-SeniorConnect befindet sich aktuell in der **Konzept-, Forschungs- und Validierungsphase**.
+Viele Menschen fühlen sich in ihrer Umgebung allein oder finden nur schwer Zugang zu Unterstützung, sozialen Kontakten, Lernangeboten oder lokalen Aktivitäten.
 
-Bevor die vollständige technische Umsetzung beginnt, sollen Gespräche mit:
+Senior:innen können von Einsamkeit betroffen sein.
 
-- Senioren
-- Angehörigen
-- Freiwilligen
-- Sozialarbeitern
-- Pflege- und Betreuungsorganisationen
-- Wohlfahrtsverbänden
-- lokalen Initiativen
+Migrant:innen leben häufig in einem neuen Land und suchen Kontakte zu Menschen aus ihrer Heimat, Unterstützung beim Deutschlernen, Informationen über kostenlose Angebote oder Hilfe für ihre Kinder.
 
-geführt werden.
+Familien benötigen manchmal Unterstützung bei der Organisation des Alltags oder bei schulischen Herausforderungen ihrer Kinder.
 
-Ziel dieser Gespräche ist es, reale Probleme, bestehende Prozesse und tatsächliche Anforderungen besser zu verstehen.
+Freiwillige möchten helfen, wissen aber oft nicht, wo ihre Unterstützung tatsächlich benötigt wird.
 
-Die Architektur und der Funktionsumfang des Projekts können sich daher auf Grundlage dieser Erkenntnisse weiterentwickeln.
+Organisationen und Vereine bieten bereits viele wertvolle Programme an, erreichen jedoch nicht immer alle Menschen, die davon profitieren könnten.
 
----
+SeniorConnect soll diese Menschen und Angebote miteinander verbinden.
 
-# 🎯 Vision
+Unser Grundgedanke ist einfach:
 
-SeniorConnect soll eine vertrauenswürdige lokale Plattform schaffen, die Menschen miteinander verbindet.
-
-Die Plattform soll insbesondere folgende Gruppen unterstützen:
-
-- Senioren
-- Menschen mit Unterstützungsbedarf
-- Angehörige und Familienmitglieder
-- unabhängige Freiwillige
-- lokale Gruppen und Gemeinschaften
-- soziale Organisationen
-- Unternehmen mit Corporate-Volunteering-Programmen
-
-Die zentrale Idee ist:
-
-> Menschen sollen leichter soziale Kontakte finden, Aktivitäten organisieren und bei einfachen alltäglichen Aufgaben Unterstützung erhalten.
-
-Dabei soll die Plattform sowohl für private Nutzer als auch für Organisationen nutzbar sein.
+> **Jeder Mensch kann Hilfe brauchen. Jeder Mensch kann etwas beitragen.**
 
 ---
 
-# 👥 Zielgruppen
+# 🎯 Was ist SeniorConnect?
 
-## 👴 Senioren
-
-Senioren können die Plattform nutzen, um:
-
-- andere Menschen in ihrer Umgebung kennenzulernen
-- Gruppen und Aktivitäten zu finden
-- selbst Treffen zu organisieren
-- Unterstützung bei einfachen alltäglichen Aufgaben anzufragen
-- anderen Menschen ihre eigenen Fähigkeiten anzubieten
-- an lokalen Veranstaltungen teilzunehmen
-- soziale Kontakte aufzubauen
-- Telefon- oder Gesprächspartner zu finden
-
-Beispiele:
-
-- gemeinsame Spaziergänge
-- Kaffee- und Gesprächsrunden
-- Spieleabende
-- gemeinsame Ausflüge
-- Wandergruppen
-- Kochgruppen
-- Sprachgruppen
-- kulturelle Aktivitäten
-- gemeinsame Arzt- oder Behördenbegleitung
-- gegenseitige kleine Hilfen
-
----
-
-## 🤝 Freiwillige
-
-Unabhängige Freiwillige können:
-
-- ein persönliches Profil erstellen
-- Fähigkeiten und Interessen angeben
-- ihre zeitliche Verfügbarkeit definieren
-- lokale Hilfsanfragen finden
-- bei Aktivitäten und Veranstaltungen helfen
-- freiwillige Einsätze übernehmen
-- ihre geleisteten Stunden dokumentieren
-- Feedback erhalten
-- sich schrittweise verifizieren lassen
-
-Mögliche Unterstützungen könnten beispielsweise sein:
-
-- Einkaufen
-- Begleitung zu Terminen
-- Spaziergänge
-- Unterstützung bei kleinen Alltagsaufgaben
-- gemeinsame Freizeitaktivitäten
-- technische Unterstützung bei Smartphones oder Computern
-
-Die Plattform soll dabei klar zwischen alltäglicher Unterstützung und professionellen bzw. medizinischen Dienstleistungen unterscheiden.
-
----
-
-## 👨‍👩‍👧 Angehörige und Family Caregiver
-
-Viele Senioren möchten digitale Anwendungen nicht selbst vollständig bedienen.
-
-Deshalb soll SeniorConnect eine Möglichkeit bieten, Angehörige oder Vertrauenspersonen einzubinden.
-
-Ein Familienmitglied könnte – abhängig von den vom Senior erteilten Berechtigungen – beispielsweise:
-
-- Aktivitäten einsehen
-- Hilfsanfragen unterstützen
-- Anmeldungen verwalten
-- wichtige Benachrichtigungen erhalten
-- als Notfallkontakt hinterlegt werden
-- bestimmte Aufgaben im Namen des Seniors durchführen
-
-Der Senior soll dabei grundsätzlich die Kontrolle über seine eigenen Berechtigungen behalten.
-
----
-
-## 🏢 Organisationen und NGOs
-
-Organisationen sollen SeniorConnect optional als Plattform nutzen können.
-
-Mögliche Organisationen:
-
-- soziale Organisationen
-- Wohlfahrtsverbände
-- lokale Vereine
-- Nachbarschaftsinitiativen
-- Freiwilligenorganisationen
-- Gemeinden und Städte
-- soziale Projekte
-
-Organisationen könnten beispielsweise:
-
-- Mitarbeiter verwalten
-- Freiwillige koordinieren
-- regionale Gruppen organisieren
-- Veranstaltungen erstellen
-- Hilfsanfragen verwalten
-- Freiwillige Einsätzen zuordnen
-- Arbeits- und Freiwilligenstunden dokumentieren
-- Berichte und Kennzahlen erstellen
-
-Die Plattform soll jedoch **nicht von der Teilnahme einer Organisation abhängig sein**.
-
-Organisationen sind eine Erweiterung der Plattform, nicht deren Voraussetzung.
-
----
-
-# 🌍 Lokale Gemeinschaft und soziale Aktivitäten
-
-Ein zentraler Bestandteil von SeniorConnect ist die Förderung sozialer Kontakte.
-
-Nutzer sollen lokale Gruppen erstellen oder bestehenden Gruppen beitreten können.
-
-Beispiele:
-
-- Spaziergruppe Innsbruck
-- Kaffee-Treffen in Hall
-- Schachgruppe
-- Senioren-Stammtisch
-- Kochgruppe
-- Fotografie-Gruppe
-- gemeinsame Museumsbesuche
-- Sprach- und Gesprächsgruppen
-
-Eine Gruppe kann:
-
-- öffentlich
-- privat
-- organisationsbezogen
-
-sein.
-
-Gruppen können regelmäßige Aktivitäten und Veranstaltungen organisieren.
-
----
-
-# 🆘 Alltagsunterstützung
-
-SeniorConnect soll eine strukturierte Möglichkeit bieten, Unterstützung für einfache Alltagsaufgaben zu finden.
-
-Beispiele:
-
-- Einkaufshilfe
-- Begleitung
-- Unterstützung bei kleinen organisatorischen Aufgaben
-- technische Hilfe
-- gemeinsame Spaziergänge
-- soziale Begleitung
-
-Eine mögliche Prozesskette:
+SeniorConnect ist eine lokale Community- und Support-Plattform mit fünf zentralen Bereichen:
 
 ```text
-Hilfsanfrage
-      ↓
-Prüfung der Anforderungen
-      ↓
-Geeignete Freiwillige finden
-      ↓
-Freiwilliger zeigt Interesse
-      ↓
-Bestätigung
-      ↓
-Durchführung
-      ↓
-Abschluss und Feedback
-🛡 Vertrauen und Sicherheit
+                    SENIORCONNECT
+                          │
+        ┌─────────────────┼─────────────────┐
+        │                 │                 │
+      CONNECT            HELP              LEARN
+        │                 │                 │
+     Menschen          Unterstützung      Lernen
+     Gruppen           Freiwillige        Sprache
+     Communities       Matching           Nachhilfe
+     Veranstaltungen   Angebote           Fähigkeiten
+        │                 │                 │
+        └─────────────────┼─────────────────┘
+                          │
+                      COMMUNITY
+                          │
+              ┌───────────┼───────────┐
+              │           │           │
+         Senior:innen  Migrant:innen Familien
+              │           │           │
+              └───────────┼───────────┘
+                          │
+                    ORGANISATIONEN
+                          │
+             NGOs · Vereine · Gemeinden
+```
 
-Vertrauen und Sicherheit sind zentrale Bestandteile des Projekts.
+Die Plattform soll keine klassische Social-Media-Plattform mit Influencern, endlosen Feeds und möglichst hoher Bildschirmzeit werden.
 
-Geplant ist ein mehrstufiges Vertrauensmodell.
+SeniorConnect ist eine **zweckorientierte soziale Plattform**.
 
-Beispielsweise:
+Im Mittelpunkt stehen:
 
-Level 0 – Registriert
+* Menschen kennenlernen
+* Unterstützung finden
+* anderen helfen
+* gemeinsam lernen
+* lokale Angebote entdecken
+* Gruppen bilden
+* an Aktivitäten teilnehmen
+* gesellschaftliche Teilhabe fördern
 
-Der Nutzer hat ein Konto erstellt.
+---
 
-Level 1 – Kontakt verifiziert
+# 👥 Für wen ist SeniorConnect?
 
-E-Mail-Adresse und/oder Telefonnummer wurden bestätigt.
+## 👴 Senior:innen
 
-Level 2 – Identität überprüft
+Senior:innen können:
 
-Die Identität wurde über einen definierten Prozess überprüft.
+* Menschen in ihrer Umgebung kennenlernen
+* lokale Gruppen finden
+* eigene Gruppen und Aktivitäten erstellen
+* Unterstützung im Alltag anfragen
+* an Veranstaltungen teilnehmen
+* ihre Erfahrungen und Fähigkeiten weitergeben
+* Sprach- oder Freizeitgruppen finden
+* mit anderen Menschen telefonieren oder kommunizieren
+* Hilfe bei digitalen Themen erhalten
 
-Level 3 – Durch vertrauenswürdige Organisation bestätigt
+Beispiele:
 
-Der Nutzer wurde durch eine teilnehmende Organisation geprüft oder bestätigt.
+> „Ich suche jemanden, der mit mir einmal pro Woche spazieren geht.“
 
-Level 4 – Zusätzliche Sicherheitsüberprüfung
+> „Ich möchte eine kleine Schachgruppe in Innsbruck gründen.“
 
-Für bestimmte Einsätze oder Tätigkeiten können zusätzliche Anforderungen gelten.
+> „Ich brauche Hilfe mit meinem Smartphone.“
 
-Die genaue Umsetzung und rechtliche Grundlage dieses Systems soll im Rahmen der Forschungs- und Validierungsphase entwickelt werden.
+> „Ich spreche gerne Deutsch mit Menschen, die Deutsch lernen möchten.“
 
-⚠️ Sicherheit bei Hilfsanfragen
+---
 
-Nicht jede Art von Unterstützung soll automatisch von jedem Freiwilligen übernommen werden können.
+## 🌍 Migrant:innen und internationale Communities
 
-Bestimmte Aktivitäten können ein höheres Vertrauens- oder Sicherheitsniveau erfordern.
+Menschen, die in einem neuen Land leben, stehen häufig vor besonderen Herausforderungen:
+
+* fehlende soziale Kontakte
+* Sprachbarrieren
+* Orientierung in einer neuen Stadt
+* fehlende Informationen über kostenlose Angebote
+* Schwierigkeiten bei der Unterstützung ihrer Kinder
+* Suche nach Menschen mit ähnlicher Sprache oder Herkunft
+
+SeniorConnect soll internationale Communities unterstützen, ohne Menschen zu verpflichten, ihre Herkunft öffentlich sichtbar zu machen.
+
+Nutzer:innen können freiwillig Informationen wie folgende angeben:
+
+* Sprachen
+* Herkunftsregion oder Community
+* Stadt oder Region
+* Interessen
+* Fähigkeiten
+
+Dadurch können sie beispielsweise entdecken:
+
+* persischsprachige Menschen in Innsbruck
+* eine ukrainische Community in Tirol
+* türkischsprachige Familien in einer Region
+* Sprachlern-Gruppen
+* lokale Kulturgruppen
+
+Dabei steht Datenschutz im Mittelpunkt.
+
+Es sollen beispielsweise aggregierte Informationen angezeigt werden:
+
+> „In deiner Region gibt es mehr als 50 Mitglieder der persischsprachigen Community.“
+
+Nicht:
+
+> „Hier sind die privaten Adressen aller Menschen aus einer bestimmten Community.“
+
+Die Sichtbarkeit persönlicher Informationen wird immer durch Privacy-Einstellungen kontrolliert.
+
+---
+
+# 🤝 Hilfe geben und Hilfe erhalten
+
+Ein zentraler Grundsatz von SeniorConnect:
+
+> **Eine Person ist nicht dauerhaft nur Helfer oder nur Empfänger von Hilfe.**
+
+Ein Mensch kann gleichzeitig Unterstützung benötigen und anderen Menschen helfen.
 
 Beispiel:
 
-Öffentliche Gruppenaktivität
-        ↓
-niedrige Sicherheitsanforderung
+```text
+Person
 
-Einkaufshilfe
-        ↓
-mittlere Sicherheitsanforderung
+Braucht:
+✓ Deutsch-Konversation
+✓ Unterstützung bei Behördengängen
 
-Hausbesuch
-        ↓
-höhere Sicherheitsanforderung
+Kann anbieten:
+✓ Mathematik-Nachhilfe
+✓ Persisch
+✓ Computerhilfe
+```
 
-Besonders sensible Situation
-        ↓
-zusätzliche Prüfung oder Organisation erforderlich
+Das Profil basiert daher auf:
 
-Die Bewertung von Sicherheitsanforderungen soll serverseitig erfolgen.
+* Needs
+* Skills
+* Interests
+* Languages
+* Offers
+* Availability
 
-Der Client darf Sicherheits- oder Vertrauensstufen nicht selbst bestimmen.
+und nicht ausschließlich auf festen Kategorien wie:
 
-👨‍👩‍👧 Familien- und Berechtigungsmodell
+```text
+Senior
+Volunteer
+Migrant
+Helper
+```
 
-Familienmitglieder sollen nicht automatisch vollständigen Zugriff auf das Konto eines Seniors erhalten.
+---
 
-Stattdessen soll ein berechtigungsbasiertes Modell verwendet werden.
+# 🆘 Unterstützungsanfragen
 
-Beispiele:
-
-Aktivitäten ansehen
-Hilfsanfragen erstellen
-Veranstaltungen verwalten
-Sicherheitsbenachrichtigungen erhalten
-Profildaten verwalten
-
-Die Berechtigungen sollen transparent und individuell steuerbar sein.
-
-🚩 Meldung von Problemen und Safeguarding
-
-Die Plattform soll Mechanismen enthalten, um problematische Situationen oder Sicherheitsbedenken zu melden.
+Nutzer:innen können Unterstützung für alltägliche Aufgaben suchen.
 
 Beispiele:
 
-unangemessenes Verhalten
-nicht erschienene Freiwillige
-Konflikte
-mögliche Gefährdung
-Sicherheitsbedenken
+* Einkaufen
+* Spaziergänge
+* Begleitung
+* Hilfe bei digitalen Geräten
+* kleine alltägliche Unterstützung
+* Sprachhilfe
+* Orientierung in einer neuen Stadt
+* Lernunterstützung
+* gesellschaftliche Begleitung
 
-Sensible Meldungen sollen nicht automatisch für alle Administratoren sichtbar sein.
+Freiwillige oder geeignete Community-Mitglieder können passende Anfragen finden.
 
-Für besonders sensible Fälle ist ein separates Berechtigungsmodell vorgesehen.
+Das Matching berücksichtigt langfristig unter anderem:
 
-📊 Organisation und Reporting
+```text
+Need
++
+Skill
++
+Language
++
+Location
++
+Availability
++
+Trust Level
+```
 
-Organisationen sollen – sofern sie die Plattform verwenden – wichtige Kennzahlen erfassen können.
+Ein mögliches Matching kann beispielsweise so aussehen:
 
-Mögliche Kennzahlen:
+```text
+Seniorin
+Sprache: Deutsch
+Braucht:
+Hilfe mit Smartphone
 
-Anzahl aktiver Freiwilliger
-geleistete Freiwilligenstunden
-Anzahl unterstützter Personen
-Anzahl durchgeführter Aktivitäten
-Anzahl offener und abgeschlossener Hilfsanfragen
-regionale Verteilung von Aktivitäten
-Teilnahme an Veranstaltungen
+↓
 
-Diese Funktionen sollen insbesondere für:
+Freiwilliger
+Skills:
+Smartphone / Computer
+Entfernung:
+2,4 km
+Verfügbarkeit:
+Dienstag Nachmittag
+Trust Level:
+Verified
+```
 
-interne Berichte
-Jahresberichte
-Förderberichte
-Impact Measurement
-Corporate Volunteering
+---
 
-weiterentwickelt werden.
+# 🧠 Skills & Mutual Support
 
-♿ Accessibility
+SeniorConnect soll nicht nur Probleme verwalten.
 
-SeniorConnect richtet sich unter anderem an ältere Menschen.
+Menschen sollen auch ihre Fähigkeiten anbieten können.
 
-Barrierefreiheit ist deshalb kein optionales Feature, sondern ein grundlegender Bestandteil der Produktentwicklung.
+Beispiele:
 
-Geplant sind unter anderem:
+* Mathematik
+* Deutsch
+* Englisch
+* Persisch
+* Programmieren
+* Computerhilfe
+* Handwerk
+* Kochen
+* Musik
+* Gartenarbeit
+* Behördenerfahrung
+* Sprachpraxis
 
-große Touch-Bereiche
-gut lesbare Schriftgrößen
-Unterstützung für große Systemschrift
-klare Benutzerführung
-hohe Verständlichkeit
-Screenreader-Unterstützung
-klare Fehlermeldungen
-Unterstützung von hohen Kontrasten
-möglichst wenig komplexe Navigation
-minimale Eingaben über Tastatur
+Ein Senior kann beispielsweise Deutsch-Konversation anbieten.
 
-Senioren sollen einen vereinfachten Nutzungsmodus verwenden können.
+Ein Migrant kann einem Senior beim Smartphone helfen.
 
-🌐 Mehrsprachigkeit
+Eine Person kann Mathematik-Nachhilfe anbieten.
 
-Die mobile Anwendung soll von Beginn an mehrsprachig entwickelt werden.
+Eine andere Person kann beim Lernen einer Sprache helfen.
 
-Für Flutter ist die Verwendung von:
+So entsteht ein Netzwerk gegenseitiger Unterstützung.
 
-easy_localization
+---
 
-vorgesehen.
+# 🗣️ Language Exchange
 
-Erste geplante Sprachen:
+SeniorConnect soll Sprachlernen durch reale soziale Kontakte fördern.
 
+Beispiele:
+
+```text
+Deutsch ↔ Persisch
+Deutsch ↔ Englisch
+Deutsch ↔ Ukrainisch
+Deutsch ↔ Türkisch
+```
+
+Ein Nutzer kann angeben:
+
+```text
+Ich möchte lernen:
 Deutsch
-Englisch
+
+Ich kann anbieten:
 Persisch
+```
 
-Die Architektur soll das spätere Hinzufügen weiterer Sprachen ermöglichen.
+Die Plattform kann passende Personen oder Gruppen vorschlagen.
 
-Beispielsweise:
+---
 
-Türkisch
-Arabisch
-Bosnisch
-Kroatisch
-Serbisch
-Ukrainisch
+# 📚 Lernhilfe und Bildungsangebote
 
-Alle sichtbaren Texte sollen über das Lokalisierungssystem verwaltet werden.
-
-Business-Logik, Statuswerte und Berechtigungen dürfen nicht von übersetzten Texten abhängig sein.
-
-↔️ RTL-Unterstützung
-
-Da die Plattform perspektivisch auch Sprachen wie Persisch oder Arabisch unterstützen kann, soll die Benutzeroberfläche RTL-fähig sein.
-
-Die Anwendung soll deshalb konsequent mit richtungsabhängigen Flutter-Komponenten entwickelt werden.
+Familien und Nutzer:innen sollen Lernunterstützung finden können.
 
 Beispiele:
 
-EdgeInsetsDirectional
-AlignmentDirectional
-Start/End statt Left/Right
+* Mathematik-Nachhilfe
+* Deutschlernen
+* Englisch
+* Hausaufgabenhilfe
+* digitale Kompetenzen
+* Sprachpraxis
 
-Neue Screens sollen sowohl für LTR- als auch für RTL-Sprachen überprüft werden.
+Organisationen und Vereine können außerdem Angebote veröffentlichen:
 
-📱 Responsive Design
+* kostenlose Deutschkurse
+* Lernprogramme
+* Workshops
+* Elternberatung
+* Integrationsangebote
+* digitale Schulungen
 
-SeniorConnect soll auf unterschiedlichen Bildschirmgrößen nutzbar sein.
+## 🧒 Schutz von Kindern
 
-Geplant ist die Verwendung von:
+Angebote und direkte Unterstützung für Kinder benötigen besondere Sicherheitsmaßnahmen.
 
+Daher wird dieser Bereich getrennt von normalen Community-Anfragen behandelt.
+
+Mögliche Anforderungen:
+
+* Zustimmung der Eltern
+* zusätzliche Verifizierung
+* Safeguarding-Regeln
+* eingeschränkte Kommunikation
+* organisationsgestützte Vermittlung für sensible Angebote
+
+Die Sicherheit von Kindern hat Vorrang vor maximaler Offenheit der Plattform.
+
+---
+
+# 👨‍👩‍👧 Familien und Angehörige
+
+Familienmitglieder können Senior:innen oder andere Angehörige bei der Nutzung der Plattform unterstützen.
+
+Beispiele:
+
+* Profil gemeinsam verwalten
+* Veranstaltungen finden
+* Aktivitäten organisieren
+* Unterstützungsanfragen erstellen
+* Benachrichtigungen erhalten
+
+Langfristig soll ein Delegation-Modell ermöglichen, dass eine Person einer anderen Person gezielt bestimmte Berechtigungen gibt.
+
+Beispiel:
+
+```text
+Seniorin
+   │
+   └── Tochter
+          │
+          ├── Darf Veranstaltungen verwalten
+          ├── Darf Hilfeanfragen erstellen
+          └── Darf Benachrichtigungen erhalten
+```
+
+Die Rechte müssen jederzeit vom Hauptnutzer kontrollierbar und widerrufbar sein.
+
+---
+
+# 👥 Lokale Communities
+
+Nutzer:innen können Communities entdecken oder eigene Gruppen erstellen.
+
+Beispiele:
+
+### Herkunft und Sprache
+
+* Iraner:innen in Innsbruck
+* Persischsprachige Menschen in Tirol
+* Ukrainische Familien in Innsbruck
+* Türkischsprachige Community
+
+### Interessen
+
+* Wandern in Tirol
+* Schach für Senior:innen
+* Gemeinsames Kochen
+* Fotografie
+* Musik
+* Gartenarbeit
+
+### Lernen
+
+* Deutsch-Konversation
+* Englisch lernen
+* Mathematik-Lerngruppe
+* Computer für Anfänger:innen
+
+### Familien
+
+* Eltern mit Volksschulkindern
+* Familienaktivitäten
+* Ferienprogramme
+
+---
+
+# 📅 Gruppen und Veranstaltungen
+
+Nutzer:innen können lokale Aktivitäten erstellen.
+
+Beispiele:
+
+* Spaziergänge
+* Wandern
+* Kaffee-Treffen
+* Sprachgruppen
+* Kulturveranstaltungen
+* Spielgruppen
+* gemeinsame Mahlzeiten
+* Lernveranstaltungen
+* Community-Treffen
+
+Eine Veranstaltung kann enthalten:
+
+```text
+Titel
+Beschreibung
+Datum
+Uhrzeit
+Ort
+Teilnehmerlimit
+Sprache
+Kategorie
+Organisator
+Sichtbarkeit
+```
+
+Teilnehmer:innen können sich anmelden oder ihr Interesse markieren.
+
+---
+
+# ☀️ Ferien- und Sommerangebote
+
+Ein spezieller Bereich soll Programme für Kinder und Familien sichtbar machen.
+
+Organisationen, Gemeinden und Vereine können beispielsweise veröffentlichen:
+
+* Sommerkurse
+* kostenlose Ferienprogramme
+* Sportangebote
+* Sprachprogramme
+* Workshops
+* Kulturprogramme
+
+Nutzer:innen können Angebote filtern nach:
+
+```text
+📍 Ort
+👶 Alter
+💰 Kostenlos
+🗣 Sprache
+📅 Zeitraum
+🏢 Organisation
+```
+
+---
+
+# 🔎 Angebote & Möglichkeiten entdecken
+
+Organisationen sollen nicht nur Hilfeanfragen verwalten.
+
+Sie können eigene Angebote veröffentlichen.
+
+Beispiele:
+
+* kostenloser Deutschkurs
+* Sprachcafé
+* Seniorentreff
+* Nachhilfe
+* Familienberatung
+* digitale Schulung
+* Freiwilligenprojekt
+* Kulturveranstaltung
+* Sommerprogramm
+
+SeniorConnect kann diese Angebote anhand von Interessen, Standort und Sprache sichtbar machen.
+
+Beispiel:
+
+```text
+Für dich gefunden:
+
+✓ 3 kostenlose Deutschkurse
+✓ 2 Lernangebote
+✓ 1 Familienveranstaltung
+✓ 4 Möglichkeiten für freiwilliges Engagement
+```
+
+---
+
+# 🏢 Organisationen, NGOs und Vereine
+
+SeniorConnect soll sowohl als offene Community-Plattform als auch als Infrastruktur für Organisationen nutzbar sein.
+
+Mögliche Organisationen:
+
+* soziale Organisationen
+* NGOs
+* Vereine
+* Gemeinden
+* Seniorenzentren
+* Bildungsorganisationen
+* Community-Initiativen
+
+Organisationen können:
+
+* Programme veröffentlichen
+* Veranstaltungen erstellen
+* Freiwillige koordinieren
+* Unterstützungsanfragen verwalten
+* Mitarbeitende verwalten
+* Community-Angebote sichtbar machen
+* Berichte erstellen
+
+Langfristig ist eine Multi-Tenant-Architektur vorgesehen.
+
+```text
+Organization
+    │
+    ├── Branches
+    ├── Staff
+    ├── Volunteers
+    ├── Programs
+    ├── Events
+    ├── Opportunities
+    └── Reports
+```
+
+Die Plattform soll dabei auch unabhängig von einer einzelnen Organisation nutzbar bleiben.
+
+---
+
+# 🛡️ Trust, Safety & Safeguarding
+
+Vertrauen ist eine der wichtigsten Voraussetzungen für SeniorConnect.
+
+Besonders bei:
+
+* Senior:innen
+* Menschen mit Behinderungen
+* Kindern
+* vulnerablen Personen
+* persönlichen Treffen
+
+sind zusätzliche Sicherheitsmaßnahmen notwendig.
+
+Geplante Funktionen:
+
+* Benutzerverifizierung
+* Trust Levels
+* organisationsgestützte Verifizierung
+* manuelle Prüfung von Freiwilligen
+* Background-Check-Status, wenn durch Organisationen erforderlich
+* Meldung problematischer Situationen
+* Safeguarding Cases
+* Audit Logs
+* eingeschränkter Zugriff auf sensible Daten
+
+Wichtig:
+
+SeniorConnect ersetzt keine medizinischen oder professionellen Pflegeleistungen.
+
+Alltägliche Unterstützung und professionelle beziehungsweise medizinische Leistungen werden klar voneinander getrennt.
+
+---
+
+# 🔐 Datenschutz und Privatsphäre
+
+SeniorConnect wird Privacy-by-Design berücksichtigen.
+
+Geplante Prinzipien:
+
+* minimale Datenerhebung
+* freiwillige Profilinformationen
+* kontrollierbare Sichtbarkeit
+* keine öffentliche Anzeige exakter Wohnadressen
+* rollenbasierte Berechtigungen
+* Audit Logging
+* Export persönlicher Daten
+* Löschung persönlicher Daten entsprechend geltender Anforderungen
+* getrennte Behandlung sensibler Informationen
+
+Besonders sensible Daten sollen nicht für allgemeine Community-Funktionen verwendet werden.
+
+---
+
+# ♿ Accessibility First
+
+SeniorConnect wird von Beginn an auf Zugänglichkeit ausgelegt.
+
+Geplant sind:
+
+* große Schrift
+* große Touch-Bereiche
+* klare Navigation
+* hoher Kontrast
+* einfache Sprache
+* anpassbare Darstellung
+* Unterstützung für Screen Reader
+* reduzierte Komplexität für Senior:innen
+* adaptive Benutzeroberflächen
+
+Langfristig soll ein vereinfachter Senior-Modus möglich sein:
+
+```text
+┌───────────────────────────┐
+│                           │
+│     🆘 Hilfe anfragen     │
+│                           │
+├───────────────────────────┤
+│                           │
+│     👥 Aktivitäten        │
+│                           │
+├───────────────────────────┤
+│                           │
+│     📞 Kontakte           │
+│                           │
+└───────────────────────────┘
+```
+
+---
+
+# 🌐 Mehrsprachigkeit
+
+SeniorConnect wird von Beginn an mehrsprachig konzipiert.
+
+Für die Flutter-App ist vorgesehen:
+
+* `easy_localization`
+* strukturierte Translation Keys
+* locale-aware Formatting
+* Erweiterbarkeit für weitere Sprachen
+
+Geplante erste Sprachen:
+
+* 🇩🇪 Deutsch
+* 🇬🇧 English
+* 🇮🇷 فارسی
+
+Weitere Sprachen können später durch die Community und Organisationen ergänzt werden.
+
+---
+
+# 📱 Technologie
+
+## Mobile App
+
+```text
+Flutter
+Dart
+easy_localization
 flutter_screenutil
-LayoutBuilder
-MediaQuery
-Flexible
-Expanded
-adaptiven Layouts
+```
 
-Die Anwendung soll auf folgenden Geräten funktionieren:
+Die App wird:
 
-Smartphones
-große Smartphones
-Tablets
-Hochformat
-Querformat
+* responsiv
+* zugänglich
+* mehrsprachig
+* rollenabhängig
 
-flutter_screenutil soll als Teil des Designsystems verwendet werden.
+entwickelt.
 
-Responsive Design darf jedoch nicht ausschließlich auf festen Skalierungswerten basieren.
+`flutter_screenutil` unterstützt die Anpassung der Benutzeroberfläche an unterschiedliche Bildschirmgrößen.
 
-Besonders wichtig ist die Unterstützung großer Systemschriftgrößen.
+`easy_localization` unterstützt die Verwaltung mehrsprachiger Inhalte.
 
-🧱 Technische Architektur
+---
 
-Die geplante technische Architektur:
+## Backend
 
-Backend
-C#
+```text
 ASP.NET Core
-PostgreSQL
+C#
+REST API
 Entity Framework Core
+PostgreSQL
+```
 
-Architektur:
+Die Architektur soll als modularer Monolith aufgebaut werden.
 
-Modular Monolith
+Vorgesehene Module:
 
-Geplante Module:
-
+```text
 Identity
 Profiles
-Family
-Community
+Communities
+Groups
 Events
-Help Requests
+HelpRequests
 Matching
-Trust & Safety
 Organizations
+Volunteers
+Family
+TrustAndSafety
+Safeguarding
 Notifications
 Reporting
+Audit
+```
 
-Microservices sind in der ersten Phase nicht vorgesehen.
+---
 
-Mobile App
-Flutter
-Feature-First Architecture
-Role-aware UI
-easy_localization
-flutter_screenutil
+## Datenbank
 
-Die Benutzeroberfläche soll sich abhängig von der Rolle und den Bedürfnissen des Nutzers anpassen.
-
-Datenbank
-
-Geplant:
-
+```text
 PostgreSQL
-EF Core Migrations
+```
 
-Mögliche Erweiterung:
+Mögliche spätere Erweiterungen:
 
-PostGIS für geografische Suche und Matching
+```text
+PostGIS
+Redis
+Background Jobs
+Object Storage
+```
 
-Für den ersten MVP soll die Architektur möglichst einfach bleiben.
+PostGIS wird insbesondere für geografische Funktionen interessant:
 
-🏗 Multi-Tenant Architektur
+* Nutzer:innen in der Nähe
+* lokale Gruppen
+* Veranstaltungen
+* Distanzberechnung
+* Matching nach Standort
 
-Organisationen sollen ihre Daten voneinander getrennt verwalten können.
+---
 
-Das System soll deshalb perspektivisch Multi-Tenancy unterstützen.
+# 🏗️ Architekturprinzipien
 
-Beispiele:
+SeniorConnect soll langfristig wachsen können, ohne unnötig komplex zu werden.
 
-Organization A
+Daher starten wir mit:
+
+> **Modular Monolith First**
+
+Grundprinzipien:
+
+* klare Modulgrenzen
+* Domain-orientierte Struktur
+* API-first
+* rollenbasierte Autorisierung
+* Multi-Tenant-Readiness
+* Auditability
+* Privacy-by-Design
+* Accessibility-by-Design
+* Testbarkeit
+
+Ein möglicher Aufbau:
+
+```text
+SeniorConnect
 │
-├── Staff
-├── Volunteers
-├── Events
-└── Reports
-
-Organization B
+├── apps
+│   ├── mobile
+│   └── admin
 │
-├── Staff
-├── Volunteers
-├── Events
-└── Reports
+├── backend
+│   ├── SeniorConnect.Api
+│   ├── SeniorConnect.Application
+│   ├── SeniorConnect.Domain
+│   └── SeniorConnect.Infrastructure
+│
+├── docs
+│   ├── product
+│   ├── architecture
+│   ├── discovery
+│   ├── plans
+│   └── api
+│
+├── tests
+│
+└── infrastructure
+```
 
-Unabhängige Nutzer sollen jedoch weiterhin außerhalb einer Organisation teilnehmen können.
+Die endgültige Repository-Struktur kann sich während der Implementierung weiterentwickeln.
 
-🔐 Datenschutz und Sicherheit
+---
 
-Datenschutz und Sicherheit sind wichtige Architekturthemen.
+# 🗺️ Roadmap
 
-Geplant sind unter anderem:
+Jede Phase soll unabhängig testbar und auslieferbar sein.
 
-rollenbasierte Autorisierung
-serverseitige Berechtigungsprüfung
-Audit Logging wichtiger Aktionen
-Trennung sensibler Daten
-minimale Datenspeicherung
-Export- und Löschkonzepte
-Datenschutzkonforme Verarbeitung
+Eine Phase gilt erst als abgeschlossen, wenn ihr Test Gate bestanden wurde.
 
-Die konkrete rechtliche und organisatorische Umsetzung soll gemeinsam mit Fachpersonen und Organisationen validiert werden.
+## Phase 0 — Discovery & Project Brain
 
-🤖 Zukünftige Erweiterungen
+Ziel:
 
-Einige Funktionen sind bewusst nicht Bestandteil des ersten MVP.
+> Keine Entwicklung auf Basis von Annahmen.
 
-Mögliche zukünftige Erweiterungen:
+Geplante Aktivitäten:
 
-intelligentes Matching
-telefonbasierte Hilfsanfragen
-Sprachassistent
-Check-in und Check-out
-Chat
-Corporate Volunteering
-White-Label-Versionen
-Integration externer Systeme
-geografisches Matching mit PostGIS
-Offline-Unterstützung
-automatisierte Impact Reports
+* Interviews und schriftliche Befragungen
+* Senior:innen
+* Freiwillige
+* Familien
+* Migrant:innen
+* NGO-Mitarbeiter:innen
+* Freiwilligenkoordinator:innen
+* Gemeinden und Vereine
 
-Diese Funktionen werden erst nach Validierung realer Anforderungen priorisiert.
+Dokumentation:
 
-🗺 Roadmap
-Phase 0 – Research & Validation
-Interviews mit Senioren
-Interviews mit Freiwilligen
-Interviews mit Organisationen
-Analyse bestehender Prozesse
-Identifikation der wichtigsten Probleme
-Definition eines realistischen MVP
-Phase 1 – Foundation
-Projektarchitektur
-Authentifizierung
-Benutzerprofile
-Rollen und Berechtigungen
-Mehrsprachigkeit
-Accessibility-Grundlagen
-Responsive Design
-Phase 2 – Social & Community
-Community Groups
-Aktivitäten
-Events
-Teilnahmeverwaltung
-Phase 3 – Family Connection
-Family Relationships
-Berechtigungen
-Benachrichtigungen
-Unterstützung im Namen eines Seniors
-Phase 4 – Help & Volunteering
-Hilfsanfragen
-Volunteer Profile
+```text
+docs/product/discovery-findings.md
+```
+
+Das MVP wird erst nach der Discovery-Phase finalisiert.
+
+---
+
+## Phase 1 — Foundation
+
+Grundlagen:
+
+* Authentication
+* User Profiles
+* Roles
+* Skills
+* Interests
+* Languages
+* Location
+* Privacy Settings
+* Theming
+* Dark Mode
+* Audit
+* Accessibility Foundation
+* Mehrsprachigkeit
+
+### Mobile
+
+* Flutter
+* easy_localization
+* flutter_screenutil
+
+---
+
+## Phase 2 — Community
+
+Erster sichtbarer Nutzen für Nutzer:innen.
+
+Funktionen:
+
+* Communities
+* Groups
+* Events
+* Event Registrations
+* Local Discovery
+* Community Announcements
+* Language Communities
+* Interest Groups
+
+---
+
+## Phase 3 — Help & Matching
+
+Der zentrale Unterstützungs-Loop.
+
+```text
+Need
+   ↓
 Matching
-Abschluss und Feedback
-Phase 5 – Trust & Safety
-Verifizierungsprozesse
-Vertrauensstufen
-Sicherheitsregeln
-Problem- und Safeguarding-Meldungen
-Phase 6 – Organizations
-Organisationen
-Standorte
-Mitarbeiter
-Freiwilligenmanagement
-Reporting
-🤝 Mitmachen
+   ↓
+Offer / Volunteer
+   ↓
+Acceptance
+   ↓
+Completion
+   ↓
+Feedback
+```
 
-SeniorConnect ist als Open-Source-Projekt geplant.
+Funktionen:
 
-Besonders willkommen sind Beiträge und Feedback von:
+* Help Requests
+* Offers
+* Skills
+* Rule-based Matching
+* Location Matching
+* Language Matching
+* Availability
+* Trust Levels
 
-Flutter-Entwicklern
-.NET-Entwicklern
-UX/UI-Designern
-Accessibility-Experten
-Sozialarbeitern
-Organisationen
-Freiwilligen
-Senioren
-Angehörigen
+---
 
-Besonders wertvoll ist Feedback aus der praktischen Arbeit.
+## Phase 4 — Family & Delegation
 
-Wir möchten nicht nur eine technisch interessante Anwendung entwickeln.
+Funktionen:
 
-Das Ziel ist es, reale Probleme im Alltag besser zu verstehen und gemeinsam eine sinnvolle Lösung zu entwickeln.
+* Family Accounts
+* Delegation
+* Permission Management
+* Unterstützung für Senior:innen
+* Familienaktivitäten
+* Lernunterstützung
 
-🧠 Projektprinzip
+---
 
-Bei der Entwicklung gelten folgende Grundprinzipien:
+## Phase 5 — Trust & Safeguarding
 
-Sicherheit vor Komfort.
-Barrierefreiheit ist ein Kernbestandteil.
-Organisationen sind optional.
-Unabhängige Freiwillige müssen unterstützt werden.
-Sicherheits- und Vertrauensstufen werden serverseitig bestimmt.
-Sensible Informationen benötigen besondere Zugriffskontrollen.
-Wichtige Aktionen müssen nachvollziehbar sein.
-Das MVP soll einfach bleiben.
-Neue Funktionen sollen erst nach Validierung realer Anforderungen entwickelt werden.
-Die Plattform soll auch ohne Organisationen einen echten Nutzen bieten.
-📬 Kontakt und Feedback
+Funktionen:
 
-Das Projekt befindet sich aktuell in der Research- und Validierungsphase.
+* Verification
+* Safety Levels
+* Safeguarding Cases
+* Reporting
+* Restricted Access Policies
+* Audit Trails
 
-Wenn Sie im Bereich:
+---
 
-Seniorenarbeit
-Freiwilligenkoordination
-soziale Arbeit
-Betreuung
-Community Building
-Accessibility
-digitale soziale Dienstleistungen
+## Phase 6 — Organizations & Dashboard
 
-tätig sind und Ihre Erfahrungen teilen möchten, freue ich mich über einen Austausch.
+Funktionen:
 
-Feedback und Verbesserungsvorschläge sind ausdrücklich willkommen.
+* Organizations
+* Branches
+* Staff
+* Volunteer Coordination
+* Programs
+* Courses
+* Opportunities
+* Events
+* Reporting
+* Impact Dashboard
+* Multi-Tenancy
+
+---
+
+## Phase 7 — Pilot Hardening
+
+Vorbereitung für einen echten Pilotbetrieb:
+
+* GDPR Review
+* Monitoring
+* Notifications
+* Error Tracking
+* Performance
+* Backup
+* Security Review
+* Offline Strategy
+
+---
+
+## Phase 8 — Scale & Intelligence
+
+Mögliche zukünftige Funktionen:
+
+* AI-assisted Matching
+* Voice Assistant
+* Phone-to-App Bridge
+* intelligente Empfehlungen
+* White Label
+* Corporate Volunteering
+* erweiterte Reporting-Funktionen
+* Integrationen mit externen Systemen
+
+Diese Funktionen sind nicht Teil des ersten MVP.
+
+---
+
+# 🤖 AI-Assisted Development
+
+SeniorConnect wird mit Unterstützung moderner AI Coding Tools entwickelt.
+
+AI soll jedoch nicht die Architekturentscheidungen unkontrolliert übernehmen.
+
+Der Entwicklungsprozess basiert auf:
+
+```text
+Requirements
+      ↓
+Architecture
+      ↓
+Implementation Plan
+      ↓
+Small Task
+      ↓
+Implementation
+      ↓
+Tests
+      ↓
+Review
+      ↓
+Documentation
+```
+
+Jede Implementierung soll:
+
+* eine klare Aufgabe haben
+* begrenzten Scope besitzen
+* Tests enthalten
+* bestehende Architektur respektieren
+* keine unnötigen Abhängigkeiten hinzufügen
+
+AI Agents sollen nicht eigenständig große Teile des Projekts umstrukturieren.
+
+---
+
+# 🧪 Testing
+
+Geplante Testebenen:
+
+```text
+Unit Tests
+    ↓
+Integration Tests
+    ↓
+API Tests
+    ↓
+Widget Tests
+    ↓
+End-to-End Tests
+```
+
+Jede Phase erhält ein eigenes Test Gate.
+
+Eine neue Phase beginnt erst, wenn:
+
+```text
+✓ Build erfolgreich
+✓ Tests erfolgreich
+✓ Linter erfolgreich
+✓ Formatierung erfolgreich
+✓ Manuelle Kernprüfung durchgeführt
+```
+
+---
+
+# 🤝 Mitmachen
+
+SeniorConnect ist ein Open-Source-Projekt.
+
+Beiträge sind willkommen.
+
+Besonders wertvoll sind Erfahrungen und Feedback von:
+
+* Senior:innen
+* Migrant:innen
+* Familien
+* Freiwilligen
+* Sozialarbeiter:innen
+* Freiwilligenkoordinator:innen
+* NGOs
+* Vereinen
+* Gemeinden
+* Accessibility-Expert:innen
+* Entwickler:innen
+* Datenschutz- und Safeguarding-Expert:innen
+
+## Wie kann ich helfen?
+
+Du kannst:
+
+* eine Issue eröffnen
+* Verbesserungsvorschläge machen
+* reale Erfahrungen aus der Praxis teilen
+* an Interviews oder schriftlichen Befragungen teilnehmen
+* Code beitragen
+* Dokumentation verbessern
+* Accessibility testen
+* neue Sprachen unterstützen
+
+Bitte lies vor größeren Änderungen die Contribution Guidelines, sobald diese im Repository verfügbar sind.
+
+---
+
+# 💬 Feedback aus der Praxis
+
+Ein wichtiges Ziel dieses Projekts ist es, reale Probleme zu lösen.
+
+Wir möchten nicht einfach Funktionen entwickeln, weil sie technisch interessant sind.
+
+Deshalb interessieren uns besonders Fragen wie:
+
+> Welches Problem kostet dich im Alltag am meisten Zeit?
+
+> Welche digitale Lösung würde deinen Alltag tatsächlich erleichtern?
+
+> Welche Funktionen würden zusätzlichen Aufwand verursachen?
+
+> Was würde dazu führen, dass du eine solche Plattform nicht verwenden möchtest?
+
+> Welche Sicherheits- oder Datenschutzbedenken hast du?
+
+Erfahrungen aus der Praxis sind für die Entwicklung von SeniorConnect besonders wertvoll.
+
+---
+
+# ⚠️ Projektstatus
+
+SeniorConnect befindet sich derzeit in einer frühen Discovery- und Konzeptphase.
+
+Das bedeutet:
+
+* Die Produktvision entwickelt sich weiter.
+* Die finale MVP-Definition ist noch nicht abgeschlossen.
+* Die Architektur wird auf Basis realer Anforderungen konkretisiert.
+* Nicht alle in diesem README beschriebenen Funktionen sind bereits implementiert.
+
+Die Roadmap beschreibt die geplante Richtung des Projekts und ist keine Garantie für bestimmte Funktionen oder Zeitpläne.
+
+---
+
+# 🧭 Leitprinzipien
+
+Bei allen Entscheidungen sollen diese Prinzipien berücksichtigt werden:
+
+### 🤝 Menschen vor Technologie
+
+Technologie soll Menschen unterstützen und keine zusätzlichen Hürden schaffen.
+
+### ♿ Accessibility First
+
+Die Plattform muss auch für Menschen mit eingeschränkter digitaler Erfahrung nutzbar sein.
+
+### 🔐 Privacy by Design
+
+Persönliche Daten gehören den Nutzer:innen.
+
+### 🛡️ Safety by Design
+
+Besonders vulnerable Personen benötigen besondere Schutzmechanismen.
+
+### 🌍 Vielfalt
+
+Menschen unterschiedlicher Herkunft, Sprache, Generation und Lebenssituation sollen teilnehmen können.
+
+### 🏘️ Local First
+
+Lokale Begegnungen und Communities stehen im Mittelpunkt.
+
+### 🔄 Give & Receive
+
+Menschen können gleichzeitig Hilfe geben und Hilfe erhalten.
+
+---
+
+# 💡 Unser Leitgedanke
+
+> **Jeder Mensch kann Hilfe brauchen. Jeder Mensch kann helfen.**
+
+SeniorConnect soll eine digitale Infrastruktur schaffen, die lokale Gemeinschaften stärkt und Menschen dabei unterstützt:
+
+* Kontakte zu finden
+* Unterstützung zu erhalten
+* anderen Menschen zu helfen
+* neue Fähigkeiten zu lernen
+* Wissen weiterzugeben
+* lokale Angebote zu entdecken
+* aktiv an der Gesellschaft teilzunehmen
+
+---
+
+# 📬 Kontakt
+
+Feedback, Ideen und Zusammenarbeit sind willkommen.
+
+Projekt-Repository:
+
+SeniorConnect auf GitHub
+
+https://github.com/hassanbht/SeniorConnect
+
+---
+
+# 📄 Lizenz
+
+Die Lizenz für dieses Projekt wird im Repository festgelegt.
+
+---
+
+## ❤️ Gemeinsam statt allein
+
+**SeniorConnect**
+
+> **Menschen verbinden. Gemeinschaft stärken. Hilfe geben und erhalten.**
