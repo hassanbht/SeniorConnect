@@ -18,7 +18,7 @@ public enum VulnerabilityReason
     Other
 }
 
-public sealed record SeniorProfileDto(
+public sealed record SupportProfileDto(
     Guid UserId,
     LivingSituation LivingSituation,
     ContactMethod PreferredContactMethod,
@@ -30,7 +30,7 @@ public sealed record SeniorProfileDto(
     string? AddressCity,
     string? AddressPostalCode);
 
-public sealed record UpdateSeniorProfileRequest(
+public sealed record UpdateSupportProfileRequest(
     LivingSituation LivingSituation,
     ContactMethod PreferredContactMethod,
     bool HasVulnerabilities,

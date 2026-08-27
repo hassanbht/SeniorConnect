@@ -14,30 +14,30 @@ public sealed class ProfileService : IProfileService
         _db = db;
     }
 
-    public async Task<Result<SeniorProfileDto>> GetSeniorProfileAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<SupportProfileDto>> GetSupportProfileAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var profile = await _db.SeniorProfiles
+        var profile = await _db.SupportProfiles
             .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
 
         if (profile is null)
         {
-            return Error.NotFound("SeniorProfile");
+            return Error.NotFound("SupportProfile");
         }
 
-        return Result<SeniorProfileDto>.Success(MapSenior(profile));
+        return Result<SupportProfileDto>.Success(MapSupport(profile));
     }
 
-    public async Task<Result<SeniorProfileDto>> UpsertSeniorProfileAsync(
+    public async Task<Result<SupportProfileDto>> UpsertSupportProfileAsync(
         Guid userId,
-        UpdateSeniorProfileRequest request,
+        UpdateSupportProfileRequest request,
         CancellationToken cancellationToken = default)
     {
-        var profile = await _db.SeniorProfiles
+        var profile = await _db.SupportProfiles
             .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
 
         if (profile is null)
         {
-            profile = SeniorProfile.Create(
+            profile = SupportProfile.Create(
                 userId: userId,
                 postalCode: request.AddressPostalCode,
                 city: request.AddressCity,
@@ -47,7 +47,7 @@ public sealed class ProfileService : IProfileService
                 livingSituation: request.LivingSituation.ToString(),
                 preferredContactMethod: request.PreferredContactMethod);
 
-            _db.SeniorProfiles.Add(profile);
+            _db.SupportProfiles.Add(profile);
         }
         else
         {
@@ -64,7 +64,7 @@ public sealed class ProfileService : IProfileService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        return Result<SeniorProfileDto>.Success(MapSenior(profile));
+        return Result<SupportProfileDto>.Success(MapSupport(profile));
     }
 
     public async Task<Result<VolunteerProfileDto>> GetVolunteerProfileAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -196,7 +196,7 @@ public sealed class ProfileService : IProfileService
         return await GetAvailabilityAsync(userId, cancellationToken);
     }
 
-    private static SeniorProfileDto MapSenior(SeniorProfile p) => new(
+    private static SupportProfileDto MapSupport(SupportProfile p) => new(
         UserId: p.UserId,
         LivingSituation: Enum.TryParse<LivingSituation>(p.LivingSituation, out var sit) ? sit : LivingSituation.Alone,
         PreferredContactMethod: p.PreferredContactMethod,

@@ -9,6 +9,8 @@ public interface IReportingDbContext
     DbSet<FundingRelationship> FundingRelationships { get; }
     DbSet<FunderMembership> FunderMemberships { get; }
     DbSet<AuditEntry> AuditEntries { get; }
+    DbSet<FunderMonthlyReportView> FunderMonthlyReports { get; }
+    DbSet<VolunteerHoursView> VolunteerHours { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

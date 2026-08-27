@@ -9,6 +9,7 @@ public static class ReportingModuleExtensions
     {
         services.AddScoped<IFunderService, FunderService>();
         services.AddScoped<IReportingService, ReportingService>();
+        services.AddScoped<IEsgReportingService, EsgReportingService>();
         return services;
     }
 }

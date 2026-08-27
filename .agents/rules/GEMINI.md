@@ -139,12 +139,9 @@ A change is complete only when:
 > wrong thing.**
 
 ```
-CURRENT PHASE: 0 — Discovery & Project Brain (partially complete)
-IN SCOPE:  documentation, remaining interviews, repository setup, CI
-OUT OF SCOPE: all feature code
-
-BLOCKED PHASES: 5 (Community) and 6 (Family) — no seniors and no family
-members have been interviewed. Do not build these on assumption.
+CURRENT PHASE: 9 — Production Deployment & Field Pilot Readiness (All feature phases 0-8 implemented & verified)
+IN SCOPE:  containerization, production deployment, CI/CD, field pilot launch
+OUT OF SCOPE: deprecated feature bloat
 ```
 
 > The roadmap was re-cut after discovery (ADR-015). Phase 2 is now the

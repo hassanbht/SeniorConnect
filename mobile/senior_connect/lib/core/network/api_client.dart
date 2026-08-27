@@ -74,12 +74,30 @@ class ApiClient {
     return _decode(response, fromJson);
   }
 
+  Future<T> put<T>(
+    String path, {
+    dynamic data,
+    T Function(dynamic)? fromJson,
+  }) async {
+    final response = await _dio.put<dynamic>(path, data: data);
+    return _decode(response, fromJson);
+  }
+
   Future<T> patch<T>(
     String path, {
     dynamic data,
     T Function(dynamic)? fromJson,
   }) async {
     final response = await _dio.patch<dynamic>(path, data: data);
+    return _decode(response, fromJson);
+  }
+
+  Future<T> delete<T>(
+    String path, {
+    dynamic data,
+    T Function(dynamic)? fromJson,
+  }) async {
+    final response = await _dio.delete<dynamic>(path, data: data);
     return _decode(response, fromJson);
   }
 

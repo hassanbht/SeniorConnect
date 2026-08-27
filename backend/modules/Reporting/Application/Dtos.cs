@@ -26,3 +26,26 @@ public sealed record ImpactReportSummaryDto(
     int ActiveVolunteersCount,
     int PeopleSupportedCount,
     IReadOnlyDictionary<string, double> HoursByCategory);
+
+public sealed record CorporateEsgSummaryDto(
+    Guid CompanyOrganizationId,
+    string CompanyName,
+    DateOnly From,
+    DateOnly To,
+    int ParticipatingEmployeesCount,
+    double TotalVolunteerHours,
+    int BeneficiariesSupportedCount,
+    IReadOnlyDictionary<string, double> HoursByCategory,
+    IReadOnlyList<string> SdgsImpacted,
+    double EstimatedSocialValueEur);
+
+public sealed record MultiOrgFunderDashboardDto(
+    Guid FunderId,
+    string FunderName,
+    string RegionName,
+    DateOnly From,
+    DateOnly To,
+    int ActiveOrganizationsCount,
+    string TotalAggregatedHours,
+    string TotalAggregatedBeneficiaries,
+    IReadOnlyList<FunderMonthlyReportItemDto> OrganizationMetrics);

@@ -51,12 +51,17 @@ builder.Services.AddDbContext<SeniorConnectDbContext>(options =>
 {
     options.UseNpgsql(connectionString);
 });
+builder.Services.AddDbContext<SafeguardingDbContext>(options =>
+{
+    options.UseNpgsql(connectionString);
+});
 
 builder.Services.AddScoped<IIdentityDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 builder.Services.AddScoped<IProfilesDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 builder.Services.AddScoped<IOrganizationsDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 builder.Services.AddScoped<IHelpRequestsDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 builder.Services.AddScoped<ITrustSafetyDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
+builder.Services.AddScoped<ISafeguardingDbContext>(sp => sp.GetRequiredService<SafeguardingDbContext>());
 builder.Services.AddScoped<IReportingDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 builder.Services.AddScoped<ICommunityDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 builder.Services.AddScoped<IFamilyDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());

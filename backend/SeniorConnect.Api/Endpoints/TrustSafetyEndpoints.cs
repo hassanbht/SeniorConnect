@@ -15,6 +15,24 @@ public static class TrustSafetyEndpoints
             .WithTags("Trust & Safety")
             .RequireAuthorization();
 
+        // --- ID Austria / eID Verification (P8-06, BR-TRUST-05) ---
+        group.MapPost("/verify:id-austria", async (
+            IdentityVerificationRequest request,
+            ClaimsPrincipal user,
+            IIdentityVerificationProvider provider,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var req = request with { UserId = userId.Value, ProviderType = VerificationProviderType.IdAustria };
+            var result = await provider.VerifyIdentityAsync(req, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("VerifyIdAustria")
+        .Produces<IdentityVerificationResult>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest);
+
         // --- Buddy System ---
         group.MapGet("/buddy/{volunteerUserId:guid}", async (
             Guid volunteerUserId,
@@ -42,6 +60,17 @@ public static class TrustSafetyEndpoints
         })
         .WithName("WaiveBuddy")
         .Produces<BuddyStatusDto>(StatusCodes.Status200OK);
+
+        // --- First Meeting Protocol ---
+        group.MapGet("/protocol", async (
+            ITrustSafetyService trustService,
+            CancellationToken ct) =>
+        {
+            var result = await trustService.GetFirstMeetingProtocolAsync(ct);
+            return result.ToHttpResult();
+        })
+        .WithName("GetFirstMeetingProtocol")
+        .Produces<FirstMeetingProtocolDto>(StatusCodes.Status200OK);
 
         // --- Key Custody ---
         group.MapPost("/keys", async (

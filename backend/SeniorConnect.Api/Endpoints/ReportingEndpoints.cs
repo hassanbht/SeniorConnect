@@ -66,51 +66,39 @@ public static class ReportingEndpoints
         .WithName("ExportImpactPdf")
         .Produces(StatusCodes.Status200OK, contentType: "application/pdf");
 
-        reportGroup.MapGet("/organizations/{orgId:guid}/report.html", async (
-            Guid orgId,
+        reportGroup.MapGet("/companies/{companyOrgId:guid}/esg-summary", async (
+            Guid companyOrgId,
             DateOnly? from,
             DateOnly? to,
-            IReportingService reportService,
+            IEsgReportingService esgService,
             CancellationToken ct) =>
         {
-            var fromDate = from ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
+            var fromDate = from ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-365));
             var toDate = to ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
-            var result = await reportService.GetImpactSummaryAsync(orgId, fromDate, toDate, ct);
+            var result = await esgService.GetCorporateEsgSummaryAsync(companyOrgId, fromDate, toDate, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("GetCorporateEsgSummary")
+        .Produces<CorporateEsgSummaryDto>(StatusCodes.Status200OK);
+
+        reportGroup.MapGet("/companies/{companyOrgId:guid}/esg-certificate.pdf", async (
+            Guid companyOrgId,
+            DateOnly? from,
+            DateOnly? to,
+            IEsgReportingService esgService,
+            CancellationToken ct) =>
+        {
+            var fromDate = from ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-365));
+            var toDate = to ?? DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var result = await esgService.ExportEsgCertificatePdfAsync(companyOrgId, fromDate, toDate, ct);
             if (result.IsFailure) return Results.BadRequest(result.Error?.Detail);
 
-            var summary = result.Value!;
-            var html = $$"""
-                <!DOCTYPE html>
-                <html lang="de">
-                <head>
-                    <meta charset="utf-8">
-                    <title>Wirkungsbericht — SeniorConnect</title>
-                    <style>
-                        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; color: #1E293B; }
-                        h1 { color: #4338CA; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px; }
-                        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 30px 0; }
-                        .card { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 20px; text-align: center; }
-                        .card .number { font-size: 32px; font-weight: 700; color: #4338CA; }
-                        .card .label { font-size: 14px; color: #64748B; margin-top: 4px; }
-                    </style>
-                </head>
-                <body>
-                    <h1>SeniorConnect Wirkungsbericht</h1>
-                    <p>Zeitraum: {{fromDate:dd.MM.yyyy}} bis {{toDate:dd.MM.yyyy}}</p>
-                    <div class="grid">
-                        <div class="card"><div class="number">{{summary.TotalHours:F1}} h</div><div class="label">Geleistete Stunden</div></div>
-                        <div class="card"><div class="number">{{summary.TotalActivities}}</div><div class="label">Erfolgreiche Einsätze</div></div>
-                        <div class="card"><div class="number">{{summary.ActiveVolunteersCount}}</div><div class="label">Aktive Freiwillige</div></div>
-                    </div>
-                </body>
-                </html>
-                """;
-
-            return Results.Content(html, "text/html");
+            return Results.File(result.Value!, "application/pdf", $"esg-certificate-{companyOrgId}.pdf");
         })
-        .WithName("GetImpactHtmlReport")
-        .Produces(StatusCodes.Status200OK, contentType: "text/html");
+        .WithName("ExportCorporateEsgCertificatePdf")
+        .Produces(StatusCodes.Status200OK, contentType: "application/pdf");
 
         return app;
     }

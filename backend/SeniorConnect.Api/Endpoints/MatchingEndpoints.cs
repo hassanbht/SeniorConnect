@@ -51,6 +51,18 @@ public static class MatchingEndpoints
         .WithName("GetVolunteerFeed")
         .Produces<IReadOnlyList<VolunteerFeedItem>>(StatusCodes.Status200OK);
 
+        matchingGroup.MapPost("/proposals:hybrid", async (
+            HybridMatchingRequest request,
+            IMatchingService matchingService,
+            CancellationToken ct) =>
+        {
+            var result = await matchingService.GetHybridProposalsAsync(request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("GetHybridMatchingProposals")
+        .Produces<IReadOnlyList<HybridMatchingProposal>>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
         return app;
     }
 }

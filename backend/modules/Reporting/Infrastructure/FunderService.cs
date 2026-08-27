@@ -32,12 +32,25 @@ public sealed class FunderService : IFunderService
             .Where(r => r.FunderId == funderId && (r.ValidUntil == null || r.ValidUntil >= today))
             .CountAsync(cancellationToken);
 
+        var relationships = await _db.FundingRelationships
+            .Where(r => r.FunderId == funderId && (r.ValidUntil == null || r.ValidUntil >= today))
+            .ToListAsync(cancellationToken);
+
+        var orgIds = relationships.Select(r => r.OrganizationId).ToList();
+
+        var reports = await _db.FunderMonthlyReports
+            .Where(r => orgIds.Contains(r.OrganizationId))
+            .ToListAsync(cancellationToken);
+
+        var totalHours = reports.Sum(r => r.Hours ?? 0.0);
+        var totalPeople = reports.Sum(r => r.DistinctPeopleSupported ?? 0);
+
         return Result<FunderSummaryDto>.Success(new FunderSummaryDto(
             FunderId: funder.Id,
             FunderName: funder.Name,
             TotalFundedOrganizations: fundedCount,
-            OverallHours: "Calculated from monthly reports",
-            OverallPeopleSupported: "Calculated from monthly reports"));
+            OverallHours: $"{totalHours:F1} h",
+            OverallPeopleSupported: totalPeople < 10 ? "<10" : totalPeople.ToString(CultureInfo.InvariantCulture)));
     }
 
     public async Task<Result<IReadOnlyList<FunderMonthlyReportItemDto>>> GetMonthlyReportsAsync(
@@ -53,25 +66,58 @@ public sealed class FunderService : IFunderService
 
         var orgIds = relationships.Select(r => r.OrganizationId).ToList();
 
-        // In production this queries the view v_funder_monthly_report.
-        // For development/demonstration we build the suppressed view DTOs.
-        var items = new List<FunderMonthlyReportItemDto>();
+        var query = _db.FunderMonthlyReports
+            .Where(r => orgIds.Contains(r.OrganizationId));
 
-        foreach (var orgId in orgIds)
-        {
-            var month = fromMonth ?? DateOnly.FromDateTime(new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1));
-            items.Add(new FunderMonthlyReportItemDto(
-                OrganizationId: orgId,
-                Month: month,
-                CategoryCode: "VISIT",
-                ActivityCount: MaskCohort(14),
-                DistinctVolunteers: MaskCohort(6),   // < 10, so will be "<10"
-                DistinctPeopleSupported: MaskCohort(8), // < 10, so will be "<10"
-                TotalHours: (21.5).ToString("0.0", CultureInfo.InvariantCulture),
-                IsSuppressed: true));
-        }
+        if (fromMonth.HasValue)
+            query = query.Where(r => r.Month >= fromMonth.Value);
+
+        if (toMonth.HasValue)
+            query = query.Where(r => r.Month <= toMonth.Value);
+
+        var viewRows = await query.ToListAsync(cancellationToken);
+
+        var items = viewRows.Select(row => new FunderMonthlyReportItemDto(
+            OrganizationId: row.OrganizationId,
+            Month: row.Month,
+            CategoryCode: row.CategoryCode,
+            ActivityCount: MaskCohort(row.ActivityCount ?? 0),
+            DistinctVolunteers: MaskCohort(row.DistinctVolunteers ?? 0),
+            DistinctPeopleSupported: MaskCohort(row.DistinctPeopleSupported ?? 0),
+            TotalHours: (row.Hours ?? 0.0).ToString("0.0", CultureInfo.InvariantCulture),
+            IsSuppressed: row.IsSuppressed || (row.DistinctVolunteers < 10) || (row.DistinctPeopleSupported < 10)
+        )).ToList();
 
         return Result<IReadOnlyList<FunderMonthlyReportItemDto>>.Success(items);
+    }
+
+    public async Task<Result<MultiOrgFunderDashboardDto>> GetMultiOrgDashboardAsync(
+        Guid funderId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default)
+    {
+        var summaryResult = await GetFunderSummaryAsync(funderId, cancellationToken);
+        if (summaryResult.IsFailure) return summaryResult.Error!;
+
+        var summary = summaryResult.Value!;
+        var reportsResult = await GetMonthlyReportsAsync(funderId, from, to, cancellationToken);
+        if (reportsResult.IsFailure) return reportsResult.Error!;
+
+        var metrics = reportsResult.Value!;
+
+        var dashboard = new MultiOrgFunderDashboardDto(
+            FunderId: funderId,
+            FunderName: summary.FunderName,
+            RegionName: "Gemeinde Pilotregion",
+            From: from,
+            To: to,
+            ActiveOrganizationsCount: summary.TotalFundedOrganizations,
+            TotalAggregatedHours: summary.OverallHours,
+            TotalAggregatedBeneficiaries: summary.OverallPeopleSupported,
+            OrganizationMetrics: metrics);
+
+        return Result<MultiOrgFunderDashboardDto>.Success(dashboard);
     }
 
     private static string MaskCohort(int count)

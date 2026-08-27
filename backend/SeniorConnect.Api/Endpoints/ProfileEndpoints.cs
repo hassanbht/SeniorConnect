@@ -15,6 +15,40 @@ public static class ProfileEndpoints
             .WithTags("User Profiles")
             .RequireAuthorization();
 
+        meGroup.MapGet("/support-profile", async (
+            ClaimsPrincipal user,
+            IProfileService profileService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await profileService.GetSupportProfileAsync(userId.Value, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("GetSupportProfile")
+        .Produces<SupportProfileDto>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
+        meGroup.MapPut("/support-profile", async (
+            UpdateSupportProfileRequest request,
+            ClaimsPrincipal user,
+            IProfileService profileService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await profileService.UpsertSupportProfileAsync(userId.Value, request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("UpdateSupportProfile")
+        .Produces<SupportProfileDto>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        // Backwards-compatibility alias route
         meGroup.MapGet("/senior-profile", async (
             ClaimsPrincipal user,
             IProfileService profileService,
@@ -23,30 +57,13 @@ public static class ProfileEndpoints
             var userId = user.GetUserId();
             if (userId is null) return Results.Unauthorized();
 
-            var result = await profileService.GetSeniorProfileAsync(userId.Value, ct);
+            var result = await profileService.GetSupportProfileAsync(userId.Value, ct);
             return result.ToHttpResult();
         })
-        .WithName("GetSeniorProfile")
-        .Produces<SeniorProfileDto>(StatusCodes.Status200OK)
+        .WithName("GetSeniorProfileAlias")
+        .Produces<SupportProfileDto>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status401Unauthorized)
         .ProducesProblem(StatusCodes.Status404NotFound);
-
-        meGroup.MapPut("/senior-profile", async (
-            UpdateSeniorProfileRequest request,
-            ClaimsPrincipal user,
-            IProfileService profileService,
-            CancellationToken ct) =>
-        {
-            var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
-
-            var result = await profileService.UpsertSeniorProfileAsync(userId.Value, request, ct);
-            return result.ToHttpResult();
-        })
-        .WithName("UpdateSeniorProfile")
-        .Produces<SeniorProfileDto>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status400BadRequest)
-        .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         meGroup.MapGet("/volunteer-profile", async (
             ClaimsPrincipal user,

@@ -90,6 +90,21 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
       icon: Icons.home_repair_service_outlined,
     ),
     HelpCategoryItem(
+      id: 'language_practice',
+      titleKey: 'help.category.language_practice',
+      icon: Icons.translate_outlined,
+    ),
+    HelpCategoryItem(
+      id: 'newcomer_orientation',
+      titleKey: 'help.category.newcomer_orientation',
+      icon: Icons.explore_outlined,
+    ),
+    HelpCategoryItem(
+      id: 'mentoring',
+      titleKey: 'help.category.mentoring',
+      icon: Icons.school_outlined,
+    ),
+    HelpCategoryItem(
       id: 'other',
       titleKey: 'help.category.other',
       icon: Icons.help_outline,
@@ -354,7 +369,6 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
         AppButton(
           label: 'common.next'.tr(),
           icon: Icons.arrow_forward,
-          minHeight: 64,
           onPressed: _onDetailsSubmitted,
         ),
       ],
@@ -373,8 +387,8 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
         Card(
           elevation: 0,
           color: theme.colorScheme.surfaceContainerHighest,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.card),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.card,
           ),
           child: Padding(
             padding: const EdgeInsetsDirectional.all(AppSpacing.lg),
@@ -417,7 +431,6 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
           label: 'help.create.submit'.tr(),
           icon: Icons.check_circle_outline,
           isLoading: _isSubmitting,
-          minHeight: 72,
           onPressed: _submitRequest,
         ),
       ],
@@ -445,7 +458,6 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
         const SizedBox(height: AppSpacing.xxl),
         AppButton(
           label: 'common.close'.tr(),
-          minHeight: 64,
           onPressed: () => context.go(AppRoutes.home),
         ),
       ],
@@ -473,7 +485,7 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
         const SizedBox(height: AppSpacing.xl),
         AppButton(
           label: 'help.blocked.other_request'.tr(),
-          variant: AppButtonVariant.secondary,
+          variant: AppButtonVariant.tonal,
           onPressed: () {
             setState(() {
               _currentStep = _RequestStep.selectCategory;
@@ -499,12 +511,14 @@ class _CategoryCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        side: BorderSide(color: theme.colorScheme.outlineVariant),
-      ),
+      shape: BorderSide(color: theme.colorScheme.outlineVariant) == BorderSide.none
+          ? const RoundedRectangleBorder(borderRadius: AppRadius.card)
+          : RoundedRectangleBorder(
+              borderRadius: AppRadius.card,
+              side: BorderSide(color: theme.colorScheme.outlineVariant),
+            ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        borderRadius: const BorderRadius.all(Radius.circular(AppRadius.lg)),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsetsDirectional.all(AppSpacing.lg),
@@ -546,11 +560,11 @@ class _TimingCard extends StatelessWidget {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        borderRadius: AppRadius.card,
         side: BorderSide(color: theme.colorScheme.outlineVariant),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        borderRadius: const BorderRadius.all(Radius.circular(AppRadius.lg)),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsetsDirectional.all(AppSpacing.lg),

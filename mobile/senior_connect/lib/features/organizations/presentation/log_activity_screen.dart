@@ -45,6 +45,9 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
     'help.category.authority',
     'help.category.accompaniment',
     'help.category.home_small',
+    'help.category.language_practice',
+    'help.category.newcomer_orientation',
+    'help.category.mentoring',
   ];
 
   @override
@@ -165,18 +168,17 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  Row(
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
                     children: [30, 60, 90, 120].map((mins) {
                       final isSelected = _durationMinutes == mins;
-                      return Padding(
-                        padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
-                        child: ChoiceChip(
-                          label: Text('$mins Min'),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (selected) setState(() => _durationMinutes = mins);
-                          },
-                        ),
+                      return ChoiceChip(
+                        label: Text('$mins Min'),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) setState(() => _durationMinutes = mins);
+                        },
                       );
                     }).toList(),
                   ),
@@ -209,7 +211,6 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
                     label: 'common.save'.tr(),
                     icon: Icons.check,
                     isLoading: _isSubmitting,
-                    minHeight: 64,
                     onPressed: _submit,
                   ),
                 ],

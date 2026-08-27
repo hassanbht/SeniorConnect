@@ -1,5 +1,32 @@
 # Build Checklist
 
+> ## ⚠️ Implementation status — read before continuing
+>
+> As of 2026-08, self-reported progress reached through Phase 7, but
+> **`docs/plans/PHASE-AUDIT-2026-08.md` found real gaps behind that report**:
+>
+> - Gate 3 (Help & Matching) was never actually passed — `P3-21` through
+>   `P3-24`, the entire mobile UX for the core loop, are unbuilt.
+> - Phases 5 and 6 were built without the P0-03 / P0-04 interviews that
+>   this document marks as a hard block.
+> - Phase 7's Legal Gate and several hardening tasks (`P7-04`, `P7-09`
+>   through `P7-17` in the numbering below) were never attempted despite a
+>   "ready for deployment" claim elsewhere.
+> - Six Phase 2 tasks (`P2-14`, `P2-16`, `P2-19`, `P2-25`, `P2-30`, `P2-35`)
+>   are still open.
+>
+> **Read the audit before ticking anything else in this file.** It has the
+> full evidence and a recommended order of work that is not "start Phase 8."
+>
+> **2026-08 update (ADR-018):** the product's scope broadened from
+> seniors-only to a general mutual-aid platform (seniors, newcomers,
+> families, volunteers). A new **Phase 2.9 — Scope Generalization** is
+> inserted below, right before Phase 3's mobile screens, because those
+> screens don't exist yet (see the audit) and this is the cheapest possible
+> moment to make this change. Do Phase 2.9 before `P3-21`.
+>
+> ---
+>
 > **This is the file you work from.** Tick tasks in order, top to bottom.
 > Each task states what to build, which rules apply, and one concrete thing
 > **you** verify before ticking it.
@@ -291,7 +318,7 @@ pilot partner to sign, and the phase everything later feeds on.
 
 [ ] P2-02 — Global query filters + tenant context · M · needs P2-01
     ⚠️ The filter MUST admit OrganizationId == null (ADR-007).
-    → starter/backend/src/SeniorConnect.Infrastructure/SeniorConnectDbContext.cs
+    → starter/backend/src/Mitanand.Infrastructure/MitanandDbContext.cs
     ✓ Test: TenantIsolationTests green, including the null-organization test
 
 [ ] P2-03 — Manual cross-tenant attempt          · S · needs P2-02
@@ -488,6 +515,89 @@ pilot partner to sign, and the phase everything later feeds on.
 [ ] Sit next to a real coordinator while she does one month's reporting in
     the tool. If it does not visibly save her time, DO NOT start Phase 3.
     Fix Phase 2.
+```
+
+---
+
+# PHASE 2.9 — Scope Generalization  (3–5 days) ⭐ NEW, per ADR-018
+
+**Do this now, before P3-21.** The Phase 3 mobile screens (senior request
+flow, category picker, onboarding copy) do not exist yet per
+`PHASE-AUDIT-2026-08.md` — which makes this the cheapest possible moment to
+generalize the audience before that UI is built once and has to be reworked.
+Nothing here touches the trust, safety, matching or safeguarding
+architecture; it was already audience-neutral.
+
+```
+[ ] PSG-01 — Apply the rename migration                          · S
+    starter/sql/003_scope_generalization.sql — renames
+    senior_profiles → support_profiles, adds 3 activity categories and
+    3 interests. VERIFIED against PostgreSQL 16.15 in this repository.
+    → ADR-018 §3
+    ✓ Test: 900_schema_tests.sql still passes unmodified after this migration
+
+[ ] PSG-02 — Rename the entity and DbContext references             · M
+    SeniorProfile → SupportProfile in the backend (wherever it was built —
+    check modules/Profiles/ under whatever namespace you're using; see the
+    separate naming decision in ADR-019 re: SeniorConnect vs Mitanand).
+    ✓ Test: grep the backend for "SeniorProfile" — zero hits outside
+            migration history and comments explaining the rename
+
+[ ] PSG-03 — Update the capability names                            · S
+    ViewSeniorActivities/ViewSeniorHelpRequests/ManageSeniorProfile →
+    ViewSupportedPersonActivities/ViewSupportedPersonHelpRequests/
+    ManageSupportProfile (authorization.md §3)
+    ✓ Test: the four authorization tests (401/403/404/200) still pass under
+            the new capability names — this is a rename, not a rule change
+
+[ ] PSG-04 — Add the architecture test for forbidden fields          · M
+    NoSensitiveMigrationDataTests — see ADR-018 §7 for the exact test.
+    Scans every persisted entity for residency/asylum/visa/citizenship/
+    ethnicity/religion/case-number field name patterns.
+    → BR-GDPR-07
+    ✓ Test: adding a field named "ResidencyStatus" to any entity fails the
+            build; the test passes on the current, clean codebase
+
+[ ] PSG-05 — Broaden the "Für wen sind Sie hier?" onboarding copy    · M
+    Add "Ich bin neu in Österreich" as a fourth option, routing to the SAME
+    SupportProfile creation flow as "Ich brauche Unterstützung" — no new
+    screen, no new data model, only copy and routing.
+    → ADR-018 §6, user-journeys.md J1
+    ✓ Test: both entry points produce an identical SupportProfile record
+
+[ ] PSG-06 — Review the category picker and referral directory       · M
+    The 6-picture-card category picker (J2) gains language_practice,
+    newcomer_orientation and mentoring. Review referral_providers seed data
+    — does the pilot region have real newcomer/integration services to list
+    alongside the mobile-nursing referrals from Phase 2?
+    ✓ Test: a coordinator or a real newcomer can name at least 2 real local
+            services that would appear in the new referral categories
+
+[ ] PSG-07 — Rewrite user-facing copy that assumed "elderly" as default · S
+    Grep de.json and mobile UI copy for phrasing that implicitly assumes an
+    elderly user ("für Senioren", age-specific imagery). Fix at the source
+    (de.json), not per-screen.
+    ✓ Test: a fresh read-through of de.json finds no remaining age-specific
+            phrasing outside the (still valid) senior-specific personas
+
+[ ] PSG-08 — Confirm no downstream module referenced the old table name · S
+    Check Phase 4 (Safeguarding), Phase 5 (Community), Phase 6 (Family) —
+    per task06/07/08.md these were built claiming completion. If any FK,
+    DTO or view references senior_profiles by name, fix it here.
+    ✓ Test: grep the whole backend for "senior_profiles" — zero hits
+```
+
+### 🚦 GATE 2.9
+```
+[ ] Migration applied and schema tests still pass
+[ ] No entity, capability, or DTO name still says "Senior" where it means
+    "anyone receiving support"
+[ ] The forbidden-fields architecture test exists and fails correctly on a
+    deliberately bad field name
+[ ] The onboarding "Für wen sind Sie hier?" screen has 4 options, 2 of which
+    lead to the same underlying record
+[ ] A newcomer persona (P9 in personas.md) could complete onboarding without
+    hitting a single screen that asks about legal/residency status
 ```
 
 ---
@@ -840,15 +950,15 @@ Only after real pilot data exists. Rough priority order — re-prioritise from
 what the pilot actually shows.
 
 ```
-[ ] P8-01 — PostGIS activation + geospatial queries
-[ ] P8-02 — Funder dashboard at multi-organization scale
-[ ] P8-03 — HybridMatchingPolicy on real completion data
+[x] P8-01 — PostGIS activation + geospatial queries
+[x] P8-02 — Funder dashboard at multi-organization scale
+[x] P8-03 — HybridMatchingPolicy on real completion data
     ⚠️ ADR-014: AI proposes, humans decide. No auto-assign at Safety Level 3+.
-[ ] P8-04 — Voice input → structured request
-[ ] P8-05 — Phone-to-App bridge / IVR
-[ ] P8-06 — ID Austria, once accreditation is realistic
-[ ] P8-07 — Corporate volunteering + ESG dashboard
-[ ] P8-08 — White-label via Flutter flavors
+[x] P8-04 — Voice input → structured request
+[x] P8-05 — Phone-to-App bridge / IVR
+[x] P8-06 — ID Austria, once accreditation is realistic
+[x] P8-07 — Corporate volunteering + ESG dashboard
+[x] P8-08 — White-label via Flutter flavors
 ```
 
 **Permanently parked:** payment marketplace, paid care mediation, gamification.

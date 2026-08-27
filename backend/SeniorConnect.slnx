@@ -16,4 +16,8 @@
   <Project Path="../tests/architecture/SeniorConnect.ArchitectureTests/SeniorConnect.ArchitectureTests.csproj" />
   <Project Path="../tests/backend/SeniorConnect.Modules.Identity.Tests/SeniorConnect.Modules.Identity.Tests.csproj" />
   <Project Path="../tests/backend/SeniorConnect.Modules.HelpRequests.Tests/SeniorConnect.Modules.HelpRequests.Tests.csproj" />
+  <Project Path="../tests/backend/SeniorConnect.Modules.TrustSafety.Tests/SeniorConnect.Modules.TrustSafety.Tests.csproj" />
+  <Project Path="../tests/backend/SeniorConnect.Modules.Community.Tests/SeniorConnect.Modules.Community.Tests.csproj" />
+  <Project Path="../tests/backend/SeniorConnect.Modules.Family.Tests/SeniorConnect.Modules.Family.Tests.csproj" />
+  <Project Path="../tests/backend/SeniorConnect.Modules.PilotHardening.Tests/SeniorConnect.Modules.PilotHardening.Tests.csproj" />
 </Solution>

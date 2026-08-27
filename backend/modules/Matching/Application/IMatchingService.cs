@@ -16,4 +16,8 @@ public interface IMatchingService
         double? longitude = null,
         double radiusKm = 20,
         CancellationToken cancellationToken = default);
+
+    Task<Result<IReadOnlyList<HybridMatchingProposal>>> GetHybridProposalsAsync(
+        HybridMatchingRequest request,
+        CancellationToken cancellationToken = default);
 }

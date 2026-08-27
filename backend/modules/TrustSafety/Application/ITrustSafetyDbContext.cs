@@ -11,9 +11,6 @@ public interface ITrustSafetyDbContext
     DbSet<KeyCustody> KeyCustodies { get; }
     DbSet<ExpenseRecord> ExpenseRecords { get; }
     DbSet<UserBlock> UserBlocks { get; }
-    DbSet<SafeguardingCase> SafeguardingCases { get; }
-    DbSet<SafeguardingCaseNote> SafeguardingCaseNotes { get; }
-    DbSet<SafeguardingAccessLog> SafeguardingAccessLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

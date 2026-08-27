@@ -14,6 +14,9 @@ public interface ITrustSafetyService
         WaiveBuddyRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<Result<FirstMeetingProtocolDto>> GetFirstMeetingProtocolAsync(
+        CancellationToken cancellationToken = default);
+
     Task<Result<KeyCustodyDto>> HandoverKeyAsync(
         HandoverKeyRequest request,
         CancellationToken cancellationToken = default);

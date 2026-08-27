@@ -39,6 +39,7 @@ dependencies:
 
   # P1-25: Routing + guards
   go_router: ^15.0.0
+  url_launcher: ^6.3.0
 
   # P1-26: API client + silent refresh
   dio: ^5.7.0

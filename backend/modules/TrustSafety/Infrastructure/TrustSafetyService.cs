@@ -73,6 +73,35 @@ public sealed class TrustSafetyService : ITrustSafetyService
             WaiverReason: buddy.WaiverReason));
     }
 
+    private static readonly string[] BeforeChecklist =
+    [
+        "protocol.before.confirm_name_and_time",
+        "protocol.before.agree_meeting_place",
+        "protocol.before.notify_trusted_person"
+    ];
+
+    private static readonly string[] DuringChecklist =
+    [
+        "protocol.during.check_in_app"
+    ];
+
+    private static readonly string[] AfterChecklist =
+    [
+        "protocol.after.check_out_app",
+        "protocol.after.confirm_all_in_order_or_report"
+    ];
+
+    public Task<Result<FirstMeetingProtocolDto>> GetFirstMeetingProtocolAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var protocol = new FirstMeetingProtocolDto(
+            BeforeMeetingChecklist: BeforeChecklist,
+            DuringMeetingChecklist: DuringChecklist,
+            AfterMeetingChecklist: AfterChecklist);
+
+        return Task.FromResult(Result<FirstMeetingProtocolDto>.Success(protocol));
+    }
+
     public async Task<Result<KeyCustodyDto>> HandoverKeyAsync(
         HandoverKeyRequest request,
         CancellationToken cancellationToken = default)

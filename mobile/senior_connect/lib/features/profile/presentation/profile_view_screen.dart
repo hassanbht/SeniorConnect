@@ -119,6 +119,29 @@ class _ProfileContent extends StatelessWidget {
             ),
           ),
         ),
+
+        const SizedBox(height: 24),
+        _SectionHeader('profile.settings_and_support'.tr()),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(Icons.help_outline, color: colorScheme.primary),
+          title: Text('faq.title'.tr(), style: textTheme.titleMedium),
+          subtitle: Text('faq.subtitle'.tr(), style: textTheme.bodySmall),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push(AppRoutes.helpFaq),
+        ),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(Icons.shield_outlined, color: colorScheme.primary),
+          title: Text('privacy.export_title'.tr(), style: textTheme.titleMedium),
+          subtitle: Text('privacy.export_subtitle'.tr(), style: textTheme.bodySmall),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('privacy.export_requested'.tr())),
+            );
+          },
+        ),
       ],
     );
   }

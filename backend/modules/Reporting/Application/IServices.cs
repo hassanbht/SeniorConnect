@@ -13,6 +13,12 @@ public interface IFunderService
         DateOnly? fromMonth = null,
         DateOnly? toMonth = null,
         CancellationToken cancellationToken = default);
+
+    Task<Result<MultiOrgFunderDashboardDto>> GetMultiOrgDashboardAsync(
+        Guid funderId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IReportingService
@@ -31,6 +37,21 @@ public interface IReportingService
 
     Task<Result<byte[]>> ExportImpactPdfAsync(
         Guid organizationId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
+}
+
+public interface IEsgReportingService
+{
+    Task<Result<CorporateEsgSummaryDto>> GetCorporateEsgSummaryAsync(
+        Guid companyOrganizationId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<byte[]>> ExportEsgCertificatePdfAsync(
+        Guid companyOrganizationId,
         DateOnly from,
         DateOnly to,
         CancellationToken cancellationToken = default);

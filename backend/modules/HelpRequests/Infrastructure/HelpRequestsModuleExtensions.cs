@@ -11,6 +11,7 @@ public static class HelpRequestsModuleExtensions
         services.AddSingleton<IActivitySafetyPolicy, ActivitySafetyPolicy>();
         services.AddScoped<IActivityService, ActivityService>();
         services.AddScoped<IHelpRequestService, HelpRequestService>();
+        services.AddScoped<IVoiceRequestParser, VoiceRequestParser>();
         return services;
     }
 }

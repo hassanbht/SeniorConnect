@@ -31,6 +31,18 @@ public static class HelpRequestEndpoints
         .Produces<HelpRequestDto>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status400BadRequest);
 
+        helpGroup.MapPost("/parse-voice", async (
+            VoiceParseRequest request,
+            IVoiceRequestParser voiceParser,
+            CancellationToken ct) =>
+        {
+            var result = await voiceParser.ParseTranscriptAsync(request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("ParseVoiceHelpRequest")
+        .Produces<VoiceParseResult>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest);
+
         helpGroup.MapGet("/", async (
             Guid? organizationId,
             IHelpRequestService helpService,

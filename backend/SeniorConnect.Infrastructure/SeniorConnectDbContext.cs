@@ -56,7 +56,7 @@ public sealed class SeniorConnectDbContext(
     public DbSet<AccountDeletionRequest> AccountDeletionRequests => Set<AccountDeletionRequest>();
 
     // --- Profiles ---
-    public DbSet<SeniorProfile> SeniorProfiles => Set<SeniorProfile>();
+    public DbSet<SupportProfile> SupportProfiles => Set<SupportProfile>();
     public DbSet<VolunteerProfile> VolunteerProfiles => Set<VolunteerProfile>();
     public DbSet<Interest> Interests => Set<Interest>();
     public DbSet<Language> Languages => Set<Language>();
@@ -88,11 +88,6 @@ public sealed class SeniorConnectDbContext(
     public DbSet<KeyCustody> KeyCustodies => Set<KeyCustody>();
     public DbSet<ExpenseRecord> ExpenseRecords => Set<ExpenseRecord>();
     public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
-
-    // --- Safeguarding (Isolated Schema) ---
-    public DbSet<SafeguardingCase> SafeguardingCases => Set<SafeguardingCase>();
-    public DbSet<SafeguardingCaseNote> SafeguardingCaseNotes => Set<SafeguardingCaseNote>();
-    public DbSet<SafeguardingAccessLog> SafeguardingAccessLogs => Set<SafeguardingAccessLog>();
 
     // --- Community ---
     public DbSet<CommunityGroup> CommunityGroups => Set<CommunityGroup>();
@@ -135,7 +130,7 @@ public sealed class SeniorConnectDbContext(
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(VolunteerApplicationConfiguration).Assembly);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FunderConfiguration).Assembly);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserConfiguration).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SeniorProfileConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SupportProfileConfiguration).Assembly);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuditEntryConfiguration).Assembly);
 
         // --- Tenant isolation (BR-TENANT-03 & ADR-007) -----------------------
@@ -209,6 +204,16 @@ public sealed class SeniorConnectDbContext(
                     j.Property<Guid>("interest_id").HasColumnName("interest_id");
                     j.HasKey("user_id", "interest_id");
                 });
+
+        // --- Family & Delegation ---------------------------------------------
+        modelBuilder.Entity<FamilyRelationship>(b =>
+        {
+            b.HasMany(r => r.Permissions)
+             .WithOne()
+             .HasForeignKey(p => p.FamilyRelationshipId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.Navigation(r => r.Permissions).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
 
         // --- Safeguarding (Schema Isolation ADR-004) -------------------------
         modelBuilder.Entity<SafeguardingCase>().ToTable("safeguarding_cases", "safeguarding");

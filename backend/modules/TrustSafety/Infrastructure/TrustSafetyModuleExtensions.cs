@@ -10,6 +10,7 @@ public static class TrustSafetyModuleExtensions
         services.AddScoped<IOnboardingService, OnboardingService>();
         services.AddScoped<ITrustSafetyService, TrustSafetyService>();
         services.AddScoped<ISafeguardingService, SafeguardingService>();
+        services.AddScoped<IIdentityVerificationProvider, IdAustriaVerificationProvider>();
         return services;
     }
 }

@@ -1,206 +1,333 @@
 {
   "app": {
-    "name": "SeniorConnect", "tagline": "Help from next door." },"common": {
-      "save": "Save",
-      "cancel": "Cancel",
-      "next": "Next",
-      "back": "Back",
-      "confirm": "Confirm",
-      "yes": "Yes",
-      "no": "No",
-      "close": "Close",
-      "retry": "Try again",
-      "loading": "Loading …",
-      "search": "Search",
-      "today": "Today",
-      "tomorrow": "Tomorrow",
-      "this_week": "This week",
-      "km_away": "{count} km away"
+    "name": "SeniorConnect",
+    "tagline": "Help from next door."
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "next": "Next",
+    "back": "Back",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "retry": "Try again",
+    "loading": "Loading …",
+    "search": "Search",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "this_week": "This week",
+    "km_away": "{count} km away"
+  },
+  "errors": {
+    "generic": "That didn't work. Please try again.",
+    "no_internet": "No connection. Please check your internet.",
+    "session_expired": "You were signed out. Please sign in again.",
+    "not_allowed": "You are not allowed to do that here.",
+    "already_taken": "Someone else was faster. Here are similar requests."
+  },
+  "auth": {
+    "phone": "Phone number",
+    "phone_field_label": "Enter your phone number",
+    "phone_required": "Please enter your phone number.",
+    "phone_invalid": "Please enter a valid phone number.",
+    "request_code": "Request code",
+    "request_code_semantic": "Request code by SMS. Opens the next form.",
+    "privacy_note": "We do not share your number.",
+    "otp_field_label": "Enter the six-digit code",
+    "otp_attempts_left": "{n} attempts remaining",
+    "otp_too_many_attempts": "Too many failed attempts. Please request a new code.",
+    "otp": {
+      "rate_limited": "Too many requests. Please wait a moment."
     },
-    "errors": {
-      "generic": "That didn't work. Please try again.",
-      "no_internet": "No connection. Please check your internet.",
-      "session_expired": "You were signed out. Please sign in again.",
-      "not_allowed": "You are not allowed to do that here.",
-      "already_taken": "Someone else was faster. Here are similar requests."
+    "verify_phone": {
+      "title": "Enter code",
+      "description": "We sent a code to {phone}.",
+      "submit": "Confirm",
+      "resend": "Request new code"
     },
-    "auth": {
-      "phone": "Phone number",
-      "phone_field_label": "Enter your phone number",
-      "phone_required": "Please enter your phone number.",
-      "phone_invalid": "Please enter a valid phone number.",
-      "request_code": "Request code",
-      "request_code_semantic": "Request code by SMS. Opens the next form.",
-      "privacy_note": "We do not share your number.",
-      "otp_field_label": "Enter the six-digit code",
-      "otp_attempts_left": "{n} attempts remaining",
-      "otp_too_many_attempts": "Too many failed attempts. Please request a new code.",
-      "otp": {
-        "rate_limited": "Too many requests. Please wait a moment."
-      },
-      "verify_phone": {
-        "title": "Enter code",
-        "description": "We sent a code to {phone}.",
-        "submit": "Confirm",
-        "resend": "Request new code"
-      },
-      "verify_semantic": "Confirm code",
-      "login": {
-        "title": "Welcome",
-        "email": "Email address",
-        "password": "Password",
-        "submit": "Sign in",
-        "forgot": "Forgot your password?"
-      },
-      "register": {
-        "title": "Create account",
-        "who_are_you": "Who are you?",
-        "i_need_help": "I am looking for support",
-        "i_want_to_help": "I want to help",
-        "i_support_someone": "I support someone"
-      }
-    },
-    "home": {
-      "greeting": "Hello {name}",
-      "senior": {
-        "request_help": "Request help",
-        "my_activities": "My appointments",
-        "my_groups": "My groups",
-        "my_contacts": "My contacts",
-        "emergency": "Emergency"
-      }
-    },
-    "help": {
-      "create": {
-        "title": "Request help",
-        "what": "What do you need help with?",
-        "when": "When?",
-        "details": "Would you like to add anything?",
-        "details_hint": "For example: third floor, no lift",
-        "review_title": "Is this correct?",
-        "submit": "Yes, send request",
-        "submitted": "Your request is on its way.",
-        "submitted_detail": "We are looking for someone. You will hear from us by tomorrow at the latest."
-      },
-      "category": {
-        "shopping": "Shopping",
-        "doctor": "Doctor's appointment",
-        "authority": "Visit to an authority",
-        "accompaniment": "Company or a walk",
-        "home_small": "Small help at home",
-        "other": "Something else"
-      },
-      "status": {
-        "open": "Looking for someone",
-        "offered": "Asked",
-        "assigned": "Confirmed",
-        "in_progress": "In progress",
-        "completed": "Completed",
-        "cancelled": "Cancelled",
-        "expired": "Expired"
-      },
-      "blocked": {
-        "title": "This needs trained care staff.",
-        "description": "We are not allowed to arrange this. Here are services near you that can.",
-        "other_request": "I would like to request something else instead"
-      },
-      "checkin": "Arrived",
-      "checkout": "Finished",
-      "emergency_detected_msg": "Your text contains indications of an emergency. In case of acute danger, please call emergency services immediately."
-    },
-    "emergency": {
-      "title": "Do you need help right now?",
-      "disclaimer": "Important: The app initiates a direct phone call to official emergency services and does not monitor emergencies itself.",
-      "call_144": "Call 144 (ambulance)",
-      "call_112": "Call 112 (emergency)",
-      "call_confirm_title": "Call {0}?",
-      "call_confirm_desc": "Would you like to call {0} directly at {1} now?",
-      "call_now": "Call now",
-      "call_144_semantic": "Call ambulance 144. Starts an emergency call.",
-      "call_112_semantic": "Call emergency 112. Starts an emergency call.",
-      "call_contacts": "Call my contacts",
-      "no": "No, I do not need emergency help"
-    },
-    "trust": {
-      "title": "Confirmations",
-      "identity_verified": "Identity confirmed",
-      "phone_verified": "Phone confirmed",
-      "address_verified": "Address confirmed",
-      "organization_verified": "Confirmed by {organization}",
-      "training_completed": "Training \"{training}\" completed",
-      "background_checked": "Criminal record certificate checked",
-      "verified_on": "Confirmed on {date}",
-      "missing_title": "Still missing:",
-      "how_to_get_it": "How to get this"
-    },
-    "community": {
-      "groups": "Groups",
-      "create_group": "Start a group",
-      "join": "Join",
-      "leave": "Leave",
-      "members": "{count} of {capacity} places",
-      "next_meeting": "Next meeting: {date}"
-    },
-    "family": {
-      "title": "Relatives",
-      "invite": "Invite a relative",
-      "create_senior_account": "Set up an account for someone",
-      "permissions": "What may this person do?",
-      "permission": {
-        "view_activities": "See my appointments",
-        "view_help_requests": "See my requests",
-        "create_help_requests": "Request help for me",
-        "receive_safety_notifications": "Be notified about important events",
-        "emergency_contact": "Be an emergency contact"
-      },
-      "access_log": "Who saw what?"
-    },
-    "safeguarding": {
-      "report": "Report something",
-      "thanks": "Thank you. A responsible person will take care of it."
-    },
-    "settings": {
-      "title": "Settings",
-      "appearance": "Appearance",
-      "theme": {
-        "system": "As set on the device",
-        "light": "Light",
-        "dark": "Dark",
-        "high_contrast_light": "High contrast (light)",
-        "high_contrast_dark": "High contrast (dark)"
-      },
-      "senior_mode": "Large view",
-      "senior_mode_hint": "Larger text and larger buttons",
-      "language": "Language",
-      "notifications": "Notifications",
-      "my_data": "My data",
-      "privacy": "Privacy"
-    },
-    "profile": {
-      "title": "My profile",
-      "edit": "Edit",
-      "edit_semantic": "Edit profile",
-      "contact": "Contact",
+    "verify_semantic": "Confirm code",
+    "login": {
+      "title": "Welcome",
       "email": "Email address",
-      "email_optional": "Optional",
-      "email_invalid": "Please enter a valid email address.",
-      "display_name": "Display name",
-      "name_required": "Please enter your name.",
-      "interests": "Interests",
-      "interests_coming_soon": "Interests can be added soon.",
-      "languages": "Languages",
-      "languages_coming_soon": "Languages can be added soon."
+      "password": "Password",
+      "submit": "Sign in",
+      "forgot": "Forgot your password?"
     },
-    "empty": {
-      "no_activities": "You do not have any appointments yet.",
-      "no_activities_action": "See groups near you",
-      "no_requests": "There are no requests near you right now.",
-      "no_groups": "There is no group here yet. Start the first one.",
-      "no_interests": "No interests added yet."
-    },
-    "semantic": {
-      "request_help_button": "Request help. Opens the form.",
-      "emergency_button": "Emergency. Opens emergency help.",
-      "back_button": "Back to the previous page."
+    "register": {
+      "title": "Create account",
+      "who_are_you": "Who are you here for?",
+      "i_support_someone": "I want to support someone",
+      "i_need_help": "I need support",
+      "i_am_new_in_austria": "I am new in Austria",
+      "i_want_to_help": "I want to help / join in"
     }
+  },
+  "home": {
+    "greeting": "Hello {name}",
+    "senior": {
+      "request_help": "Request help",
+      "my_activities": "My appointments",
+      "my_groups": "My groups",
+      "my_contacts": "My contacts",
+      "emergency": "Emergency"
+    }
+  },
+  "help": {
+    "create": {
+      "title": "Request help",
+      "what": "What do you need help with?",
+      "when": "When?",
+      "details": "Would you like to add anything?",
+      "details_hint": "For example: third floor, no lift",
+      "review_title": "Is this correct?",
+      "submit": "Yes, send request",
+      "submitted": "Your request is on its way.",
+      "submitted_detail": "We are looking for someone. You will hear from us by tomorrow at the latest."
+    },
+    "category": {
+      "shopping": "Shopping",
+      "doctor": "Doctor's appointment",
+      "authority": "Visit to an authority",
+      "accompaniment": "Company or a walk",
+      "home_small": "Small help at home",
+      "language_practice": "Practice German & language exchange",
+      "newcomer_orientation": "Orientation & settling in",
+      "mentoring": "Mentoring & advice",
+      "other": "Something else"
+    },
+    "status": {
+      "open": "Looking for someone",
+      "offered": "Asked",
+      "assigned": "Confirmed",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "expired": "Expired"
+    },
+    "blocked": {
+      "title": "This needs trained care staff.",
+      "description": "We are not allowed to arrange this. Here are services near you that can.",
+      "other_request": "I would like to request something else instead"
+    },
+    "checkin": "Arrived",
+    "checkout": "Finished",
+    "emergency_detected_msg": "Your text contains indications of an emergency. In case of acute danger, please call emergency services immediately."
+  },
+  "emergency": {
+    "title": "Do you need help right now?",
+    "disclaimer": "Important: The app initiates a direct phone call to official emergency services and does not monitor emergencies itself.",
+    "call_144": "Call 144 (ambulance)",
+    "call_112": "Call 112 (emergency)",
+    "call_confirm_title": "Call {0}?",
+    "call_confirm_desc": "Would you like to call {0} directly at {1} now?",
+    "call_now": "Call now",
+    "call_144_semantic": "Call ambulance 144. Starts an emergency call.",
+    "call_112_semantic": "Call emergency 112. Starts an emergency call.",
+    "call_contacts": "Call my contacts",
+    "no": "No, I do not need emergency help"
+  },
+  "trust": {
+    "title": "Confirmations",
+    "identity_verified": "Identity confirmed",
+    "phone_verified": "Phone confirmed",
+    "address_verified": "Address confirmed",
+    "organization_verified": "Confirmed by {organization}",
+    "training_completed": "Training \"{training}\" completed",
+    "background_checked": "Criminal record certificate checked",
+    "verified_on": "Confirmed on {date}",
+    "missing_title": "Still missing:",
+    "how_to_get_it": "How to get this"
+  },
+  "community": {
+    "title": "Community",
+    "groups": "Groups",
+    "create_group": "Start a group",
+    "join": "Join",
+    "leave": "Leave",
+    "members": "{count} of {capacity} places",
+    "next_meeting": "Next meeting: {date}",
+    "feed_title": "Community & Meetups",
+    "my_appointments": "My Appointments",
+    "join_event": "I want to attend",
+    "cancel_registration": "Cancel Attendance",
+    "confirmed": "Confirmed",
+    "waitlist": "Waitlist",
+    "cancelled": "Cancelled",
+    "starts_soon": "Starts soon",
+    "spots_taken": "spots taken",
+    "attendees": "attendees",
+    "cat_all": "All",
+    "cat_sports": "Sports & Activity",
+    "cat_general": "Meetups & Coffee",
+    "cat_culture": "Culture & Knowledge",
+    "cat_language_practice": "Language Practice",
+    "cat_local_orientation": "Local Orientation"
+  },
+  "family": {
+    "title": "Family",
+    "invite": "Invite a relative",
+    "create_senior_account": "Set up an account for someone",
+    "permissions": "What may this person do?",
+    "permission": {
+      "view_activities": "See my appointments",
+      "view_help_requests": "See my requests",
+      "create_help_requests": "Request help for me",
+      "receive_safety_notifications": "Be notified about important events",
+      "emergency_contact": "Be an emergency contact"
+    },
+    "access_log": "Who saw what?",
+    "dashboard_title": "Family & Caregivers",
+    "access_log_title": "Who saw what?",
+    "access_log_explanation": "Complete transparency: Here you see all access to your data within the last 30 days.",
+    "access_log_link_title": "Access log of the last 30 days",
+    "access_log_link_subtitle": "All activities and actions taken by your relatives are recorded here transparently.",
+    "connected_seniors": "Connected Profiles",
+    "family_member": "Relative",
+    "status_active": "Connected",
+    "request_for_senior": "Request help for senior",
+    "manage_permissions": "Adjust Permissions",
+    "permissions_for": "Permissions for {}",
+    "permissions_saved": "Permissions updated successfully.",
+    "no_logs_found": "No access logs in the last 30 days.",
+    "zugangskarte_banner_title": "Access Card for Relatives",
+    "zugangskarte_banner_desc": "Connect your profile directly with relatives to securely coordinate support.",
+    "transparency_section": "Transparency & Privacy",
+    "perm_view_activities": "View Activities",
+    "perm_view_activities_hint": "Can see upcoming appointments and help requests.",
+    "perm_create_requests": "Create Help Requests",
+    "perm_create_requests_hint": "Can organize support on behalf of the senior.",
+    "perm_view_emergency": "View Emergency Contacts",
+    "perm_view_emergency_hint": "Can view registered emergency contacts.",
+    "perm_safety_alerts": "Safety Alerts",
+    "perm_safety_alerts_hint": "Receives alerts in case of inactivity or unusual events.",
+    "perm_manage_settings": "Manage Settings",
+    "perm_manage_settings_hint": "Can adjust profile settings and permissions.",
+    "log_viewed_activities": "Viewed current help requests.",
+    "log_created_request": "Created a help request for the senior."
+  },
+  "safeguarding": {
+    "report": "Report Concern",
+    "prompt": "Did you notice any safety concerns or unusual situations?",
+    "category": "Category",
+    "cat_general_concern": "General concern",
+    "cat_vulnerability_welfare": "Welfare / Self-neglect",
+    "cat_safety_risk": "Safety risk",
+    "cat_boundary_crossing": "Boundary crossing",
+    "hint": "Describe observations factually...",
+    "thanks": "Thank you for reporting. Our trust & safety team will review this immediately."
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "theme": {
+      "system": "As set on the device",
+      "light": "Light",
+      "dark": "Dark",
+      "high_contrast_light": "High contrast (light)",
+      "high_contrast_dark": "High contrast (dark)"
+    },
+    "senior_mode": "Large view",
+    "senior_mode_hint": "Larger text and larger buttons",
+    "language": "Language",
+    "notifications": "Notifications",
+    "my_data": "My data",
+    "privacy": "Privacy"
+  },
+  "profile": {
+    "title": "My profile",
+    "edit": "Edit",
+    "edit_semantic": "Edit profile",
+    "contact": "Contact",
+    "email": "Email address",
+    "email_optional": "Optional",
+    "email_invalid": "Please enter a valid email address.",
+    "display_name": "Display name",
+    "name_required": "Please enter your name.",
+    "interests": "Interests",
+    "interests_coming_soon": "Interests can be added soon.",
+    "languages": "Languages",
+    "languages_coming_soon": "Languages can be added soon."
+  },
+  "empty": {
+    "no_activities": "You do not have any appointments yet.",
+    "no_activities_action": "See groups near you",
+    "no_requests": "There are no requests near you right now.",
+    "no_groups": "There is no group here yet. Start the first one.",
+    "no_interests": "No interests added yet."
+  },
+  "interest": {
+    "language_exchange": "Language exchange",
+    "local_orientation": "Local orientation",
+    "job_search_support": "Job search support"
+  },
+  "semantic": {
+    "request_help_button": "Request help. Opens the form.",
+    "emergency_button": "Emergency. Opens emergency help.",
+    "back_button": "Back to the previous page."
+  },
+  "protocol": {
+    "title": "First Meeting Protocol",
+    "before_title": "Before the Meeting",
+    "during_title": "During the Meeting",
+    "after_title": "After the Meeting",
+    "understood": "Understood",
+    "before": {
+      "confirm_name_and_time": "Confirm name and time in advance",
+      "agree_meeting_place": "Agree on a clear meeting location",
+      "notify_trusted_person": "Inform a trusted person about the appointment"
+    },
+    "during": {
+      "check_in_app": "Check-in via the app"
+    },
+    "after": {
+      "check_out_app": "Check-out via the app",
+      "confirm_all_in_order_or_report": "Confirm all in order or report any concerns"
+    }
+  },
+  "faq": {
+    "title": "Help & FAQ",
+    "subtitle": "Answers regarding safety, usage and privacy",
+    "search_hint": "Search question or topic...",
+    "intro_banner": "Here you will find plain answers to the most common questions about SeniorConnect.",
+    "q_how_to_request": "How do I request support?",
+    "a_how_to_request": "Tap 'Request Help' on the home screen, select the matching category, and specify when you need support.",
+    "q_safety_trust": "Who are the volunteers?",
+    "a_safety_trust": "All volunteers are registered with verified phone numbers and agreed to our community guidelines. For sensitive tasks, they are additionally verified by local organizations.",
+    "q_family_access": "Can my relatives help me?",
+    "a_family_access": "Yes, with the 'Access Card for Relatives' you can connect trusted family members so they can coordinate requests on your behalf.",
+    "q_notifications": "How many notifications will I receive?",
+    "a_notifications": "We protect your peace of mind: at most 2 non-urgent notifications per day. Night hours (20:00 - 08:00) are quiet hours.",
+    "q_privacy_gdpr": "What happens with my data?",
+    "a_privacy_gdpr": "Your data remains in Switzerland/EU and is never sold to advertisers. You can export or delete your data anytime.",
+    "q_emergency_144": "What should I do in an emergency?",
+    "a_emergency_144": "In case of acute medical emergencies or immediate danger, call 144 (Ambulance) or 112 (General Emergency) immediately.",
+    "need_personal_help": "Need personal assistance?",
+    "personal_help_desc": "Our support team or a local coordination office is happy to assist you.",
+    "contact_support": "Contact Support",
+    "support_contacted": "Thank you. A representative will get in touch."
+  },
+  "privacy": {
+    "export_title": "Data Export & Portability",
+    "export_subtitle": "Copy of all your stored data (GDPR / FADP)",
+    "export_requested": "Your data export is being generated and will be available shortly."
+  },
+  "voice_input": {
+    "title": "Voice Input / Dictation",
+    "start_recording": "Start speaking",
+    "stop_recording": "Stop recording",
+    "listening": "Listening...",
+    "convert_to_request": "Convert to request",
+    "emergency_warning": "Warning: This appears to be an emergency. Please dial 144 or 112 directly.",
+    "nursing_warning": "Medical care services cannot be brokered."
+  },
+  "esg": {
+    "title": "Corporate Volunteering (ESG)",
+    "subtitle": "Volunteering & Social Impact",
+    "total_hours": "Volunteered Hours",
+    "participating_employees": "Participating Employees",
+    "beneficiaries_supported": "People Supported",
+    "download_certificate": "Download ESG Certificate (PDF)"
   }
+}

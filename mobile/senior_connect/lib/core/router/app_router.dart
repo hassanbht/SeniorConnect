@@ -11,13 +11,20 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/onboarding_persona_screen.dart';
 import '../../features/auth/presentation/otp_verify_screen.dart';
 import '../../features/auth/presentation/phone_entry_screen.dart';
+import '../../features/community/presentation/community_feed_screen.dart';
+import '../../features/community/presentation/event_detail_screen.dart';
+import '../../features/community/presentation/my_appointments_screen.dart';
+import '../../features/family/presentation/family_dashboard_screen.dart';
+import '../../features/family/presentation/senior_access_log_screen.dart';
 import '../../features/help_requests/presentation/active_assignment_screen.dart';
 import '../../features/help_requests/presentation/emergency_screen.dart';
 import '../../features/help_requests/presentation/senior_request_flow_screen.dart';
 import '../../features/help_requests/presentation/volunteer_feed_screen.dart';
 import '../../features/organizations/presentation/log_activity_screen.dart';
+import '../../features/profile/presentation/help_faq_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_view_screen.dart';
 import '../../shared/senior/senior_shell.dart';
@@ -25,6 +32,7 @@ import '../network/api_client.dart';
 
 // Route names — use these constants everywhere, never raw strings
 abstract final class AppRoutes {
+  static const onboarding = '/auth/onboarding';
   static const phoneEntry = '/auth/phone';
   static const otpVerify = '/auth/otp';
   static const home = '/';
@@ -35,6 +43,11 @@ abstract final class AppRoutes {
   static const activeAssignment = '/help-requests/active';
   static const emergency = '/emergency';
   static const logActivity = '/activities/log';
+  static const community = '/community';
+  static const myAppointments = '/community/my-appointments';
+  static const family = '/family';
+  static const familyAccessLog = '/family/access-log';
+  static const helpFaq = '/help-faq';
 }
 
 GoRouter buildRouter({required ApiClient apiClient}) {
@@ -51,6 +64,11 @@ GoRouter buildRouter({required ApiClient apiClient}) {
     },
     routes: [
       // ---------- Auth routes (no shell) ------------------------------------
+      GoRoute(
+        path: AppRoutes.onboarding,
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingPersonaScreen(),
+      ),
       GoRoute(
         path: AppRoutes.phoneEntry,
         name: 'phone-entry',
@@ -100,6 +118,31 @@ GoRouter buildRouter({required ApiClient apiClient}) {
             builder: (context, state) => LogActivityScreen(apiClient: apiClient),
           ),
           GoRoute(
+            path: AppRoutes.community,
+            name: 'community',
+            builder: (context, state) => CommunityFeedScreen(apiClient: apiClient),
+          ),
+          GoRoute(
+            path: AppRoutes.myAppointments,
+            name: 'my-appointments',
+            builder: (context, state) => MyAppointmentsScreen(apiClient: apiClient),
+          ),
+          GoRoute(
+            path: AppRoutes.family,
+            name: 'family',
+            builder: (context, state) => FamilyDashboardScreen(apiClient: apiClient),
+          ),
+          GoRoute(
+            path: AppRoutes.familyAccessLog,
+            name: 'family-access-log',
+            builder: (context, state) => SeniorAccessLogScreen(apiClient: apiClient),
+          ),
+          GoRoute(
+            path: AppRoutes.helpFaq,
+            name: 'help-faq',
+            builder: (context, state) => const HelpFaqScreen(),
+          ),
+          GoRoute(
             path: AppRoutes.profile,
             name: 'profile',
             builder: (context, state) => const ProfileViewScreen(),
@@ -145,6 +188,24 @@ class _HomeScreen extends StatelessWidget {
           label: 'Einsatz erfassen',
           semanticLabel: 'Einsatz erfassen',
           onTap: () => context.push(AppRoutes.logActivity),
+        ),
+        SeniorAction(
+          icon: Icons.groups_outlined,
+          label: 'community.title'.tr(),
+          semanticLabel: 'community.title'.tr(),
+          onTap: () => context.push(AppRoutes.community),
+        ),
+        SeniorAction(
+          icon: Icons.calendar_month_outlined,
+          label: 'community.my_appointments'.tr(),
+          semanticLabel: 'community.my_appointments'.tr(),
+          onTap: () => context.push(AppRoutes.myAppointments),
+        ),
+        SeniorAction(
+          icon: Icons.family_restroom_outlined,
+          label: 'family.title'.tr(),
+          semanticLabel: 'family.title'.tr(),
+          onTap: () => context.push(AppRoutes.family),
         ),
         SeniorAction(
           icon: Icons.person_outline,

@@ -51,6 +51,12 @@ public sealed record BuddyStatusDto(
 public sealed record WaiveBuddyRequest(
     string Reason);
 
+// --- Phase 4: First Meeting Protocol ---
+public sealed record FirstMeetingProtocolDto(
+    IReadOnlyList<string> BeforeMeetingChecklist,
+    IReadOnlyList<string> DuringMeetingChecklist,
+    IReadOnlyList<string> AfterMeetingChecklist);
+
 // --- Phase 4: Key Custody ---
 public sealed record KeyCustodyDto(
     Guid Id,

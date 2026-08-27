@@ -18,6 +18,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
+import 'widgets/safeguarding_concern_dialog.dart';
 
 class ActiveAssignmentScreen extends StatefulWidget {
   const ActiveAssignmentScreen({
@@ -109,18 +110,10 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
   }
 
   void _reportSafeguardingConcern() {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('safeguarding.report'.tr()),
-        content: Text('safeguarding.thanks'.tr()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('common.close'.tr()),
-          ),
-        ],
-      ),
+    SafeguardingConcernDialog.show(
+      context,
+      subjectUserId: widget.assignmentId ?? 'unknown',
+      apiClient: widget.apiClient,
     );
   }
 
@@ -197,7 +190,7 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                       color: _isCheckedIn
                           ? theme.colorScheme.tertiaryContainer
                           : theme.colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(AppRadius.card),
+                      borderRadius: AppRadius.card,
                     ),
                     child: Row(
                       children: [
@@ -230,7 +223,7 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.card),
+                      borderRadius: AppRadius.card,
                       side: BorderSide(color: theme.colorScheme.outlineVariant),
                     ),
                     child: Padding(
@@ -245,10 +238,9 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                                 backgroundColor: theme.colorScheme.primaryContainer,
                                 child: Text(
                                   _seniorName.isNotEmpty ? _seniorName[0] : 'S',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onPrimaryContainer,
                                   ),
                                 ),
                               ),
@@ -259,7 +251,7 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                                   children: [
                                     Text(
                                       _seniorName,
-                                      style: theme.textTheme.titleMedium?.copyWith(
+                                      style: theme.textTheme.titleLarge?.copyWith(
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -276,14 +268,13 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                           ),
                           const Divider(height: AppSpacing.xl),
 
-                          // Phone button
+                          // Phone Call Action
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: Icon(Icons.phone, color: theme.colorScheme.primary),
                             title: Text(_seniorPhone),
-                            trailing: OutlinedButton.icon(
-                              icon: const Icon(Icons.call, size: 16),
-                              label: const Text('Anrufen'),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.call),
                               onPressed: () => _makeCall(_seniorPhone),
                             ),
                           ),
@@ -302,7 +293,7 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                               padding: const EdgeInsetsDirectional.all(AppSpacing.md),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(AppRadius.card),
+                                borderRadius: AppRadius.card,
                               ),
                               child: Text(
                                 _notes,
@@ -322,7 +313,6 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                       label: 'help.checkin'.tr() + ' (Angekommen)',
                       icon: Icons.login,
                       isLoading: _isActionInProgress,
-                      minHeight: 64,
                       onPressed: _handleCheckIn,
                     )
                   else
@@ -330,7 +320,6 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                       label: 'help.checkout'.tr() + ' (Abschließen)',
                       icon: Icons.check_circle,
                       isLoading: _isActionInProgress,
-                      minHeight: 64,
                       variant: AppButtonVariant.primary,
                       onPressed: _handleComplete,
                     ),

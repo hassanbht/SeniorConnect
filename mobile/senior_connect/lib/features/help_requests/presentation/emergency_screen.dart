@@ -66,10 +66,10 @@ class EmergencyScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Padding(
-              padding: const EdgeInsetsDirectional.all(AppSpacing.lg),
+          child: SingleChildScrollView(
+            padding: const EdgeInsetsDirectional.all(AppSpacing.lg),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -102,8 +102,8 @@ class EmergencyScreen extends StatelessWidget {
                   AppButton(
                     label: 'emergency.call_144'.tr(),
                     icon: Icons.phone_in_talk,
-                    variant: AppButtonVariant.danger,
-                    minHeight: 72,
+                    variant: AppButtonVariant.emergency,
+                    confirmationText: 'emergency.call_confirm_desc'.tr(args: ['Rettung', '144']),
                     semanticLabel: 'emergency.call_144_semantic'.tr(),
                     onPressed: () => _makePhoneCall(context, '144', 'Rettung (144)'),
                   ),
@@ -113,8 +113,8 @@ class EmergencyScreen extends StatelessWidget {
                   AppButton(
                     label: 'emergency.call_112'.tr(),
                     icon: Icons.local_hospital,
-                    variant: AppButtonVariant.danger,
-                    minHeight: 72,
+                    variant: AppButtonVariant.emergency,
+                    confirmationText: 'emergency.call_confirm_desc'.tr(args: ['Euro-Notruf', '112']),
                     semanticLabel: 'emergency.call_112_semantic'.tr(),
                     onPressed: () => _makePhoneCall(context, '112', 'Euro-Notruf (112)'),
                   ),
@@ -125,7 +125,7 @@ class EmergencyScreen extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(60),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.button),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
                       ),
                     ),
                     onPressed: () => Navigator.of(context).maybePop(),

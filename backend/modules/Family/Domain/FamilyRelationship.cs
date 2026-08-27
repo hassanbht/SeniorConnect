@@ -55,9 +55,12 @@ public sealed class FamilyRelationship
             ConfirmedAtUtc = DateTimeOffset.UtcNow
         };
 
-        // Add default basic permissions
-        rel._permissions.Add(new FamilyPermission(rel.Id, PermissionType.ViewActivities, true));
-        rel._permissions.Add(new FamilyPermission(rel.Id, PermissionType.ReceiveSafetyAlerts, true));
+        // Initialize all permissions with defaults
+        foreach (PermissionType p in Enum.GetValues<PermissionType>())
+        {
+            var isDefault = p == PermissionType.ViewActivities || p == PermissionType.ReceiveSafetyAlerts;
+            rel._permissions.Add(new FamilyPermission(rel.Id, p, isDefault));
+        }
 
         return rel;
     }
@@ -79,6 +82,12 @@ public sealed class FamilyRelationship
             InvitationExpiresAtUtc = expiresAtUtc,
             CreatedAtUtc = DateTimeOffset.UtcNow
         };
+
+        foreach (PermissionType p in Enum.GetValues<PermissionType>())
+        {
+            var isDefault = p == PermissionType.ViewActivities || p == PermissionType.ReceiveSafetyAlerts;
+            rel._permissions.Add(new FamilyPermission(rel.Id, p, isDefault));
+        }
 
         return rel;
     }
@@ -102,8 +111,11 @@ public sealed class FamilyRelationship
 
         if (_permissions.Count == 0)
         {
-            _permissions.Add(new FamilyPermission(Id, PermissionType.ViewActivities, true));
-            _permissions.Add(new FamilyPermission(Id, PermissionType.ReceiveSafetyAlerts, true));
+            foreach (PermissionType p in Enum.GetValues<PermissionType>())
+            {
+                var isDefault = p == PermissionType.ViewActivities || p == PermissionType.ReceiveSafetyAlerts;
+                _permissions.Add(new FamilyPermission(Id, p, isDefault));
+            }
         }
 
         return Result.Success();

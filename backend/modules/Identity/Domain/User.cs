@@ -3,7 +3,7 @@ using SeniorConnect.Domain;
 namespace SeniorConnect.Modules.Identity.Domain;
 
 /// <summary>
-/// Core user entity. A user may hold both SeniorProfile and VolunteerProfile.
+/// Core user entity. A user may hold both SupportProfile and VolunteerProfile.
 /// Password is ONLY for organization staff (ADR-016 / BR-AUTH-01..03).
 /// </summary>
 public sealed class User : Entity, IAuditable, ISoftDeletable
@@ -183,6 +183,18 @@ public sealed class User : Entity, IAuditable, ISoftDeletable
 
     public void SoftDelete()
     {
+        IsDeleted = true;
+        Status = UserStatus.Deleted;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
+    public void AnonymizeForGdpr()
+    {
+        DisplayName = "Gelöschtes Profil";
+        Email = null;
+        Phone = null;
+        DateOfBirth = null;
+        PasswordHash = null;
         IsDeleted = true;
         Status = UserStatus.Deleted;
         UpdatedAtUtc = DateTimeOffset.UtcNow;

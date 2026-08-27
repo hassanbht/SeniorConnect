@@ -245,18 +245,20 @@ class _VolunteerFeedScreenState extends State<VolunteerFeedScreen> {
 
   Widget _buildBody(ThemeData theme) {
     if (_isLoading) {
-      return const AppLoadingState();
+      return AppLoading(message: 'common.loading'.tr());
     }
 
     if (_errorMessage != null) {
-      return AppErrorState(
+      return AppErrorView(
         message: _errorMessage!,
+        retryLabel: 'common.retry'.tr(),
         onRetry: _loadFeed,
       );
     }
 
     if (_requests.isEmpty) {
       return AppEmptyState(
+        icon: Icons.inbox_outlined,
         message: 'empty.no_requests'.tr(),
         actionLabel: 'common.retry'.tr(),
         onAction: _loadFeed,
@@ -339,7 +341,7 @@ class _RequestCard extends StatelessWidget {
           ? theme.colorScheme.surfaceContainerLow
           : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        borderRadius: AppRadius.card,
         side: BorderSide(
           color: isEligible
               ? theme.colorScheme.outlineVariant
@@ -362,7 +364,7 @@ class _RequestCard extends StatelessWidget {
                     color: isEligible
                         ? theme.colorScheme.primaryContainer
                         : theme.colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(AppRadius.chip),
+                    borderRadius: AppRadius.chip,
                   ),
                   child: Text(
                     item.categoryName,

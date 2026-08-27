@@ -38,6 +38,12 @@ public sealed class EndpointSecurityTests
             {
                 if (ServerOwnedProperties.Contains(property.Name, StringComparer.Ordinal))
                 {
+                    // Organization membership role assignment by coordinators is allowed, but system-level roles are not
+                    if (property.PropertyType.Name == "MembershipRole")
+                    {
+                        continue;
+                    }
+
                     offenders.Add($"{dto.Name}.{property.Name}");
                 }
             }

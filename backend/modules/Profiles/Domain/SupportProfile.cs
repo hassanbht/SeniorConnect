@@ -2,9 +2,14 @@ using SeniorConnect.Domain;
 
 namespace SeniorConnect.Modules.Profiles.Domain;
 
-public sealed class SeniorProfile : Entity, IAuditable
+/// <summary>
+/// SupportProfile (formerly SeniorProfile, generalized per ADR-018).
+/// Models anyone receiving everyday support: seniors, newcomers, isolated families,
+/// or people with disabilities.
+/// </summary>
+public sealed class SupportProfile : Entity, IAuditable
 {
-    private SeniorProfile() { }
+    private SupportProfile() { }
 
     [DataClass(DataClass.Operational)]
     public Guid UserId { get; private set; }
@@ -57,7 +62,7 @@ public sealed class SeniorProfile : Entity, IAuditable
     [DataClass(DataClass.Operational)]
     public Guid? UpdatedBy { get; private set; }
 
-    public static SeniorProfile Create(
+    public static SupportProfile Create(
         Guid userId,
         string? addressLine = null,
         string? postalCode = null,
@@ -70,7 +75,7 @@ public sealed class SeniorProfile : Entity, IAuditable
         Guid? createdBy = null)
     {
         var now = DateTimeOffset.UtcNow;
-        return new SeniorProfile
+        return new SupportProfile
         {
             Id = Guid.CreateVersion7(),
             UserId = userId,

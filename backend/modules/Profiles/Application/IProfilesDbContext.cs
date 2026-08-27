@@ -5,7 +5,7 @@ namespace SeniorConnect.Modules.Profiles.Application;
 
 public interface IProfilesDbContext
 {
-    DbSet<SeniorProfile> SeniorProfiles { get; }
+    DbSet<SupportProfile> SupportProfiles { get; }
     DbSet<VolunteerProfile> VolunteerProfiles { get; }
     DbSet<Interest> Interests { get; }
     DbSet<Language> Languages { get; }

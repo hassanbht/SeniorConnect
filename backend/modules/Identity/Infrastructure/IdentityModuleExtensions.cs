@@ -17,6 +17,8 @@ public static class IdentityModuleExtensions
         services.AddScoped<ICapabilityService, CapabilityService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IPrivacyService, PrivacyService>();
+        services.AddScoped<IIdentityVerificationProvider, ManualVerificationProvider>();
+        services.AddScoped<IIdentityVerificationProvider, OrganizationVerificationProvider>();
 
         return services;
     }

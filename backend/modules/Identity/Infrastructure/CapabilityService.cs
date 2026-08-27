@@ -26,6 +26,9 @@ public sealed class CapabilityService : ICapabilityService
             capabilities.Add("CreateHelpRequest");
             capabilities.Add("JoinPublicEvent");
             capabilities.Add("CreateCommunityGroup");
+            capabilities.Add("ManageSupportProfile");
+            capabilities.Add("ViewSupportedPersonActivities");
+            capabilities.Add("ViewSupportedPersonHelpRequests");
 
             // Derived safety capabilities from trust level
             if (currentTrustLevel >= 1) capabilities.Add("PerformSafetyLevel1");
@@ -35,7 +38,7 @@ public sealed class CapabilityService : ICapabilityService
             if (currentTrustLevel >= 5) capabilities.Add("PerformSafetyLevel5");
         }
 
-        // Fetch unexpired granted capabilities
+        // Fetch unexpired granted capabilities (P4-04: PerformSafetyLevel* can NEVER be hand-granted)
         var now = DateTimeOffset.UtcNow;
         var grantedCapabilities = await _db.UserCapabilities
             .Where(c => c.UserId == user.Id && (c.ExpiresAtUtc == null || c.ExpiresAtUtc > now))
@@ -44,7 +47,10 @@ public sealed class CapabilityService : ICapabilityService
 
         foreach (var cap in grantedCapabilities)
         {
-            capabilities.Add(cap);
+            if (!cap.StartsWith("PerformSafetyLevel", StringComparison.OrdinalIgnoreCase))
+            {
+                capabilities.Add(cap);
+            }
         }
 
         return capabilities.ToList();

@@ -4,15 +4,15 @@ using SeniorConnect.Modules.Profiles.Domain;
 
 namespace SeniorConnect.Modules.Profiles.Infrastructure;
 
-public sealed class SeniorProfileConfiguration : IEntityTypeConfiguration<SeniorProfile>
+public sealed class SupportProfileConfiguration : IEntityTypeConfiguration<SupportProfile>
 {
-    public void Configure(EntityTypeBuilder<SeniorProfile> builder)
+    public void Configure(EntityTypeBuilder<SupportProfile> builder)
     {
-        builder.ToTable("senior_profiles", t =>
+        builder.ToTable("support_profiles", t =>
         {
-            t.HasCheckConstraint("ck_senior_contact_method", "preferred_contact_method IN ('app','phone','sms','family')");
-            t.HasCheckConstraint("ck_senior_vulnerability_reason", "NOT vulnerability_flag OR vulnerability_reason IS NOT NULL");
-            t.HasCheckConstraint("ck_senior_geo_pair", "(latitude IS NULL) = (longitude IS NULL)");
+            t.HasCheckConstraint("ck_support_contact_method", "preferred_contact_method IN ('app','phone','sms','family')");
+            t.HasCheckConstraint("ck_support_vulnerability_reason", "NOT vulnerability_flag OR vulnerability_reason IS NOT NULL");
+            t.HasCheckConstraint("ck_support_geo_pair", "(latitude IS NULL) = (longitude IS NULL)");
         });
 
         builder.HasKey(s => s.Id);
@@ -37,11 +37,11 @@ public sealed class SeniorProfileConfiguration : IEntityTypeConfiguration<Senior
         builder.Property(s => s.UpdatedBy).HasColumnName("updated_by");
 
         builder.HasIndex(s => new { s.Latitude, s.Longitude })
-            .HasDatabaseName("ix_senior_profiles_geo")
+            .HasDatabaseName("ix_support_profiles_geo")
             .HasFilter("latitude IS NOT NULL");
 
         builder.HasIndex(s => s.PostalCode)
-            .HasDatabaseName("ix_senior_profiles_postal");
+            .HasDatabaseName("ix_support_profiles_postal");
     }
 }
 

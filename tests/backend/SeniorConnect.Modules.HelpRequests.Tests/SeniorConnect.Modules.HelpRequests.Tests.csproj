@@ -24,6 +24,8 @@
     <ProjectReference Include="..\..\..\backend\modules\Community\SeniorConnect.Modules.Community.csproj" />
     <ProjectReference Include="..\..\..\backend\modules\Family\SeniorConnect.Modules.Family.csproj" />
     <ProjectReference Include="..\..\..\backend\modules\Notifications\SeniorConnect.Modules.Notifications.csproj" />
+    <ProjectReference Include="..\..\..\backend\modules\Matching\SeniorConnect.Modules.Matching.csproj" />
+    <ProjectReference Include="..\..\..\backend\modules\Reporting\SeniorConnect.Modules.Reporting.csproj" />
     <ProjectReference Include="..\..\..\backend\SeniorConnect.Infrastructure\SeniorConnect.Infrastructure.csproj" />
   </ItemGroup>
 

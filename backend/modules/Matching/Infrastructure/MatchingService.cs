@@ -54,7 +54,7 @@ public sealed class MatchingService : IMatchingService
 
             var ineligibility = new List<string>();
 
-            // Calculate distance
+            // Calculate spatial distance
             double distanceKm = 5.0; // default if coordinates not set
             if (v.Latitude.HasValue && v.Longitude.HasValue && request.Latitude.HasValue && request.Longitude.HasValue)
             {
@@ -150,6 +150,69 @@ public sealed class MatchingService : IMatchingService
         }
 
         return Result<IReadOnlyList<VolunteerFeedItem>>.Success(items);
+    }
+
+    public async Task<Result<IReadOnlyList<HybridMatchingProposal>>> GetHybridProposalsAsync(
+        HybridMatchingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var helpRequest = await _helpDb.HelpRequests
+            .FirstOrDefaultAsync(r => r.Id == request.HelpRequestId && !r.IsDeleted, cancellationToken);
+
+        if (helpRequest is null)
+        {
+            return Error.NotFound("HelpRequest");
+        }
+
+        var candidatesResult = await FindCandidatesAsync(request.HelpRequestId, null, cancellationToken);
+        if (candidatesResult.IsFailure) return candidatesResult.Error!;
+
+        var eligibleCandidates = candidatesResult.Value!.Where(c => c.IsEligible).ToList();
+        var proposals = new List<HybridMatchingProposal>();
+
+        // Per ADR-014: AI proposes, humans decide. Any Safety Level 3+ requires manual human coordinator approval.
+        var requiresManualApproval = helpRequest.RequiredSafetyLevel >= 3;
+
+        foreach (var candidate in eligibleCandidates)
+        {
+            // Historical completion rate estimation
+            var pastTotal = await _helpDb.Activities
+                .CountAsync(a => a.VolunteerUserId == candidate.VolunteerUserId, cancellationToken);
+
+            var pastConfirmed = await _helpDb.Activities
+                .CountAsync(a => a.VolunteerUserId == candidate.VolunteerUserId && a.Status == ActivityStatus.Confirmed, cancellationToken);
+
+            double completionProbability = pastTotal > 0
+                ? (double)pastConfirmed / pastTotal
+                : candidate.ReliabilityScore;
+
+            completionProbability = Math.Clamp(completionProbability, 0.40, 0.99);
+
+            // Combined hybrid score: 65% rule-based + 35% completion probability
+            double combinedScore = Math.Round((candidate.TotalScore * 0.65) + (completionProbability * 0.35), 3);
+
+            if (combinedScore < request.MinConfidenceThreshold) continue;
+
+            string aiReason = candidate.IsPriorMatch
+                ? string.Format(CultureInfo.InvariantCulture, "High continuity preference: previously completed activities for this beneficiary. Predicted completion: {0:P0}", completionProbability)
+                : string.Format(CultureInfo.InvariantCulture, "Optimal proximity ({0:F1} km) and active reliability. Predicted completion: {1:P0}", candidate.DistanceKm, completionProbability);
+
+            proposals.Add(new HybridMatchingProposal(
+                HelpRequestId: helpRequest.Id,
+                CandidateVolunteerUserId: candidate.VolunteerUserId,
+                CombinedScore: combinedScore,
+                RuleBasedScore: candidate.TotalScore,
+                PredictedCompletionProbability: Math.Round(completionProbability, 2),
+                Breakdown: candidate.Breakdown,
+                AiRecommendationReason: aiReason,
+                RequiresManualCoordinatorApproval: requiresManualApproval));
+        }
+
+        var sortedProposals = proposals
+            .OrderByDescending(p => p.CombinedScore)
+            .ToList();
+
+        return Result<IReadOnlyList<HybridMatchingProposal>>.Success(sortedProposals);
     }
 
     private static double CalculateDistanceKm(double lat1, double lon1, double lat2, double lon2)

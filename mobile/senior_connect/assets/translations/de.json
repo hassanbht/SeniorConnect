@@ -57,10 +57,11 @@
     },
     "register": {
       "title": "Konto erstellen",
-      "who_are_you": "Wer sind Sie?",
-      "i_need_help": "Ich suche Unterstützung",
-      "i_want_to_help": "Ich möchte helfen",
-      "i_support_someone": "Ich unterstütze jemanden"
+      "who_are_you": "Für wen sind Sie hier?",
+      "i_support_someone": "Ich möchte jemanden unterstützen",
+      "i_need_help": "Ich brauche Unterstützung",
+      "i_am_new_in_austria": "Ich bin neu in Österreich",
+      "i_want_to_help": "Ich möchte helfen / mitmachen"
     }
   },
   "home": {
@@ -91,6 +92,9 @@
       "authority": "Behördengang",
       "accompaniment": "Begleitung oder Spaziergang",
       "home_small": "Kleine Hilfe zu Hause",
+      "language_practice": "Deutsch üben & Sprachaustausch",
+      "newcomer_orientation": "Orientierung & Ankommen",
+      "mentoring": "Mentoring & Beratung",
       "other": "Etwas anderes"
     },
     "status": {
@@ -137,12 +141,29 @@
     "how_to_get_it": "So bekommen Sie das"
   },
   "community": {
+    "title": "Gemeinschaft",
     "groups": "Gruppen",
     "create_group": "Gruppe gründen",
     "join": "Mitmachen",
     "leave": "Nicht mehr mitmachen",
     "members": "{count} von {capacity} Plätzen",
-    "next_meeting": "Nächstes Treffen: {date}"
+    "next_meeting": "Nächstes Treffen: {date}",
+    "feed_title": "Gemeinschaft & Treffen",
+    "my_appointments": "Meine Termine",
+    "join_event": "Ich nehme teil",
+    "cancel_registration": "Abmelden",
+    "confirmed": "Angemeldet",
+    "waitlist": "Warteliste",
+    "cancelled": "Abgesagt",
+    "starts_soon": "Beginnt bald",
+    "spots_taken": "Plätze belegt",
+    "attendees": "Teilnehmende",
+    "cat_all": "Alle",
+    "cat_sports": "Sport & Bewegung",
+    "cat_general": "Treffen & Plaudern",
+    "cat_culture": "Kultur & Wissen",
+    "cat_language_practice": "Sprachpraxis",
+    "cat_local_orientation": "Orientierung"
   },
   "family": {
     "title": "Angehörige",
@@ -156,11 +177,46 @@
       "receive_safety_notifications": "Bei wichtigen Ereignissen benachrichtigt werden",
       "emergency_contact": "Notfallkontakt sein"
     },
-    "access_log": "Wer hat was gesehen?"
+    "access_log": "Wer hat was gesehen?",
+    "dashboard_title": "Familie & Angehörige",
+    "access_log_title": "Wer hat was gesehen?",
+    "access_log_explanation": "Vollständige Transparenz: Hier sehen Sie alle Zugriffe auf Ihre Daten der letzten 30 Tage.",
+    "access_log_link_title": "Zugriffsprotokoll der letzten 30 Tage",
+    "access_log_link_subtitle": "Alle Aktivitäten und Einsichten Ihrer Angehörigen sind hier transparent dokumentiert.",
+    "connected_seniors": "Verbundene Profile",
+    "family_member": "Angehöriger",
+    "status_active": "Aktiv verbunden",
+    "request_for_senior": "Hilfe für Senior anfragen",
+    "manage_permissions": "Berechtigungen anpassen",
+    "permissions_for": "Berechtigungen für {}",
+    "permissions_saved": "Berechtigungen erfolgreich aktualisiert.",
+    "no_logs_found": "Keine Zugriffseinträge in den letzten 30 Tagen.",
+    "zugangskarte_banner_title": "Zugangskarte für Angehörige",
+    "zugangskarte_banner_desc": "Verbinden Sie Ihr Profil direkt mit Ihren Angehörigen, um Unterstützung sicher zu koordinieren.",
+    "transparency_section": "Transparenz & Datenschutz",
+    "perm_view_activities": "Aktivitäten einsehen",
+    "perm_view_activities_hint": "Darf Termine und Hilfeanfragen des Seniors sehen.",
+    "perm_create_requests": "Hilfeanfragen erstellen",
+    "perm_create_requests_hint": "Darf im Namen des Seniors Unterstützung organisieren.",
+    "perm_view_emergency": "Notfallkontakte einsehen",
+    "perm_view_emergency_hint": "Darf hinterlegte Notfallkontakte einsehen.",
+    "perm_safety_alerts": "Sicherheitsbenachrichtigungen",
+    "perm_safety_alerts_hint": "Wird bei Inaktivität oder Auffälligkeiten informiert.",
+    "perm_manage_settings": "Einstellungen verwalten",
+    "perm_manage_settings_hint": "Darf Einstellungen und Berechtigungen anpassen.",
+    "log_viewed_activities": "Hat die aktuellen Hilfeanfragen eingesehen.",
+    "log_created_request": "Hat eine Hilfeanfrage für den Senior erstellt."
   },
   "safeguarding": {
-    "report": "Etwas melden",
-    "thanks": "Danke. Eine zuständige Person kümmert sich darum."
+    "report": "Bedenken melden",
+    "prompt": "Haben Sie Auffälligkeiten oder Sicherheitsbedenken bemerkt?",
+    "category": "Kategorie",
+    "cat_general_concern": "Allgemeines Bedenken",
+    "cat_vulnerability_welfare": "Wohlbefinden / Selbstvernachlässigung",
+    "cat_safety_risk": "Sicherheitsrisiko",
+    "cat_boundary_crossing": "Grenzüberschreitung",
+    "hint": "Beschreiben Sie die Beobachtung sachlich...",
+    "thanks": "Vielen Dank für Ihre Meldung. Unser Vertrauensteam prüft diese umgehend."
   },
   "settings": {
     "title": "Einstellungen",
@@ -201,9 +257,77 @@
     "no_groups": "Hier gibt es noch keine Gruppe. Gründen Sie die erste.",
     "no_interests": "Noch keine Interessen hinzugefügt."
   },
+  "interest": {
+    "language_exchange": "Sprachaustausch",
+    "local_orientation": "Lokale Orientierung",
+    "job_search_support": "Unterstützung bei der Arbeitssuche"
+  },
   "semantic": {
     "request_help_button": "Hilfe anfragen. Öffnet das Formular.",
     "emergency_button": "Notfall. Öffnet die Notfallhilfe.",
     "back_button": "Zurück zur vorherigen Seite."
+  },
+  "protocol": {
+    "title": "Erstgesprächs-Leitfaden",
+    "before_title": "Vor dem Treffen",
+    "during_title": "Während des Treffens",
+    "after_title": "Nach dem Treffen",
+    "understood": "Verstanden",
+    "before": {
+      "confirm_name_and_time": "Name und Uhrzeit vorab bestätigen",
+      "agree_meeting_place": "Treffpunkt genau vereinbaren",
+      "notify_trusted_person": "Eine Vertrauensperson über den Termin informieren"
+    },
+    "during": {
+      "check_in_app": "In der App einchecken"
+    },
+    "after": {
+      "check_out_app": "In der App auschecken",
+      "confirm_all_in_order_or_report": "Alles in Ordnung bestätigen oder Auffälligkeiten melden"
+    }
+  },
+  "faq": {
+    "title": "Hilfe & Häufige Fragen",
+    "subtitle": "Antworten zu Sicherheit, Bedienung und Datenschutz",
+    "search_hint": "Frage oder Thema suchen...",
+    "intro_banner": "Hier finden Sie einfache Antworten auf die wichtigsten Fragen zur Nutzung von SeniorConnect.",
+    "q_how_to_request": "Wie frage ich nach Unterstützung?",
+    "a_how_to_request": "Tippen Sie auf 'Hilfe anfragen' auf der Startseite, wählen Sie die passende Kategorie und geben Sie an, wann Sie Unterstützung benötigen.",
+    "q_safety_trust": "Wer sind die freiwilligen Helferinnen und Helfer?",
+    "a_safety_trust": "Alle Helfenden sind mit geprüfter Telefonnummer registriert und haben unsere Vertrauensrichtlinien bestätigt. Bei sensiblen Aufgaben sind sie zusätzlich von lokalen Organisationen verifiziert.",
+    "q_family_access": "Können meine Angehörigen mir helfen?",
+    "a_family_access": "Ja, über die 'Zugangskarte für Angehörige' können Sie vertraute Familienmitglieder verbinden, damit diese in Ihrem Namen Anfragen erstellen können.",
+    "q_notifications": "Wie viele Benachrichtigungen erhalte ich?",
+    "a_notifications": "Wir schützen Ihre Ruhe: Sie erhalten maximal 2 nicht-dringende Benachrichtigungen pro Tag. Nachts (20:00 - 08:00) herrscht Ruhezeit.",
+    "q_privacy_gdpr": "Was passiert mit meinen Daten?",
+    "a_privacy_gdpr": "Ihre Daten bleiben in der Schweiz/EU und werden niemals an Werbepartner weitergegeben. Sie können Ihre Daten jederzeit exportieren oder löschen.",
+    "q_emergency_144": "Was tue ich bei einem echten Notfall?",
+    "a_emergency_144": "Bei akuten medizinischen Notfällen oder Gefahr wählen Sie bitte sofort die Notrufnummer 144 (Sanität) oder 112 (Allgemeiner Notruf).",
+    "need_personal_help": "Brauchen Sie persönliche Hilfe?",
+    "personal_help_desc": "Unser Support-Team oder eine lokale Koordinationsstelle hilft Ihnen gerne weiter.",
+    "contact_support": "Kundendienst kontaktieren",
+    "support_contacted": "Vielen Dank. Ein Ansprechpartner meldet sich bei Ihnen."
+  },
+  "privacy": {
+    "export_title": "Datenauskunft & Export",
+    "export_subtitle": "Kopie aller Ihrer gespeicherten Daten (GDPR / DSG)",
+    "export_requested": "Der Datenexport wird vorbereitet und steht in Kürze bereit."
+  },
+  "voice_input": {
+    "title": "Sprachaufnahme / Vorlesen",
+    "start_recording": "Sprechen starten",
+    "stop_recording": "Aufnahme beenden",
+    "listening": "Ich höre zu...",
+    "convert_to_request": "In Anfrage umwandeln",
+    "emergency_warning": "Achtung: Dies scheint ein Notfall zu sein. Bitte wählen Sie direkt 144 oder 112.",
+    "nursing_warning": "Pflegerische Tätigkeiten dürfen nicht vermittelt werden."
+  },
+  "esg": {
+    "title": "Unternehmensengagement (ESG)",
+    "subtitle": "Freiwilligenarbeit & Gesellschaftlicher Beitrag",
+    "total_hours": "Geleistete Stunden",
+    "participating_employees": "Teilnehmende Mitarbeiter:innen",
+    "beneficiaries_supported": "Unterstützte Personen",
+    "download_certificate": "ESG-Zertifikat herunterladen (PDF)"
   }
 }

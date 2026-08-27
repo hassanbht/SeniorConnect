@@ -7,9 +7,9 @@ namespace SeniorConnect.Modules.TrustSafety.Infrastructure;
 
 public sealed class SafeguardingService : ISafeguardingService
 {
-    private readonly ITrustSafetyDbContext _db;
+    private readonly ISafeguardingDbContext _db;
 
-    public SafeguardingService(ITrustSafetyDbContext db)
+    public SafeguardingService(ISafeguardingDbContext db)
     {
         _db = db;
     }
