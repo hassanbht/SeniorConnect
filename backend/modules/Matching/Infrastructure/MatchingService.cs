@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using SeniorConnect.Domain;
 using SeniorConnect.Modules.HelpRequests.Application;
 using SeniorConnect.Modules.HelpRequests.Domain;
+using SeniorConnect.Modules.Identity.Contracts;
 using SeniorConnect.Modules.Matching.Application;
 using SeniorConnect.Modules.Matching.Domain;
 using SeniorConnect.Modules.Profiles.Application;
+using SeniorConnect.Modules.TrustSafety.Contracts;
 
 namespace SeniorConnect.Modules.Matching.Infrastructure;
 
@@ -13,11 +15,19 @@ public sealed class MatchingService : IMatchingService
 {
     private readonly IHelpRequestsDbContext _helpDb;
     private readonly IProfilesDbContext _profileDb;
+    private readonly ITrustLevelReader _trustLevelReader;
+    private readonly ISafetyBoundaryReader _safetyBoundaryReader;
 
-    public MatchingService(IHelpRequestsDbContext helpDb, IProfilesDbContext profileDb)
+    public MatchingService(
+        IHelpRequestsDbContext helpDb,
+        IProfilesDbContext profileDb,
+        ITrustLevelReader trustLevelReader,
+        ISafetyBoundaryReader safetyBoundaryReader)
     {
         _helpDb = helpDb;
         _profileDb = profileDb;
+        _trustLevelReader = trustLevelReader;
+        _safetyBoundaryReader = safetyBoundaryReader;
     }
 
     public async Task<Result<IReadOnlyList<MatchingCandidate>>> FindCandidatesAsync(
@@ -39,6 +49,14 @@ public sealed class MatchingService : IMatchingService
             .Where(v => v.IsAcceptingRequests)
             .ToListAsync(cancellationToken);
 
+        var volunteerUserIds = volunteers.Select(v => v.UserId).ToList();
+
+        // P4-16: Query blocked relationships
+        var blockedVolunteerIds = await _safetyBoundaryReader.GetBlockedUserIdsAsync(request.SeniorUserId, volunteerUserIds, cancellationToken);
+
+        // P4-06: Query latest verified trust level snapshots
+        var latestSnapshots = await _trustLevelReader.GetEffectiveTrustLevelsAsync(volunteerUserIds, cancellationToken);
+
         // Find prior activities with this senior for continuity scoring
         var priorVolunteerIds = await _helpDb.Activities
             .Where(a => a.SubjectUserId == request.SeniorUserId && a.Status == ActivityStatus.Confirmed)
@@ -51,8 +69,16 @@ public sealed class MatchingService : IMatchingService
         foreach (var v in volunteers)
         {
             if (v.UserId == request.SeniorUserId) continue; // Senior cannot volunteer for themselves
+            if (blockedVolunteerIds.Contains(v.UserId)) continue; // P4-16: Exclude blocked users entirely
 
             var ineligibility = new List<string>();
+
+            // P4-06: Hard Trust Level Invariant (BR-TRUST-03)
+            var trustLevel = latestSnapshots.TryGetValue(v.UserId, out var lvl) ? lvl : 0;
+            if (trustLevel < request.RequiredTrustLevel)
+            {
+                ineligibility.Add(string.Format(CultureInfo.InvariantCulture, "Volunteer trust level (L{0}) is below required level (L{1})", trustLevel, request.RequiredTrustLevel));
+            }
 
             // Calculate spatial distance
             double distanceKm = 5.0; // default if coordinates not set
@@ -116,10 +142,19 @@ public sealed class MatchingService : IMatchingService
         double radiusKm = 20,
         CancellationToken cancellationToken = default)
     {
+        // P4-06 & P4-16: Query volunteer's effective trust level & block list
+        var volunteerTrustLevel = await _trustLevelReader.GetEffectiveTrustLevelAsync(volunteerUserId, cancellationToken);
+
         var openRequests = await _helpDb.HelpRequests
-            .Where(r => (r.Status == HelpRequestStatus.Open || r.Status == HelpRequestStatus.Offered || r.Status == HelpRequestStatus.Matching) && !r.IsDeleted && r.SeniorUserId != volunteerUserId)
+            .Where(r => (r.Status == HelpRequestStatus.Open || r.Status == HelpRequestStatus.Offered || r.Status == HelpRequestStatus.Matching) 
+                     && !r.IsDeleted 
+                     && r.SeniorUserId != volunteerUserId)
             .OrderBy(r => r.ScheduledStartUtc)
             .ToListAsync(cancellationToken);
+
+        var requestSeniorIds = openRequests.Select(r => r.SeniorUserId).Distinct().ToList();
+        var blockedSeniorIds = await _safetyBoundaryReader.GetBlockedUserIdsAsync(volunteerUserId, requestSeniorIds, cancellationToken);
+        openRequests = openRequests.Where(r => !blockedSeniorIds.Contains(r.SeniorUserId)).ToList();
 
         var categories = await _helpDb.ActivityCategories
             .ToDictionaryAsync(c => c.Id, c => c.NameKey, cancellationToken);
@@ -136,6 +171,21 @@ public sealed class MatchingService : IMatchingService
 
             var categoryName = categories.TryGetValue(r.CategoryId, out var name) ? name : "activity.general";
 
+            // P4-06: Check trust level eligibility
+            var isTrustEligible = volunteerTrustLevel >= r.RequiredTrustLevel;
+            var isDistEligible = dist <= radiusKm;
+            var isEligible = isTrustEligible && isDistEligible;
+
+            string? ineligibilityReason = null;
+            if (!isTrustEligible)
+            {
+                ineligibilityReason = string.Format(CultureInfo.InvariantCulture, "Requires Trust Level {0} (you currently have Level {1})", r.RequiredTrustLevel, volunteerTrustLevel);
+            }
+            else if (!isDistEligible)
+            {
+                ineligibilityReason = "Outside preferred travel radius";
+            }
+
             items.Add(new VolunteerFeedItem(
                 HelpRequestId: r.Id,
                 CategoryNameKey: categoryName,
@@ -145,8 +195,8 @@ public sealed class MatchingService : IMatchingService
                 LocationCity: r.LocationCity ?? "City",
                 LocationPostalCode: r.LocationPostalCode,
                 DistanceKm: Math.Round(dist, 1),
-                IsEligible: dist <= radiusKm,
-                IneligibilityReason: dist > radiusKm ? "Outside preferred travel radius" : null));
+                IsEligible: isEligible,
+                IneligibilityReason: ineligibilityReason));
         }
 
         return Result<IReadOnlyList<VolunteerFeedItem>>.Success(items);

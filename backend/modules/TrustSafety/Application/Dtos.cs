@@ -146,5 +146,8 @@ public sealed record RaiseConcernRequest(
 public sealed record AddCaseNoteRequest(
     string NoteText);
 
+public sealed record AssignCaseRequest(
+    Guid AssigneeOfficerUserId);
+
 public sealed record CloseCaseRequest(
     string ResolutionNotes);

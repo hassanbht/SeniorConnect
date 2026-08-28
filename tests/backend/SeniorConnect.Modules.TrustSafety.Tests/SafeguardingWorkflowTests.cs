@@ -78,4 +78,32 @@ public sealed class SafeguardingWorkflowTests
         note.CaseId.Should().Be(caseId);
         note.AuthorOfficerUserId.Should().Be(officerId);
     }
+
+    [Fact]
+    public void Safeguarding_access_log_records_officer_and_action()
+    {
+        var caseId = Guid.NewGuid();
+        var officerId = Guid.NewGuid();
+
+        var log = SafeguardingAccessLog.Create(caseId, officerId, "ViewCase");
+        log.CaseId.Should().Be(caseId);
+        log.AccessedByUserId.Should().Be(officerId);
+        log.Action.Should().Be("ViewCase");
+        log.AccessedAtUtc.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
+    public void AssignToOfficer_TransitionsToAssignedStatus_AndSetsAssignee()
+    {
+        var officerId = Guid.NewGuid();
+        var sCase = SafeguardingCase.Raise(
+            reporterUserId: Guid.NewGuid(),
+            subjectUserId: Guid.NewGuid(),
+            summary: "Subject requested urgent welfare visit.").Value!;
+
+        var result = sCase.AssignToOfficer(officerId);
+        result.IsSuccess.Should().BeTrue();
+        sCase.Status.Should().Be(SafeguardingStatus.Assigned);
+        sCase.AssignedOfficerUserId.Should().Be(officerId);
+    }
 }

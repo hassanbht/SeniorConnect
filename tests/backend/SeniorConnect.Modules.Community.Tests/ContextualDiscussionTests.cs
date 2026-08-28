@@ -48,4 +48,29 @@ public sealed class ContextualDiscussionTests
         thread.IsClosed.Should().BeTrue();
         thread.UpdatedBy.Should().Be(adminId);
     }
+
+    [Fact]
+    public void Thread_message_can_be_flagged_for_moderation()
+    {
+        var threadId = Guid.NewGuid();
+        var senderId = Guid.NewGuid();
+
+        var msg = ThreadMessage.Create(threadId, senderId, "Inappropriate content").Value!;
+        msg.FlagForModeration("Spam or abusive tone");
+
+        msg.IsFlaggedForModeration.Should().BeTrue();
+        msg.ModerationReason.Should().Be("Spam or abusive tone");
+    }
+
+    [Fact]
+    public void Thread_message_can_be_soft_deleted()
+    {
+        var threadId = Guid.NewGuid();
+        var senderId = Guid.NewGuid();
+
+        var msg = ThreadMessage.Create(threadId, senderId, "Message to delete").Value!;
+        msg.SoftDelete();
+
+        msg.IsDeleted.Should().BeTrue();
+    }
 }

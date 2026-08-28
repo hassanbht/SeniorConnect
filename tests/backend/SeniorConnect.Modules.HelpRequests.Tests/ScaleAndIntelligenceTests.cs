@@ -117,9 +117,12 @@ public sealed class ScaleAndIntelligenceTests
 
         volunteerProfile.UpdateReliability(0.95m);
         db.VolunteerProfiles.Add(volunteerProfile);
+        db.TrustLevelSnapshots.Add(SeniorConnect.Modules.Identity.Domain.TrustLevelSnapshot.Create(volunteerUserId, 3, "{}"));
         await db.SaveChangesAsync();
 
-        var matchingService = new MatchingService(db, db);
+        var trustReader = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
+        var safetyReader = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
+        var matchingService = new MatchingService(db, db, trustReader, safetyReader);
         var hybridResult = await matchingService.GetHybridProposalsAsync(new HybridMatchingRequest(helpRequest.Id));
 
         Assert.True(hybridResult.IsSuccess);
@@ -172,5 +175,26 @@ public sealed class ScaleAndIntelligenceTests
         var pdfResult = await esgService.ExportEsgCertificatePdfAsync(companyOrgId, from, to);
         Assert.True(pdfResult.IsSuccess);
         Assert.NotEmpty(pdfResult.Value!);
+    }
+
+    [Fact]
+    public async Task ReportingService_GeneratesValidSpreadsheetXlsxReport()
+    {
+        using var db = new SeniorConnectDbContext(_dbOptions, new TestTenantContext());
+        var orgId = Guid.CreateVersion7();
+        var from = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
+        var to = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var reportingService = new ReportingService(db);
+        var xlsxResult = await reportingService.ExportImpactXlsxAsync(orgId, from, to);
+
+        Assert.True(xlsxResult.IsSuccess);
+        var bytes = xlsxResult.Value!;
+        Assert.NotEmpty(bytes);
+
+        var content = System.Text.Encoding.UTF8.GetString(bytes);
+        Assert.Contains("xml version=\"1.0\"", content);
+        Assert.Contains("urn:schemas-microsoft-com:office:spreadsheet", content);
+        Assert.Contains("Wirkungsbericht", content);
     }
 }

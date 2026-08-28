@@ -155,6 +155,24 @@ public static class HelpRequestEndpoints
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .ProducesProblem(StatusCodes.Status404NotFound);
 
+        helpGroup.MapPost("/{id:guid}:no-show", async (
+            Guid id,
+            NoShowHelpRequestRequest request,
+            ClaimsPrincipal user,
+            IHelpRequestService helpService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await helpService.MarkNoShowAsync(id, userId.Value, request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("MarkHelpRequestNoShow")
+        .Produces<HelpRequestDto>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
         helpGroup.MapGet("/{id:guid}/history", async (
             Guid id,
             IHelpRequestService helpService,

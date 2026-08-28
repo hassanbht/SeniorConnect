@@ -88,6 +88,9 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
     public string? CancellationReason { get; private set; }
 
     [DataClass(DataClass.Operational)]
+    public CancellationReasonCode? CancellationReasonCode { get; private set; }
+
+    [DataClass(DataClass.Operational)]
     public Guid? CancelledByUserId { get; private set; }
 
     [DataClass(DataClass.Operational)]
@@ -296,7 +299,7 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
         return Result.Success();
     }
 
-    public Result Cancel(Guid cancelledByUserId, string reason)
+    public Result Cancel(Guid cancelledByUserId, string reason, SeniorConnect.Modules.HelpRequests.Domain.CancellationReasonCode reasonCode = SeniorConnect.Modules.HelpRequests.Domain.CancellationReasonCode.Other)
     {
         if (Status is (HelpRequestStatus.Completed or HelpRequestStatus.Cancelled or HelpRequestStatus.Expired))
         {
@@ -311,6 +314,7 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
         Status = HelpRequestStatus.Cancelled;
         CancelledByUserId = cancelledByUserId;
         CancellationReason = reason.Trim();
+        CancellationReasonCode = reasonCode;
         CancelledAtUtc = DateTimeOffset.UtcNow;
         RowVersion++;
         UpdatedAtUtc = DateTimeOffset.UtcNow;
@@ -334,6 +338,7 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
 
         Status = HelpRequestStatus.NoShow;
         CancellationReason = reason?.Trim() ?? "Volunteer / Senior no-show";
+        CancellationReasonCode = SeniorConnect.Modules.HelpRequests.Domain.CancellationReasonCode.Other;
         CancelledByUserId = reportedByUserId;
         CancelledAtUtc = now;
         RowVersion++;
@@ -355,6 +360,17 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
         UpdatedAtUtc = DateTimeOffset.UtcNow;
         return Result.Success();
     }
+}
+
+public enum CancellationReasonCode
+{
+    SeniorCancelled,
+    VolunteerCancelled,
+    NeedsMetOtherwise,
+    SafetyConcern,
+    ScheduleConflict,
+    Emergency,
+    Other
 }
 
 public enum HelpRequestStatus

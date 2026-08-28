@@ -40,6 +40,12 @@ public interface IReportingService
         DateOnly from,
         DateOnly to,
         CancellationToken cancellationToken = default);
+
+    Task<Result<byte[]>> ExportImpactXlsxAsync(
+        Guid organizationId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IEsgReportingService

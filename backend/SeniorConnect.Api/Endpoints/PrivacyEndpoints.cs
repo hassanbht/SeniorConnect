@@ -77,6 +77,20 @@ public static class PrivacyEndpoints
         .WithName("ExportUserData")
         .Produces<UserDataExportDto>(StatusCodes.Status200OK);
 
+        group.MapGet("/me/export", async (
+            ClaimsPrincipal user,
+            IPrivacyService privacyService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await privacyService.ExportUserDataAsync(userId.Value, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("ExportMyPersonalData")
+        .Produces<UserDataExportDto>(StatusCodes.Status200OK);
+
         group.MapPost("/account-deletion:request", async (
             RequestDeletionRequest request,
             ClaimsPrincipal user,

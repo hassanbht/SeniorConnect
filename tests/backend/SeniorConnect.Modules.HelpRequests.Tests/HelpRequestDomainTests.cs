@@ -150,7 +150,7 @@ public sealed class HelpRequestDomainTests
     }
 
     [Fact]
-    public void Cancel_WithValidReason_TransitionsToCancelled()
+    public void Cancel_WithValidReasonAndCode_TransitionsToCancelled()
     {
         var seniorId = Guid.NewGuid();
         var categoryId = Guid.NewGuid();
@@ -168,10 +168,70 @@ public sealed class HelpRequestDomainTests
             durationMinutes: 60,
             locationType: LocationType.PublicPlace).Value!;
 
-        var cancelResult = request.Cancel(seniorId, "Doctor appointment rescheduled");
+        var cancelResult = request.Cancel(
+            seniorId,
+            "Doctor appointment rescheduled",
+            CancellationReasonCode.ScheduleConflict);
+
         Assert.True(cancelResult.IsSuccess);
         Assert.Equal(HelpRequestStatus.Cancelled, request.Status);
         Assert.Equal("Doctor appointment rescheduled", request.CancellationReason);
+        Assert.Equal(CancellationReasonCode.ScheduleConflict, request.CancellationReasonCode);
+    }
+
+    [Fact]
+    public void MarkNoShow_WhenAssignedAndPastScheduledTime_TransitionsToNoShow()
+    {
+        var seniorId = Guid.NewGuid();
+        var volunteerId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        var request = HelpRequest.Create(
+            organizationId: null,
+            seniorUserId: seniorId,
+            createdByUserId: seniorId,
+            categoryId: categoryId,
+            safetyLevel: 2,
+            trustLevel: 2,
+            scheduledStartUtc: now.AddHours(-1), // 1 hour in the past
+            scheduledEndUtc: now,
+            durationMinutes: 60,
+            locationType: LocationType.PublicPlace).Value!;
+
+        request.Assign(volunteerId, expectedRowVersion: 1);
+
+        var noShowResult = request.MarkNoShow(seniorId, "Volunteer did not show up");
+        Assert.True(noShowResult.IsSuccess);
+        Assert.Equal(HelpRequestStatus.NoShow, request.Status);
+        Assert.Equal("Volunteer did not show up", request.CancellationReason);
+    }
+
+    [Fact]
+    public void MarkNoShow_WhenTooEarly_ReturnsValidationError()
+    {
+        var seniorId = Guid.NewGuid();
+        var volunteerId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        var request = HelpRequest.Create(
+            organizationId: null,
+            seniorUserId: seniorId,
+            createdByUserId: seniorId,
+            categoryId: categoryId,
+            safetyLevel: 2,
+            trustLevel: 2,
+            scheduledStartUtc: now.AddHours(2), // in the future
+            scheduledEndUtc: now.AddHours(3),
+            durationMinutes: 60,
+            locationType: LocationType.PublicPlace).Value!;
+
+        request.Assign(volunteerId, expectedRowVersion: 1);
+
+        var noShowResult = request.MarkNoShow(seniorId, "Volunteer not here yet");
+        Assert.True(noShowResult.IsFailure);
+        Assert.Equal(HelpRequestStatus.Assigned, request.Status);
     }
 
     [Fact]

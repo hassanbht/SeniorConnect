@@ -80,6 +80,11 @@ public sealed class SafeguardingService : ISafeguardingService
             .OrderByDescending(c => c.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
+        // P4-12: Write audit access log for case list access (BR-SG-06)
+        var log = SafeguardingAccessLog.Create(Guid.Empty, officerUserId, "ListCases");
+        _db.SafeguardingAccessLogs.Add(log);
+        await _db.SaveChangesAsync(cancellationToken);
+
         var dtos = cases.Select(MapCase).ToList();
         return Result<IReadOnlyList<SafeguardingCaseDto>>.Success(dtos);
     }
@@ -111,6 +116,33 @@ public sealed class SafeguardingService : ISafeguardingService
 
         await _db.SaveChangesAsync(cancellationToken);
         return Result.Success();
+    }
+
+    public async Task<Result<SafeguardingCaseDto>> AssignCaseAsync(
+        Guid caseId,
+        Guid officerUserId,
+        AssignCaseRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var sCase = await _db.SafeguardingCases
+            .FirstOrDefaultAsync(c => c.Id == caseId, cancellationToken);
+
+        if (sCase is null)
+        {
+            return Error.NotFound("SafeguardingCase");
+        }
+
+        var assignResult = sCase.AssignToOfficer(request.AssigneeOfficerUserId);
+        if (assignResult.IsFailure)
+        {
+            return assignResult.Error!;
+        }
+
+        var log = SafeguardingAccessLog.Create(caseId, officerUserId, $"AssignCase:{request.AssigneeOfficerUserId}");
+        _db.SafeguardingAccessLogs.Add(log);
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return Result<SafeguardingCaseDto>.Success(MapCase(sCase));
     }
 
     public async Task<Result<SafeguardingCaseDto>> CloseCaseAsync(

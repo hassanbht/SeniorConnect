@@ -73,6 +73,12 @@ public interface ISafeguardingService
         AddCaseNoteRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<Result<SafeguardingCaseDto>> AssignCaseAsync(
+        Guid caseId,
+        Guid officerUserId,
+        AssignCaseRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<Result<SafeguardingCaseDto>> CloseCaseAsync(
         Guid caseId,
         Guid officerUserId,

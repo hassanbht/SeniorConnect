@@ -46,6 +46,12 @@ public interface IHelpRequestService
         CancelHelpRequestRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<Result<HelpRequestDto>> MarkNoShowAsync(
+        Guid helpRequestId,
+        Guid reportedByUserId,
+        NoShowHelpRequestRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<Result<IReadOnlyList<HelpRequestStatusHistoryDto>>> GetStatusHistoryAsync(
         Guid helpRequestId,
         CancellationToken cancellationToken = default);

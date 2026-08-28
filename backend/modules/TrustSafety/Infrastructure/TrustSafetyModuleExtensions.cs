@@ -11,6 +11,7 @@ public static class TrustSafetyModuleExtensions
         services.AddScoped<ITrustSafetyService, TrustSafetyService>();
         services.AddScoped<ISafeguardingService, SafeguardingService>();
         services.AddScoped<IIdentityVerificationProvider, IdAustriaVerificationProvider>();
+        services.AddScoped<SeniorConnect.Modules.TrustSafety.Contracts.ISafetyBoundaryReader, SafetyBoundaryReader>();
         return services;
     }
 }

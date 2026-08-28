@@ -10,6 +10,8 @@
     <ProjectReference Include="..\..\SeniorConnect.Domain\SeniorConnect.Domain.csproj" />
     <ProjectReference Include="..\HelpRequests\SeniorConnect.Modules.HelpRequests.csproj" />
     <ProjectReference Include="..\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+    <ProjectReference Include="..\Identity\SeniorConnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\TrustSafety\SeniorConnect.Modules.TrustSafety.csproj" />
   </ItemGroup>
 
   <ItemGroup>

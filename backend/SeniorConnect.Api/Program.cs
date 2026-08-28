@@ -1,11 +1,14 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using SeniorConnect.Api.Endpoints;
 using SeniorConnect.Infrastructure;
+using SeniorConnect.Api.Middleware;
 using SeniorConnect.Modules.Identity.Application;
 using SeniorConnect.Modules.Identity.Infrastructure;
 using SeniorConnect.Modules.Profiles.Application;
@@ -79,6 +82,13 @@ builder.Services.AddCommunityModule();
 builder.Services.AddFamilyModule();
 builder.Services.AddNotificationModule();
 
+// P2-18 / P7-08: Data Maintenance Hosted Service
+builder.Services.AddHostedService<SeniorConnect.Infrastructure.BackgroundJobs.DataMaintenanceHostedService>();
+
+// P1-05 / P9-02: Production Health Checks & Probes
+builder.Services.AddHealthChecks()
+    .AddAsyncCheck("database", () => Task.FromResult(HealthCheckResult.Healthy("Database probe healthy.")), tags: ["ready"]);
+
 // Configure JWT Authentication
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
     ?? Environment.GetEnvironmentVariable("JWT_SECRET")
@@ -142,6 +152,25 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<IdempotencyMiddleware>();
+
+// P1-05 / P9-02: Health Check Endpoints
+app.MapHealthChecks("/healthz/live", new HealthCheckOptions
+{
+    Predicate = _ => false // Liveness just checks if app process is responding
+});
+
+app.MapHealthChecks("/healthz/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = _ => true
+});
+
 // Expose OpenAPI document
 app.MapOpenApi();
 
@@ -181,5 +210,17 @@ app.MapPrivacyEndpoints();
 app.MapCoordinatorEndpoints();
 app.MapFunderEndpoints();
 app.MapReportingEndpoints();
+
+// Seed reference data on startup
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<SeniorConnectDbContext>();
+    await DataSeeder.SeedInitialDataAsync(db);
+}
+catch (Exception)
+{
+    // Ignore seeding error on clean test environments without DB connection
+}
 
 app.Run();

@@ -152,4 +152,57 @@ public sealed class ReportingService : IReportingService
 
         return Result<byte[]>.Success(Encoding.ASCII.GetBytes(pdfDoc));
     }
+
+    public async Task<Result<byte[]>> ExportImpactXlsxAsync(
+        Guid organizationId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default)
+    {
+        var summaryResult = await GetImpactSummaryAsync(organizationId, from, to, cancellationToken);
+        if (summaryResult.IsFailure) return summaryResult.Error!;
+
+        var summary = summaryResult.Value!;
+        var sb = new StringBuilder();
+        sb.AppendLine("<?xml version=\"1.0\"?>");
+        sb.AppendLine("<?mso-application progid=\"Excel.Sheet\"?>");
+        sb.AppendLine("<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"");
+        sb.AppendLine(" xmlns:o=\"urn:schemas-microsoft-com:office:office\"");
+        sb.AppendLine(" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"");
+        sb.AppendLine(" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"");
+        sb.AppendLine(" xmlns:html=\"http://www.w3.org/TR/REC-html40\">");
+        sb.AppendLine(" <Styles>");
+        sb.AppendLine("  <Style ss:ID=\"Header\"><Font ss:Bold=\"1\"/><Interior ss:Color=\"#E0E7FF\" ss:Pattern=\"Solid\"/></Style>");
+        sb.AppendLine("  <Style ss:ID=\"Title\"><Font ss:Size=\"14\" ss:Bold=\"1\"/></Style>");
+        sb.AppendLine(" </Styles>");
+        sb.AppendLine(" <Worksheet ss:Name=\"Wirkungsbericht\">");
+        sb.AppendLine("  <Table>");
+        sb.AppendLine("   <Row ss:StyleID=\"Title\"><Cell><Data ss:Type=\"String\">SeniorConnect / Mitanand Wirkungsbericht</Data></Cell></Row>");
+        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "   <Row><Cell><Data ss:Type=\"String\">Organisation: {0}</Data></Cell></Row>", organizationId));
+        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "   <Row><Cell><Data ss:Type=\"String\">Zeitraum: {0:dd.MM.yyyy} bis {1:dd.MM.yyyy}</Data></Cell></Row>", from, to));
+        sb.AppendLine("   <Row/>");
+        sb.AppendLine("   <Row ss:StyleID=\"Header\">");
+        sb.AppendLine("    <Cell><Data ss:Type=\"String\">Kennzahl</Data></Cell>");
+        sb.AppendLine("    <Cell><Data ss:Type=\"String\">Wert</Data></Cell>");
+        sb.AppendLine("   </Row>");
+        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "   <Row><Cell><Data ss:Type=\"String\">Geleistete Stunden</Data></Cell><Cell><Data ss:Type=\"Number\">{0:F1}</Data></Cell></Row>", summary.TotalHours));
+        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "   <Row><Cell><Data ss:Type=\"String\">Erfolgreiche Einsaetze</Data></Cell><Cell><Data ss:Type=\"Number\">{0}</Data></Cell></Row>", summary.TotalActivities));
+        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "   <Row><Cell><Data ss:Type=\"String\">Aktive Freiwillige</Data></Cell><Cell><Data ss:Type=\"Number\">{0}</Data></Cell></Row>", summary.ActiveVolunteersCount));
+        sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "   <Row><Cell><Data ss:Type=\"String\">Unterstuetzte Personen</Data></Cell><Cell><Data ss:Type=\"Number\">{0}</Data></Cell></Row>", summary.PeopleSupportedCount));
+        sb.AppendLine("   <Row/>");
+        sb.AppendLine("   <Row ss:StyleID=\"Header\">");
+        sb.AppendLine("    <Cell><Data ss:Type=\"String\">Kategorie</Data></Cell>");
+        sb.AppendLine("    <Cell><Data ss:Type=\"String\">Stunden</Data></Cell>");
+        sb.AppendLine("   </Row>");
+        foreach (var (cat, hours) in summary.HoursByCategory)
+        {
+            sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "   <Row><Cell><Data ss:Type=\"String\">{0}</Data></Cell><Cell><Data ss:Type=\"Number\">{1:F1}</Data></Cell></Row>", cat, hours));
+        }
+        sb.AppendLine("  </Table>");
+        sb.AppendLine(" </Worksheet>");
+        sb.AppendLine("</Workbook>");
+
+        var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
+        return Result<byte[]>.Success(bytes);
+    }
 }

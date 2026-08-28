@@ -10,5 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\SeniorConnect.Domain\SeniorConnect.Domain.csproj" />
+    <ProjectReference Include="..\Identity\SeniorConnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\TrustSafety\SeniorConnect.Modules.TrustSafety.csproj" />
   </ItemGroup>
 </Project>

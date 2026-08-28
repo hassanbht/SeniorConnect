@@ -23,6 +23,7 @@ public sealed class EndpointSecurityTests
         AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a => a.GetTypes())
             .Where(t => t.Namespace?.StartsWith("SeniorConnect", StringComparison.Ordinal) == true)
+            .Where(t => !typeof(Entity).IsAssignableFrom(t))
             .Where(t => t.Name.EndsWith("Request", StringComparison.Ordinal)
                      || t.Name.EndsWith("Command", StringComparison.Ordinal));
 

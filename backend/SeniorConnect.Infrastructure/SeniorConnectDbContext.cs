@@ -188,6 +188,7 @@ public sealed class SeniorConnectDbContext(
         // --- Concurrency -----------------------------------------------------
         modelBuilder.Entity<Activity>().Property<uint>("xmin").HasColumnType("xmin").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();
         modelBuilder.Entity<Organization>().Property<uint>("xmin").HasColumnType("xmin").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();
+        modelBuilder.Entity<HelpRequest>().Property<uint>("xmin").HasColumnType("xmin").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();
 
         // --- Cross-module relationships --------------------------------------
         modelBuilder.Entity<User>()
@@ -214,11 +215,6 @@ public sealed class SeniorConnectDbContext(
              .OnDelete(DeleteBehavior.Cascade);
             b.Navigation(r => r.Permissions).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
-
-        // --- Safeguarding (Schema Isolation ADR-004) -------------------------
-        modelBuilder.Entity<SafeguardingCase>().ToTable("safeguarding_cases", "safeguarding");
-        modelBuilder.Entity<SafeguardingCaseNote>().ToTable("safeguarding_case_notes", "safeguarding");
-        modelBuilder.Entity<SafeguardingAccessLog>().ToTable("safeguarding_access_logs", "safeguarding");
 
         base.OnModelCreating(modelBuilder);
     }

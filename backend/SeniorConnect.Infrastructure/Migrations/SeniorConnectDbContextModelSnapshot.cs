@@ -1523,7 +1523,7 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.ToTable("languages", "public");
                 });
 
-            modelBuilder.Entity("SeniorConnect.Modules.Profiles.Domain.SeniorProfile", b =>
+            modelBuilder.Entity("SeniorConnect.Modules.Profiles.Domain.SupportProfile", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1613,19 +1613,19 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PostalCode")
-                        .HasDatabaseName("ix_senior_profiles_postal");
+                        .HasDatabaseName("ix_support_profiles_postal");
 
                     b.HasIndex("Latitude", "Longitude")
-                        .HasDatabaseName("ix_senior_profiles_geo")
+                        .HasDatabaseName("ix_support_profiles_geo")
                         .HasFilter("latitude IS NOT NULL");
 
-                    b.ToTable("senior_profiles", "public", t =>
+                    b.ToTable("support_profiles", "public", t =>
                         {
-                            t.HasCheckConstraint("ck_senior_contact_method", "preferred_contact_method IN ('app','phone','sms','family')");
+                            t.HasCheckConstraint("ck_support_contact_method", "preferred_contact_method IN ('app','phone','sms','family')");
 
-                            t.HasCheckConstraint("ck_senior_geo_pair", "(latitude IS NULL) = (longitude IS NULL)");
+                            t.HasCheckConstraint("ck_support_geo_pair", "(latitude IS NULL) = (longitude IS NULL)");
 
-                            t.HasCheckConstraint("ck_senior_vulnerability_reason", "NOT vulnerability_flag OR vulnerability_reason IS NOT NULL");
+                            t.HasCheckConstraint("ck_support_vulnerability_reason", "NOT vulnerability_flag OR vulnerability_reason IS NOT NULL");
                         });
                 });
 

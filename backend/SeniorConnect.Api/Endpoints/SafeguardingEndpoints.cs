@@ -112,6 +112,33 @@ public static class SafeguardingEndpoints
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status404NotFound);
 
+        group.MapPost("/cases/{id:guid}:assign", async (
+            Guid id,
+            AssignCaseRequest request,
+            ClaimsPrincipal user,
+            ISafeguardingService safeguardingService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            if (!IsSafeguardingOfficer(user))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status403Forbidden,
+                    title: "Forbidden",
+                    detail: "The capability 'SafeguardingOfficer' is required to assign safeguarding records.",
+                    extensions: new Dictionary<string, object?> { ["code"] = "SAFEGUARDING_OFFICER_REQUIRED" });
+            }
+
+            var result = await safeguardingService.AssignCaseAsync(id, userId.Value, request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("AssignSafeguardingCase")
+        .Produces<SafeguardingCaseDto>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
         group.MapPost("/cases/{id:guid}:close", async (
             Guid id,
             CloseCaseRequest request,

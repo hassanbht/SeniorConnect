@@ -122,3 +122,6 @@ public sealed record ThreadMessageDto(
 
 public sealed record PostMessageRequest(
     string Content);
+
+public sealed record ReportMessageRequest(
+    string Reason);

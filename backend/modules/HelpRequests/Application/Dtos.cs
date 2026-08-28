@@ -110,7 +110,11 @@ public sealed record CompleteHelpRequestRequest(
     int? ActualDurationMinutes = null);
 
 public sealed record CancelHelpRequestRequest(
-    string Reason);
+    string Reason,
+    CancellationReasonCode ReasonCode = CancellationReasonCode.Other);
+
+public sealed record NoShowHelpRequestRequest(
+    string? Notes = null);
 
 public sealed record HelpRequestStatusHistoryDto(
     Guid Id,

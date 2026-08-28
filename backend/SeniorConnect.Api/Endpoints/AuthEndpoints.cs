@@ -13,7 +13,8 @@ public static class AuthEndpoints
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
         var authGroup = app.MapGroup("/api/v1/auth")
-            .WithTags("Authentication");
+            .WithTags("Authentication")
+            .RequireRateLimiting("auth_policy");
 
         authGroup.MapPost("/request-phone-code", async (
             RequestPhoneOtpRequest request,

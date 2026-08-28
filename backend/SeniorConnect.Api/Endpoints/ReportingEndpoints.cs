@@ -66,6 +66,24 @@ public static class ReportingEndpoints
         .WithName("ExportImpactPdf")
         .Produces(StatusCodes.Status200OK, contentType: "application/pdf");
 
+        reportGroup.MapGet("/organizations/{orgId:guid}/export.xlsx", async (
+            Guid orgId,
+            DateOnly? from,
+            DateOnly? to,
+            IReportingService reportService,
+            CancellationToken ct) =>
+        {
+            var fromDate = from ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
+            var toDate = to ?? DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var result = await reportService.ExportImpactXlsxAsync(orgId, fromDate, toDate, ct);
+            if (result.IsFailure) return Results.BadRequest(result.Error?.Detail);
+
+            return Results.File(result.Value!, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"impact-report-{orgId}.xlsx");
+        })
+        .WithName("ExportImpactXlsx")
+        .Produces(StatusCodes.Status200OK, contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
         reportGroup.MapGet("/companies/{companyOrgId:guid}/esg-summary", async (
             Guid companyOrgId,
             DateOnly? from,

@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using SeniorConnect.Domain;
 using SeniorConnect.Modules.HelpRequests.Application;
 using SeniorConnect.Modules.HelpRequests.Domain;
+using SeniorConnect.Modules.Identity.Contracts;
+using SeniorConnect.Modules.TrustSafety.Contracts;
 
 namespace SeniorConnect.Modules.HelpRequests.Infrastructure;
 
@@ -9,11 +11,19 @@ public sealed class HelpRequestService : IHelpRequestService
 {
     private readonly IHelpRequestsDbContext _db;
     private readonly IActivitySafetyPolicy _safetyPolicy;
+    private readonly ITrustLevelReader _trustLevelReader;
+    private readonly ISafetyBoundaryReader _safetyBoundaryReader;
 
-    public HelpRequestService(IHelpRequestsDbContext db, IActivitySafetyPolicy safetyPolicy)
+    public HelpRequestService(
+        IHelpRequestsDbContext db, 
+        IActivitySafetyPolicy safetyPolicy,
+        ITrustLevelReader trustLevelReader,
+        ISafetyBoundaryReader safetyBoundaryReader)
     {
         _db = db;
         _safetyPolicy = safetyPolicy;
+        _trustLevelReader = trustLevelReader;
+        _safetyBoundaryReader = safetyBoundaryReader;
     }
 
     public async Task<Result<HelpRequestDto>> CreateHelpRequestAsync(
@@ -156,6 +166,41 @@ public sealed class HelpRequestService : IHelpRequestService
             return Error.NotFound("HelpRequest");
         }
 
+        if (helpRequest.SeniorUserId == volunteerUserId)
+        {
+            return Error.Forbidden("Beneficiary cannot accept their own help request.");
+        }
+
+        // P4-16: Blocked user check
+        var isBlocked = await _safetyBoundaryReader.IsBlockedAsync(helpRequest.SeniorUserId, volunteerUserId, cancellationToken);
+        if (isBlocked)
+        {
+            return Error.Forbidden("Cannot accept request from a blocked user.");
+        }
+
+        // P4-06: Trust Level Invariant enforcement
+        var volunteerTrustLevel = await _trustLevelReader.GetEffectiveTrustLevelAsync(volunteerUserId, cancellationToken);
+        if (volunteerTrustLevel < helpRequest.RequiredTrustLevel)
+        {
+            return new Error(
+                "TRUST_LEVEL_INSUFFICIENT",
+                $"Your verified Trust Level ({volunteerTrustLevel}) is below the required Trust Level ({helpRequest.RequiredTrustLevel}) for this activity.",
+                ErrorKind.Forbidden);
+        }
+
+        // P4-07: Buddy System Check for Safety Level 3+ (first 3 visits)
+        if (helpRequest.RequiredSafetyLevel >= 3)
+        {
+            var isBuddyRequired = await _safetyBoundaryReader.IsBuddyRequiredForLevel3Async(volunteerUserId, cancellationToken);
+            if (isBuddyRequired)
+            {
+                return new Error(
+                    "BUDDY_REQUIRED",
+                    "The first three Safety Level 3+ visits require an assigned experienced buddy volunteer or coordinator waiver.",
+                    ErrorKind.Forbidden);
+            }
+        }
+
         var fromStatus = helpRequest.Status;
         var assignResult = helpRequest.Assign(volunteerUserId, request.ExpectedRowVersion);
         if (assignResult.IsFailure)
@@ -289,7 +334,7 @@ public sealed class HelpRequestService : IHelpRequestService
         }
 
         var fromStatus = helpRequest.Status;
-        var cancelResult = helpRequest.Cancel(cancelledByUserId, request.Reason);
+        var cancelResult = helpRequest.Cancel(cancelledByUserId, request.Reason, request.ReasonCode);
         if (cancelResult.IsFailure)
         {
             return cancelResult.Error!;
@@ -300,12 +345,46 @@ public sealed class HelpRequestService : IHelpRequestService
             fromStatus: fromStatus,
             toStatus: HelpRequestStatus.Cancelled,
             changedByUserId: cancelledByUserId,
-            reason: request.Reason);
+            reason: $"{request.ReasonCode}: {request.Reason}");
 
         _db.HelpRequestStatusHistories.Add(history);
         await _db.SaveChangesAsync(cancellationToken);
 
         return Result<HelpRequestDto>.Success(MapRequest(helpRequest, requestingUserId: cancelledByUserId));
+    }
+
+    public async Task<Result<HelpRequestDto>> MarkNoShowAsync(
+        Guid helpRequestId,
+        Guid reportedByUserId,
+        NoShowHelpRequestRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var helpRequest = await _db.HelpRequests
+            .FirstOrDefaultAsync(r => r.Id == helpRequestId && !r.IsDeleted, cancellationToken);
+
+        if (helpRequest is null)
+        {
+            return Error.NotFound("HelpRequest");
+        }
+
+        var fromStatus = helpRequest.Status;
+        var noShowResult = helpRequest.MarkNoShow(reportedByUserId, request.Notes);
+        if (noShowResult.IsFailure)
+        {
+            return noShowResult.Error!;
+        }
+
+        var history = HelpRequestStatusHistory.Create(
+            helpRequestId: helpRequest.Id,
+            fromStatus: fromStatus,
+            toStatus: HelpRequestStatus.NoShow,
+            changedByUserId: reportedByUserId,
+            reason: request.Notes ?? "No-show recorded");
+
+        _db.HelpRequestStatusHistories.Add(history);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Result<HelpRequestDto>.Success(MapRequest(helpRequest, requestingUserId: reportedByUserId));
     }
 
     public async Task<Result<IReadOnlyList<HelpRequestStatusHistoryDto>>> GetStatusHistoryAsync(

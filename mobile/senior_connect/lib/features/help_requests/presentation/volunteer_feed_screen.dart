@@ -18,6 +18,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
+import 'widgets/first_meeting_protocol_dialog.dart';
 
 class HelpRequestFeedItem {
   const HelpRequestFeedItem({
@@ -225,6 +226,11 @@ class _VolunteerFeedScreenState extends State<VolunteerFeedScreen> {
       appBar: AppBar(
         title: Text('home.senior.my_activities'.tr()),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.shield_outlined),
+            tooltip: 'protocol.title'.tr(),
+            onPressed: () => FirstMeetingProtocolDialog.show(context),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'common.retry'.tr(),

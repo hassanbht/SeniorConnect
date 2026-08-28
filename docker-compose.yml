@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: seniorconnect_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: seniorconnect_db
+      POSTGRES_USER: seniorconnect
+      POSTGRES_PASSWORD: seniorconnect_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seniorconnect -d seniorconnect_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - seniorconnect_net
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: seniorconnect_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=seniorconnect_db;Username=seniorconnect;Password=seniorconnect_dev_password"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - seniorconnect_net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  seniorconnect_net:
+    driver: bridge

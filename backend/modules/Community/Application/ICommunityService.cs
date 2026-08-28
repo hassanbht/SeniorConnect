@@ -100,4 +100,17 @@ public interface ICommunityService
         Guid senderUserId,
         PostMessageRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<Result> DeleteMessageAsync(
+        Guid threadId,
+        Guid messageId,
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<ThreadMessageDto>> ReportMessageAsync(
+        Guid threadId,
+        Guid messageId,
+        Guid reporterUserId,
+        ReportMessageRequest request,
+        CancellationToken cancellationToken = default);
 }

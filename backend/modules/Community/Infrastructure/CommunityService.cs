@@ -624,6 +624,55 @@ public sealed class CommunityService : ICommunityService
         return Result<ThreadMessageDto>.Success(MapMessage(message));
     }
 
+    public async Task<Result> DeleteMessageAsync(
+        Guid threadId,
+        Guid messageId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var message = await _db.ThreadMessages
+            .FirstOrDefaultAsync(m => m.Id == messageId && m.ThreadId == threadId && !m.IsDeleted, cancellationToken);
+
+        if (message is null)
+        {
+            return Error.NotFound("ThreadMessage");
+        }
+
+        if (message.SenderUserId != userId)
+        {
+            return Error.Forbidden("You can only delete your own messages.");
+        }
+
+        message.SoftDelete();
+        await _db.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
+    public async Task<Result<ThreadMessageDto>> ReportMessageAsync(
+        Guid threadId,
+        Guid messageId,
+        Guid reporterUserId,
+        ReportMessageRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var message = await _db.ThreadMessages
+            .FirstOrDefaultAsync(m => m.Id == messageId && m.ThreadId == threadId && !m.IsDeleted, cancellationToken);
+
+        if (message is null)
+        {
+            return Error.NotFound("ThreadMessage");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Reason))
+        {
+            return Error.Validation("Report reason cannot be empty.");
+        }
+
+        message.FlagForModeration(request.Reason.Trim());
+        await _db.SaveChangesAsync(cancellationToken);
+        return Result<ThreadMessageDto>.Success(MapMessage(message));
+    }
+
     // --- Mapping Helpers ---
 
     private static CommunityGroupDto MapGroup(CommunityGroup g, int memberCount) => new(

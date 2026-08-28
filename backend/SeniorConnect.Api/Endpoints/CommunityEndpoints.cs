@@ -282,6 +282,43 @@ public static class CommunityEndpoints
         .WithName("PostThreadMessage")
         .Produces<ThreadMessageDto>(StatusCodes.Status201Created);
 
+        group.MapDelete("/threads/{threadId:guid}/messages/{messageId:guid}", async (
+            Guid threadId,
+            Guid messageId,
+            ClaimsPrincipal user,
+            ICommunityService communityService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await communityService.DeleteMessageAsync(threadId, messageId, userId.Value, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("DeleteThreadMessage")
+        .Produces(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapPost("/threads/{threadId:guid}/messages/{messageId:guid}:report", async (
+            Guid threadId,
+            Guid messageId,
+            ReportMessageRequest request,
+            ClaimsPrincipal user,
+            ICommunityService communityService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await communityService.ReportMessageAsync(threadId, messageId, userId.Value, request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("ReportThreadMessage")
+        .Produces<ThreadMessageDto>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
         return app;
     }
 }
