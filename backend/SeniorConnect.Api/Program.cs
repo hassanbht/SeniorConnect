@@ -133,6 +133,19 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+var corsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:5000", "http://localhost:8080"];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FlutterWeb", policy =>
+    {
+        policy.WithOrigins(corsAllowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // P7-09: Rate Limiting & Lockout across the general API
 builder.Services.AddRateLimiter(options =>
 {
@@ -193,6 +206,7 @@ app.MapScalarApiReference(options =>
 app.MapGet("/swagger", () => Results.Redirect("/scalar/v1"));
 
 app.UseHttpsRedirection();
+app.UseCors("FlutterWeb");
 app.UseRateLimiter();
 
 app.UseAuthentication();
