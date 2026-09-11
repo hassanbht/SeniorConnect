@@ -67,11 +67,15 @@
 > `MonthlyVolunteerReminderHostedService` runs the sweep daily, safe to
 > call any number of times. `P2-36` (recognition shortlist, ADR-020) is
 > **now built**: `GET /api/v1/coordinator/organizations/{id}/recognition-shortlist`,
-> staff-only, never exposed elsewhere. **`P2-25` (staff web app shell) is
-> confirmed genuinely MISSING** — no Blazor/React project exists anywhere in
-> the repo. This is an `L`-sized, multi-day task (a whole new frontend
-> project) and was deliberately not started this session — it is the
-> single largest remaining gap in Phase 2.
+> staff-only, never exposed elsewhere.
+>
+> **2026-09 update #3 — `P2-25` built (Flutter, not Blazor/React):** redefined
+> per `docs/superpowers/specs/2026-09-11-org-profile-flutter-p2-25-design.md` —
+> reused the existing Flutter app (`mobile/senior_connect`) with the `web`
+> platform enabled, instead of a separate Blazor/React project. Also closed a
+> real authorization gap found along the way: `CommunityService` previously
+> let any authenticated user publish a group/event on behalf of any
+> organization; it now checks `IOrganizationCoordinatorReader` first.
 >
 > ---
 >
@@ -492,9 +496,14 @@ pilot partner to sign, and the phase everything later feeds on.
 ## 2.5 Coordinator dashboard (web)
 
 ```
-[ ] P2-25 — Staff web app shell                  · L · needs P2-02
-    Blazor or React. Keyboard-navigable, screen-reader usable.
-    ✓ Test: complete one full task using only the keyboard
+[x] P2-25 — Organization profile page (news/events)  · L · needs P2-02
+    Flutter (mobile/senior_connect), web platform enabled — not a separate
+    Blazor/React project. Any logged-in user views an org's page by tapping
+    it; active Coordinator/Admin staff publish, edit, and cancel news/events
+    for their org from the same screens.
+    ✓ Test: a non-staff user cannot publish for an org (403); an active
+      Coordinator/Admin can; both the mobile and `flutter run -d chrome`
+      builds render the org profile screen.
 
 [ ] P2-26 — "Braucht heute Aufmerksamkeit"       · L · needs P2-17, P2-23
     FIRST widget, above everything: dormant · unconfirmed hours ·
