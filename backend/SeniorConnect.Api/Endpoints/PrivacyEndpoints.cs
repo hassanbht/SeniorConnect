@@ -44,7 +44,7 @@ public static class PrivacyEndpoints
             var result = await privacyService.RecordConsentAsync(userId.Value, request, ipHash, ct);
             return result.ToHttpResult();
         })
-        .WithName("RecordConsent")
+        .WithName("RecordPrivacyConsent")
         .Produces<VersionedConsentDto>(StatusCodes.Status200OK);
 
         group.MapPost("/consents/{consentType}/withdraw", async (

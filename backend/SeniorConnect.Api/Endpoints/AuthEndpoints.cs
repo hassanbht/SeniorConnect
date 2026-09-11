@@ -289,7 +289,7 @@ public static class AuthEndpoints
             var result = await identityService.RecordConsentAsync(userId.Value, request, ip, ct);
             return result.ToHttpResult();
         })
-        .WithName("RecordConsent")
+        .WithName("RecordOnboardingConsent")
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .ProducesProblem(StatusCodes.Status401Unauthorized);
