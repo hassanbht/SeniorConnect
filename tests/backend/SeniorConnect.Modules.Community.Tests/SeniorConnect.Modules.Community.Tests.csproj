@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\backend\modules\Community\SeniorConnect.Modules.Community.csproj" />
     <ProjectReference Include="..\..\..\backend\modules\Identity\SeniorConnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\..\..\backend\modules\Organizations\SeniorConnect.Modules.Organizations.csproj" />
     <ProjectReference Include="..\..\..\backend\SeniorConnect.Infrastructure\SeniorConnect.Infrastructure.csproj" />
   </ItemGroup>
 

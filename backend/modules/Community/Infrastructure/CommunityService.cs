@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SeniorConnect.Domain;
 using SeniorConnect.Modules.Community.Application;
 using SeniorConnect.Modules.Community.Domain;
+using SeniorConnect.Modules.Organizations.Contracts;
 
 namespace SeniorConnect.Modules.Community.Infrastructure;
 
@@ -9,11 +10,32 @@ public sealed class CommunityService : ICommunityService
 {
     private readonly ICommunityDbContext _db;
     private readonly IMessageModerationService _moderation;
+    private readonly IOrganizationCoordinatorReader _orgReader;
 
-    public CommunityService(ICommunityDbContext db, IMessageModerationService moderation)
+    public CommunityService(
+        ICommunityDbContext db,
+        IMessageModerationService moderation,
+        IOrganizationCoordinatorReader orgReader)
     {
         _db = db;
         _moderation = moderation;
+        _orgReader = orgReader;
+    }
+
+    private async Task<Error?> RequireOrgStaffAsync(Guid? organizationId, Guid callerUserId, CancellationToken ct)
+    {
+        if (organizationId is null)
+        {
+            return null;
+        }
+
+        var staffIds = await _orgReader.GetActiveCoordinatorUserIdsAsync(organizationId.Value, ct);
+        if (!staffIds.Contains(callerUserId))
+        {
+            return Error.Forbidden("Only an active coordinator or admin of this organization may publish on its behalf.");
+        }
+
+        return null;
     }
 
     // --- Groups ---
@@ -23,6 +45,12 @@ public sealed class CommunityService : ICommunityService
         CreateCommunityGroupRequest request,
         CancellationToken cancellationToken = default)
     {
+        var authError = await RequireOrgStaffAsync(request.OrganizationId, userId, cancellationToken);
+        if (authError is not null)
+        {
+            return authError;
+        }
+
         var groupResult = CommunityGroup.Create(
             creatorUserId: userId,
             title: request.Title,
@@ -123,6 +151,12 @@ public sealed class CommunityService : ICommunityService
         if (group is null)
         {
             return Error.NotFound("CommunityGroup");
+        }
+
+        var orgAuthError = await RequireOrgStaffAsync(group.OrganizationId, userId, cancellationToken);
+        if (orgAuthError is not null)
+        {
+            return orgAuthError;
         }
 
         var membership = await _db.GroupMemberships
@@ -293,6 +327,12 @@ public sealed class CommunityService : ICommunityService
         CreateCommunityEventRequest request,
         CancellationToken cancellationToken = default)
     {
+        var authError = await RequireOrgStaffAsync(request.OrganizationId, userId, cancellationToken);
+        if (authError is not null)
+        {
+            return authError;
+        }
+
         var eventResult = CommunityEvent.Create(
             hostUserId: userId,
             title: request.Title,

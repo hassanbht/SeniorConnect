@@ -10,5 +10,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\SeniorConnect.Domain\SeniorConnect.Domain.csproj" />
+    <ProjectReference Include="..\Organizations\SeniorConnect.Modules.Organizations.csproj" />
   </ItemGroup>
 </Project>
