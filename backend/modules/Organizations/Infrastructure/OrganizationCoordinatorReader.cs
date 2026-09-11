@@ -24,4 +24,20 @@ public sealed class OrganizationCoordinatorReader : IOrganizationCoordinatorRead
             .Distinct()
             .ToListAsync(ct);
     }
+
+    public async Task<IReadOnlyList<StaffOrganizationDto>> GetActiveMembershipsForUserAsync(Guid userId, CancellationToken ct = default)
+    {
+        var organizationIds = await _db.OrganizationMemberships
+            .Where(m => m.UserId == userId
+                     && m.Status == MembershipStatus.Active
+                     && (m.Role == MembershipRole.Coordinator || m.Role == MembershipRole.Admin))
+            .Select(m => m.OrganizationId!.Value)
+            .Distinct()
+            .ToListAsync(ct);
+
+        return await _db.Organizations
+            .Where(o => organizationIds.Contains(o.Id))
+            .Select(o => new StaffOrganizationDto(o.Id, o.Name))
+            .ToListAsync(ct);
+    }
 }
