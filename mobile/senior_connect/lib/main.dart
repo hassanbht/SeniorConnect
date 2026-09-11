@@ -12,6 +12,7 @@
 // P1-26: ApiClient created with base URL from environment config
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -30,7 +31,7 @@ Future<void> main() async {
   // P1-26: API client — base URL injected at build time via --dart-define
   const baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:5000', // Android emulator localhost
+    defaultValue: kIsWeb ? 'http://localhost:5000' : 'http://10.0.2.2:5000',
   );
   final apiClient = ApiClient(baseUrl: baseUrl);
 
