@@ -148,6 +148,37 @@ public sealed class CommunityEvent : Entity, IAuditable, ISoftDeletable, IOrgani
         return Result.Success();
     }
 
+    public Result UpdateDetails(
+        string title,
+        string description,
+        string category,
+        string? locationAddress,
+        string? locationPostalCode,
+        int? capacity,
+        Guid updatedByUserId)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return Error.Validation("Title is required.");
+        }
+
+        if (capacity.HasValue && capacity.Value <= 0)
+        {
+            return Error.Validation("Capacity must be positive.");
+        }
+
+        Title = title.Trim();
+        Description = description?.Trim() ?? string.Empty;
+        Category = string.IsNullOrWhiteSpace(category) ? "general" : category.Trim().ToLowerInvariant();
+        LocationAddress = locationAddress?.Trim();
+        LocationPostalCode = locationPostalCode?.Trim();
+        Capacity = capacity;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+        UpdatedBy = updatedByUserId;
+
+        return Result.Success();
+    }
+
     public Result Cancel(string reason, Guid hostUserId)
     {
         IsCancelled = true;

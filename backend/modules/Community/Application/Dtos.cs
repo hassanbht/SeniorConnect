@@ -79,6 +79,16 @@ public sealed record CreateCommunityEventRequest(
     DateTimeOffset? RecurrenceUntilUtc = null,
     int? Capacity = null);
 
+public sealed record UpdateCommunityEventRequest(
+    string Title,
+    string Description,
+    string Category,
+    string? LocationAddress = null,
+    string? LocationPostalCode = null,
+    int? Capacity = null);
+
+public sealed record CancelCommunityEventRequest(string Reason);
+
 public sealed record EventRegistrationDto(
     Guid Id,
     Guid EventId,

@@ -456,6 +456,86 @@ public sealed class CommunityService : ICommunityService
         return Result<IReadOnlyList<CommunityEventDto>>.Success(dtos);
     }
 
+    public async Task<Result<CommunityEventDto>> UpdateEventAsync(
+        Guid eventId,
+        Guid userId,
+        UpdateCommunityEventRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var ev = await _db.CommunityEvents
+            .FirstOrDefaultAsync(e => e.Id == eventId && !e.IsDeleted, cancellationToken);
+
+        if (ev is null)
+        {
+            return Error.NotFound("CommunityEvent");
+        }
+
+        var authError = await RequireOrgStaffAsync(ev.OrganizationId, userId, cancellationToken);
+        if (authError is not null)
+        {
+            if (ev.OrganizationId is not null || ev.HostUserId != userId)
+            {
+                return authError;
+            }
+        }
+
+        var updateResult = ev.UpdateDetails(
+            title: request.Title,
+            description: request.Description,
+            category: request.Category,
+            locationAddress: request.LocationAddress,
+            locationPostalCode: request.LocationPostalCode,
+            capacity: request.Capacity,
+            updatedByUserId: userId);
+
+        if (updateResult.IsFailure)
+        {
+            return updateResult.Error!;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var goingCount = await _db.EventRegistrations
+            .CountAsync(r => r.EventId == eventId && r.Status == EventRsvpStatus.Going, cancellationToken);
+        var waitlistCount = await _db.EventRegistrations
+            .CountAsync(r => r.EventId == eventId && r.Status == EventRsvpStatus.Waitlisted, cancellationToken);
+
+        return Result<CommunityEventDto>.Success(MapEvent(ev, goingCount, waitlistCount));
+    }
+
+    public async Task<Result> CancelEventAsync(
+        Guid eventId,
+        Guid userId,
+        string reason,
+        CancellationToken cancellationToken = default)
+    {
+        var ev = await _db.CommunityEvents
+            .FirstOrDefaultAsync(e => e.Id == eventId && !e.IsDeleted, cancellationToken);
+
+        if (ev is null)
+        {
+            return Error.NotFound("CommunityEvent");
+        }
+
+        var authError = await RequireOrgStaffAsync(ev.OrganizationId, userId, cancellationToken);
+        if (authError is not null)
+        {
+            if (ev.OrganizationId is not null || ev.HostUserId != userId)
+            {
+                return authError;
+            }
+        }
+
+        var cancelResult = ev.Cancel(reason, userId);
+        if (cancelResult.IsFailure)
+        {
+            return cancelResult.Error!;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
     public async Task<Result<EventRegistrationDto>> RegisterForEventAsync(
         Guid eventId,
         Guid userId,

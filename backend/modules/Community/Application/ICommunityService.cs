@@ -68,6 +68,18 @@ public interface ICommunityService
         Guid? organizationId = null,
         CancellationToken cancellationToken = default);
 
+    Task<Result<CommunityEventDto>> UpdateEventAsync(
+        Guid eventId,
+        Guid userId,
+        UpdateCommunityEventRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> CancelEventAsync(
+        Guid eventId,
+        Guid userId,
+        string reason,
+        CancellationToken cancellationToken = default);
+
     Task<Result<EventRegistrationDto>> RegisterForEventAsync(
         Guid eventId,
         Guid userId,
