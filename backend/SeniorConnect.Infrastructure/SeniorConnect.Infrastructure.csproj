@@ -21,5 +21,6 @@
     <ProjectReference Include="..\modules\Community\SeniorConnect.Modules.Community.csproj" />
     <ProjectReference Include="..\modules\Family\SeniorConnect.Modules.Family.csproj" />
     <ProjectReference Include="..\modules\Notifications\SeniorConnect.Modules.Notifications.csproj" />
+    <ProjectReference Include="..\modules\Matching\SeniorConnect.Modules.Matching.csproj" />
   </ItemGroup>
 </Project>

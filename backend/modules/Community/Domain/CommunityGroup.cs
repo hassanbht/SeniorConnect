@@ -82,6 +82,14 @@ public sealed class CommunityGroup : Entity, IAuditable, ISoftDeletable, IOrgani
             return Error.Validation("Title is required.");
         }
 
+        if (organizationId is null || organizationId == Guid.Empty)
+        {
+            // BR-COMM-06 / ADR-020: only an Organization may publish a public
+            // group or page. Individual users get no self-service group
+            // creation. See docs/decisions/ADR-020.
+            return Error.OrganizationRequiredForGroup();
+        }
+
         var now = DateTimeOffset.UtcNow;
         var group = new CommunityGroup
         {

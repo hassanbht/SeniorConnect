@@ -61,7 +61,7 @@ public sealed class HelpRequestMatchingAndSafetyTests
 
         var trustReader = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
         var safetyReader = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
-        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader, safetyReader);
+        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader, safetyReader, new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db));
 
         var result = await service.AcceptHelpRequestAsync(
             request.Id,
@@ -103,7 +103,7 @@ public sealed class HelpRequestMatchingAndSafetyTests
 
         var trustReader2 = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
         var safetyReader2 = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
-        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader2, safetyReader2);
+        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader2, safetyReader2, new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db));
 
         var result = await service.AcceptHelpRequestAsync(
             request.Id,
@@ -148,7 +148,7 @@ public sealed class HelpRequestMatchingAndSafetyTests
 
         var trustReader3 = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
         var safetyReader3 = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
-        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader3, safetyReader3);
+        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader3, safetyReader3, new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db));
 
         var result = await service.AcceptHelpRequestAsync(
             request.Id,
@@ -203,7 +203,9 @@ public sealed class HelpRequestMatchingAndSafetyTests
 
         var trustReader4 = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
         var safetyReader4 = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
-        var matchingService = new MatchingService(db, db, trustReader4, safetyReader4);
+        var matchingService = new MatchingService(db, db, trustReader4, safetyReader4, Microsoft.Extensions.Options.Options.Create(new MatchingConfig()),
+            new SeniorConnect.Modules.Notifications.Infrastructure.NotificationService(db),
+            new SeniorConnect.Modules.Organizations.Infrastructure.OrganizationCoordinatorReader(db));
 
         var candidatesResult = await matchingService.FindCandidatesAsync(request.Id);
 
@@ -223,5 +225,269 @@ public sealed class HelpRequestMatchingAndSafetyTests
         var eligibleCandidate = candidates.FirstOrDefault(c => c.VolunteerUserId == eligibleVolId);
         eligibleCandidate.Should().NotBeNull();
         eligibleCandidate!.IsEligible.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task MatchingService_UsesInjectedWeights_NotHardcodedDefaults()
+    {
+        // P3-09 / Gate 3 item 6: matching weights must be configurable
+        // without a code change. This proves MatchingService actually reads
+        // the injected IOptions<MatchingConfig> value — the same mechanism
+        // AddMatchingModule binds from appsettings.json "Matching:Weights" —
+        // rather than silently using `new MatchingConfig()`.
+        using var db = CreateInMemoryDb();
+        var seniorId = Guid.NewGuid();
+        var volunteerId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        var request = HelpRequest.Create(
+            organizationId: null,
+            seniorUserId: seniorId,
+            createdByUserId: seniorId,
+            categoryId: categoryId,
+            safetyLevel: 1,
+            trustLevel: 1,
+            scheduledStartUtc: now.AddHours(2),
+            scheduledEndUtc: now.AddHours(3),
+            durationMinutes: 60,
+            locationType: LocationType.PublicPlace).Value!;
+
+        db.HelpRequests.Add(request);
+
+        var volunteer = VolunteerProfile.Create(volunteerId, "Weighted Vol");
+        volunteer.UpdateStatus(true);
+        db.VolunteerProfiles.Add(volunteer);
+        await db.SaveChangesAsync();
+
+        var trustReader = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
+        var safetyReader = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
+
+        // No coordinates set on either side, so distanceKm defaults to 5.0
+        // and distanceScore = 1 - 5/20 = 0.75 for every weight combination
+        // below — only the weight applied to it should change the total.
+        var distanceOnlyConfig = new MatchingConfig(
+            DistanceWeight: 1.0, ContinuityWeight: 0, ReliabilityWeight: 0, AvailabilityWeight: 0);
+        var reliabilityOnlyConfig = new MatchingConfig(
+            DistanceWeight: 0, ContinuityWeight: 0, ReliabilityWeight: 1.0, AvailabilityWeight: 0,
+            ColdStartReliability: 0.42);
+
+        var notificationService = new SeniorConnect.Modules.Notifications.Infrastructure.NotificationService(db);
+        var coordinatorReader = new SeniorConnect.Modules.Organizations.Infrastructure.OrganizationCoordinatorReader(db);
+
+        var distanceWeightedService = new MatchingService(
+            db, db, trustReader, safetyReader, Microsoft.Extensions.Options.Options.Create(distanceOnlyConfig),
+            notificationService, coordinatorReader);
+        var reliabilityWeightedService = new MatchingService(
+            db, db, trustReader, safetyReader, Microsoft.Extensions.Options.Options.Create(reliabilityOnlyConfig),
+            notificationService, coordinatorReader);
+
+        var distanceResult = await distanceWeightedService.FindCandidatesAsync(request.Id);
+        var reliabilityResult = await reliabilityWeightedService.FindCandidatesAsync(request.Id);
+
+        distanceResult.IsSuccess.Should().BeTrue();
+        reliabilityResult.IsSuccess.Should().BeTrue();
+
+        var distanceCandidate = distanceResult.Value!.Single();
+        var reliabilityCandidate = reliabilityResult.Value!.Single();
+
+        // Same volunteer, same request — different injected config must
+        // produce a different total score, proving the weights are live,
+        // not compiled in.
+        distanceCandidate.TotalScore.Should().Be(0.75);
+        reliabilityCandidate.TotalScore.Should().Be(0.42);
+        distanceCandidate.TotalScore.Should().NotBe(reliabilityCandidate.TotalScore);
+    }
+
+    [Fact]
+    public async Task GetHelpRequestById_RevealsSeniorContact_OnlyToAuthorizedCounterparty()
+    {
+        // BR-COMM-04: the senior's name/phone are revealed only to the
+        // senior, the creator, or the assigned volunteer — never to anyone
+        // else who happens to know the request id.
+        using var db = CreateInMemoryDb();
+        var seniorId = Guid.NewGuid();
+        var volunteerId = Guid.NewGuid();
+        var strangerId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        var seniorUser = SeniorConnect.Modules.Identity.Domain.User.CreateWithPhone(
+            "+43 664 9999999", "Elisabeth Huber");
+        typeof(SeniorConnect.Domain.Entity).GetProperty(nameof(SeniorConnect.Domain.Entity.Id))!
+            .SetValue(seniorUser, seniorId);
+        db.Users.Add(seniorUser);
+
+        var request = HelpRequest.Create(
+            organizationId: null,
+            seniorUserId: seniorId,
+            createdByUserId: seniorId,
+            categoryId: categoryId,
+            safetyLevel: 1,
+            trustLevel: 1,
+            scheduledStartUtc: now.AddHours(2),
+            scheduledEndUtc: now.AddHours(3),
+            durationMinutes: 60,
+            locationType: LocationType.PublicPlace).Value!;
+        request.Publish();
+        request.Assign(volunteerId, request.RowVersion);
+        db.HelpRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var service = new HelpRequestService(
+            db, new ActivitySafetyPolicy(),
+            new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db),
+            new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db),
+            new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db));
+
+        var asVolunteer = await service.GetHelpRequestByIdAsync(request.Id, volunteerId);
+        asVolunteer.Value!.SeniorDisplayName.Should().Be("Elisabeth Huber");
+        asVolunteer.Value!.SeniorPhone.Should().Be("+43 664 9999999");
+
+        var asStranger = await service.GetHelpRequestByIdAsync(request.Id, strangerId);
+        asStranger.Value!.SeniorDisplayName.Should().BeNull();
+        asStranger.Value!.SeniorPhone.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AdvanceStaleOffers_WithZeroEligibleCandidatesAtTier3_EscalatesToCoordinator()
+    {
+        // P3-13 / Gate 3 item 7: a request with no eligible volunteers must
+        // advance 1 → 2 → 3 and then escalate to the org's coordinators —
+        // never sit silently unmatched.
+        using var db = CreateInMemoryDb();
+        var seniorId = Guid.NewGuid();
+        var coordinatorId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        var org = SeniorConnect.Modules.Organizations.Domain.Organization.Create("Freiwilligenzentrum Test", SeniorConnect.Modules.Organizations.Domain.OrganizationType.Ngo);
+        var organizationId = org.Id;
+        db.Organizations.Add(org);
+
+        var membership = SeniorConnect.Modules.Organizations.Domain.OrganizationMembership.Create(
+            organizationId, coordinatorId, SeniorConnect.Modules.Organizations.Domain.MembershipRole.Coordinator);
+        membership.Activate();
+        db.OrganizationMemberships.Add(membership);
+
+        var request = HelpRequest.Create(
+            organizationId: organizationId,
+            seniorUserId: seniorId,
+            createdByUserId: seniorId,
+            categoryId: categoryId,
+            safetyLevel: 1,
+            trustLevel: 1,
+            scheduledStartUtc: now.AddHours(5),
+            scheduledEndUtc: now.AddHours(6),
+            durationMinutes: 60,
+            locationType: LocationType.PublicPlace).Value!;
+        request.Publish();
+        db.HelpRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var trustReader = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
+        var safetyReader = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
+        var notificationService = new SeniorConnect.Modules.Notifications.Infrastructure.NotificationService(db);
+        var coordinatorReader = new SeniorConnect.Modules.Organizations.Infrastructure.OrganizationCoordinatorReader(db);
+        var matchingService = new MatchingService(
+            db, db, trustReader, safetyReader, Microsoft.Extensions.Options.Options.Create(new MatchingConfig()),
+            notificationService, coordinatorReader);
+
+        // Force the tier clock into the past so every call below is "stale"
+        // immediately, instead of waiting 15 real minutes per tier.
+        void MakeStale()
+        {
+            db.ChangeTracker.Clear();
+            var stored = db.HelpRequests.Single(r => r.Id == request.Id);
+            typeof(HelpRequest).GetProperty(nameof(HelpRequest.TierAdvancedAtUtc))!
+                .SetValue(stored, now.AddMinutes(-30));
+            db.SaveChanges();
+        }
+
+        MakeStale();
+        var advanced1 = await matchingService.AdvanceStaleOffersAsync(); // tier 1 -> 2
+        advanced1.Should().Be(1);
+
+        MakeStale();
+        var advanced2 = await matchingService.AdvanceStaleOffersAsync(); // tier 2 -> 3
+        advanced2.Should().Be(1);
+
+        MakeStale();
+        var advanced3 = await matchingService.AdvanceStaleOffersAsync(); // tier 3 stale -> escalate
+        advanced3.Should().Be(1);
+
+        var finalState = await db.HelpRequests.SingleAsync(r => r.Id == request.Id);
+        finalState.OfferTier.Should().Be(3);
+        finalState.EscalatedToCoordinatorAtUtc.Should().NotBeNull();
+
+        var coordinatorNotifications = await db.NotificationMessages
+            .Where(m => m.RecipientUserId == coordinatorId)
+            .ToListAsync();
+        coordinatorNotifications.Should().ContainSingle();
+        coordinatorNotifications[0].Priority.Should().Be(SeniorConnect.Modules.Notifications.Domain.NotificationPriority.Urgent);
+
+        // Escalating twice must not happen.
+        MakeStale();
+        var advanced4 = await matchingService.AdvanceStaleOffersAsync();
+        advanced4.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task DispatchDueAssignmentReminders_SendsExactlyTwoPerAssignment_NeverMore()
+    {
+        // P3-18 / BR-NOTIFY-01: at most 2 pushes per assignment (T-24h, T-2h).
+        using var db = CreateInMemoryDb();
+        var seniorId = Guid.NewGuid();
+        var volunteerId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        var request = HelpRequest.Create(
+            organizationId: null,
+            seniorUserId: seniorId,
+            createdByUserId: seniorId,
+            categoryId: categoryId,
+            safetyLevel: 1,
+            trustLevel: 1,
+            scheduledStartUtc: now.AddHours(20), // inside the 24h window, outside the 2h window
+            scheduledEndUtc: now.AddHours(21),
+            durationMinutes: 60,
+            locationType: LocationType.PublicPlace).Value!;
+        request.Publish();
+        request.Assign(volunteerId, request.RowVersion);
+        db.HelpRequests.Add(request);
+        await db.SaveChangesAsync();
+
+        var trustReader = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
+        var safetyReader = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
+        var notificationService = new SeniorConnect.Modules.Notifications.Infrastructure.NotificationService(db);
+        var coordinatorReader = new SeniorConnect.Modules.Organizations.Infrastructure.OrganizationCoordinatorReader(db);
+        var matchingService = new MatchingService(
+            db, db, trustReader, safetyReader, Microsoft.Extensions.Options.Options.Create(new MatchingConfig()),
+            notificationService, coordinatorReader);
+
+        var firstRun = await matchingService.DispatchDueAssignmentRemindersAsync();
+        firstRun.Should().Be(1); // only the 24h reminder is due so far
+
+        var secondRunSamePoll = await matchingService.DispatchDueAssignmentRemindersAsync();
+        secondRunSamePoll.Should().Be(0); // idempotent — already sent
+
+        // Move the clock: now within the 2h window too.
+        db.ChangeTracker.Clear();
+        var stored = db.HelpRequests.Single(r => r.Id == request.Id);
+        typeof(HelpRequest).GetProperty(nameof(HelpRequest.ScheduledStartUtc))!
+            .SetValue(stored, DateTimeOffset.UtcNow.AddHours(1));
+        db.SaveChanges();
+
+        var thirdRun = await matchingService.DispatchDueAssignmentRemindersAsync();
+        thirdRun.Should().Be(1); // the 2h reminder fires now
+
+        var fourthRun = await matchingService.DispatchDueAssignmentRemindersAsync();
+        fourthRun.Should().Be(0);
+
+        var allNotifications = await db.NotificationMessages
+            .Where(m => m.RecipientUserId == volunteerId)
+            .ToListAsync();
+        allNotifications.Should().HaveCount(2);
     }
 }

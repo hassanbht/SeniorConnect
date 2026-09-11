@@ -85,7 +85,9 @@ public sealed record HelpRequestDto(
     DateTimeOffset? CheckedInAtUtc,
     DateTimeOffset? CompletedAtUtc,
     string? CancellationReason,
-    int RowVersion);
+    int RowVersion,
+    string? SeniorDisplayName = null,
+    string? SeniorPhone = null);
 
 public sealed record CreateHelpRequestRequest(
     Guid? OrganizationId,

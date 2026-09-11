@@ -8,6 +8,7 @@ public static class CommunityModuleExtensions
     public static IServiceCollection AddCommunityModule(this IServiceCollection services)
     {
         services.AddScoped<ICommunityService, CommunityService>();
+        services.AddSingleton<IMessageModerationService, LocalMessageModerationService>();
         return services;
     }
 }

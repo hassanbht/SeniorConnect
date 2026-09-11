@@ -13,17 +13,20 @@ public sealed class HelpRequestService : IHelpRequestService
     private readonly IActivitySafetyPolicy _safetyPolicy;
     private readonly ITrustLevelReader _trustLevelReader;
     private readonly ISafetyBoundaryReader _safetyBoundaryReader;
+    private readonly IUserContactReader _userContactReader;
 
     public HelpRequestService(
-        IHelpRequestsDbContext db, 
+        IHelpRequestsDbContext db,
         IActivitySafetyPolicy safetyPolicy,
         ITrustLevelReader trustLevelReader,
-        ISafetyBoundaryReader safetyBoundaryReader)
+        ISafetyBoundaryReader safetyBoundaryReader,
+        IUserContactReader userContactReader)
     {
         _db = db;
         _safetyPolicy = safetyPolicy;
         _trustLevelReader = trustLevelReader;
         _safetyBoundaryReader = safetyBoundaryReader;
+        _userContactReader = userContactReader;
     }
 
     public async Task<Result<HelpRequestDto>> CreateHelpRequestAsync(
@@ -116,7 +119,13 @@ public sealed class HelpRequestService : IHelpRequestService
             return Error.NotFound("HelpRequest");
         }
 
-        return Result<HelpRequestDto>.Success(MapRequest(helpRequest, requestingUserId));
+        // BR-COMM-04: contact details only ever computed for the counterpart
+        // authorized to see them (senior/creator/assigned volunteer) —
+        // MapRequest re-checks this itself, so passing null when
+        // unauthorized costs nothing extra here.
+        var contact = await _userContactReader.GetContactAsync(helpRequest.SeniorUserId, cancellationToken);
+
+        return Result<HelpRequestDto>.Success(MapRequest(helpRequest, requestingUserId, contact));
     }
 
     public async Task<Result<IReadOnlyList<HelpRequestDto>>> GetSeniorHelpRequestsAsync(
@@ -216,7 +225,23 @@ public sealed class HelpRequestService : IHelpRequestService
             reason: "Accepted by volunteer");
 
         _db.HelpRequestStatusHistories.Add(history);
-        await _db.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // BR-HELP-03 / Gate 3 item 2: two truly-simultaneous accepts can
+            // both pass the in-memory RowVersion check above and only race
+            // at the database's own concurrency token (xmin). The loser
+            // must still get the same clean, non-blaming 409 the sequential
+            // case returns — never an unhandled 500.
+            return new Error(
+                "CONCURRENCY_CONFLICT",
+                "The request was modified or claimed by another user.",
+                ErrorKind.Conflict);
+        }
 
         return Result<HelpRequestDto>.Success(MapRequest(helpRequest, requestingUserId: volunteerUserId));
     }
@@ -408,12 +433,12 @@ public sealed class HelpRequestService : IHelpRequestService
         return Result<IReadOnlyList<HelpRequestStatusHistoryDto>>.Success(dtos);
     }
 
-    private static HelpRequestDto MapRequest(HelpRequest r, Guid requestingUserId)
+    private static HelpRequestDto MapRequest(HelpRequest r, Guid requestingUserId, UserContact? seniorContact = null)
     {
         // Contact details mask rule (BR-COMM-04): Address and precise contact info are only revealed
         // once assigned to the volunteer, or for the senior/creator themselves.
-        var isAuthorizedToSeeAddress = requestingUserId == r.SeniorUserId 
-            || requestingUserId == r.CreatedByUserId 
+        var isAuthorizedToSeeAddress = requestingUserId == r.SeniorUserId
+            || requestingUserId == r.CreatedByUserId
             || (r.AssignedVolunteerUserId.HasValue && r.AssignedVolunteerUserId.Value == requestingUserId);
 
         return new HelpRequestDto(
@@ -443,6 +468,8 @@ public sealed class HelpRequestService : IHelpRequestService
             CheckedInAtUtc: r.CheckedInAtUtc,
             CompletedAtUtc: r.CompletedAtUtc,
             CancellationReason: r.CancellationReason,
-            RowVersion: r.RowVersion);
+            RowVersion: r.RowVersion,
+            SeniorDisplayName: isAuthorizedToSeeAddress ? seniorContact?.DisplayName : null,
+            SeniorPhone: isAuthorizedToSeeAddress ? seniorContact?.Phone : null);
     }
 }

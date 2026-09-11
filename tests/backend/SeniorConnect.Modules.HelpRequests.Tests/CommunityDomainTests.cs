@@ -19,6 +19,7 @@ public sealed class CommunityDomainTests
             category: "games",
             scope: GroupVisibilityScope.Public,
             joinPolicy: GroupJoinPolicy.Open,
+            organizationId: Guid.NewGuid(), // BR-COMM-06 / ADR-020: org required
             locationPostalCode: "1010");
 
         Assert.True(groupResult.IsSuccess);
@@ -41,7 +42,8 @@ public sealed class CommunityDomainTests
             creatorUserId: creatorId,
             title: "Nachbarschaftsgarten",
             description: "Gemeinsames Gärtnern",
-            joinPolicy: GroupJoinPolicy.RequestApproval);
+            joinPolicy: GroupJoinPolicy.RequestApproval,
+            organizationId: Guid.NewGuid()); // BR-COMM-06 / ADR-020: org required
 
         Assert.True(groupResult.IsSuccess);
         var group = groupResult.Value!;

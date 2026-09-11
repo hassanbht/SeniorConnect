@@ -20,6 +20,7 @@ public static class IdentityModuleExtensions
         services.AddScoped<IIdentityVerificationProvider, ManualVerificationProvider>();
         services.AddScoped<IIdentityVerificationProvider, OrganizationVerificationProvider>();
         services.AddScoped<SeniorConnect.Modules.Identity.Contracts.ITrustLevelReader, TrustLevelReader>();
+        services.AddScoped<SeniorConnect.Modules.Identity.Contracts.IUserContactReader, UserContactReader>();
 
         return services;
     }

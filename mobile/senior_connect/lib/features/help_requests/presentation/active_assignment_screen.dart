@@ -20,6 +20,24 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
 import 'widgets/safeguarding_concern_dialog.dart';
 
+class _AssignmentDetails {
+  const _AssignmentDetails({
+    required this.categoryNameKey,
+    required this.address,
+    required this.notes,
+    required this.seniorDisplayName,
+    required this.seniorPhone,
+    required this.rowVersion,
+  });
+
+  final String categoryNameKey;
+  final String? address;
+  final String? notes;
+  final String? seniorDisplayName;
+  final String? seniorPhone;
+  final int rowVersion;
+}
+
 class ActiveAssignmentScreen extends StatefulWidget {
   const ActiveAssignmentScreen({
     super.key,
@@ -35,17 +53,83 @@ class ActiveAssignmentScreen extends StatefulWidget {
 }
 
 class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool _isCheckedIn = false;
   bool _isCompleted = false;
   bool _isActionInProgress = false;
+  String? _loadError;
+  String? _actionError;
+  _AssignmentDetails? _details;
 
-  // Mock data for the active assignment
-  final String _seniorName = 'Elisabeth Huber';
-  final String _seniorPhone = '+43 664 1234567';
-  final String _address = 'Kirchengasse 12, 5020 Salzburg';
-  final String _categoryName = 'help.category.shopping';
-  final String _notes = 'Bitte 1L Milch und Vollkornbrot vom SPAR mitbringen. Geld liegt bereit.';
+  @override
+  void initState() {
+    super.initState();
+    _loadAssignment();
+  }
+
+  Future<void> _loadAssignment() async {
+    final id = widget.assignmentId;
+    if (id == null) {
+      setState(() {
+        _isLoading = false;
+        _loadError = 'errors.generic'.tr();
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+
+    try {
+      final requestData = await widget.apiClient.get<dynamic>(
+        '/api/v1/help-requests/$id',
+      );
+      final categoriesData = await widget.apiClient.get<dynamic>(
+        '/api/v1/activities/categories',
+      );
+
+      final m = requestData as Map<String, dynamic>;
+      var categoryNameKey = 'help.category.shopping';
+      if (categoriesData is List) {
+        for (final c in categoriesData) {
+          final cm = c as Map<String, dynamic>;
+          if (cm['id'] == m['categoryId']) {
+            categoryNameKey = cm['nameKey'] as String? ?? categoryNameKey;
+            break;
+          }
+        }
+      }
+
+      final details = _AssignmentDetails(
+        categoryNameKey: categoryNameKey,
+        address: m['locationAddress'] as String?,
+        notes: m['notes'] as String?,
+        seniorDisplayName: m['seniorDisplayName'] as String?,
+        seniorPhone: m['seniorPhone'] as String?,
+        rowVersion: (m['rowVersion'] as num?)?.toInt() ?? 0,
+      );
+
+      final status = m['status'] as String?;
+
+      if (mounted) {
+        setState(() {
+          _details = details;
+          _isCheckedIn = status == 'InProgress' || status == 'Completed';
+          _isCompleted = status == 'Completed';
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _loadError = 'errors.generic'.tr();
+        });
+      }
+    }
+  }
 
   Future<void> _makeCall(String phoneNumber) async {
     final uri = Uri(scheme: 'tel', path: phoneNumber);
@@ -55,13 +139,14 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
   }
 
   Future<void> _handleCheckIn() async {
-    setState(() => _isActionInProgress = true);
+    setState(() {
+      _isActionInProgress = true;
+      _actionError = null;
+    });
     try {
-      if (widget.assignmentId != null) {
-        await widget.apiClient.post<dynamic>(
-          '/api/v1/help-requests/${widget.assignmentId}:check-in',
-        );
-      }
+      await widget.apiClient.post<dynamic>(
+        '/api/v1/help-requests/${widget.assignmentId}:check-in',
+      );
       if (mounted) {
         setState(() {
           _isCheckedIn = true;
@@ -75,24 +160,27 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
         );
       }
     } catch (_) {
+      // P3-23 fix: a failed check-in must never be shown as a successful
+      // one — the coordinator's hours record depends on this being real.
       if (mounted) {
         setState(() {
-          _isCheckedIn = true; // Optimistic fallback
           _isActionInProgress = false;
+          _actionError = 'errors.generic'.tr();
         });
       }
     }
   }
 
   Future<void> _handleComplete() async {
-    setState(() => _isActionInProgress = true);
+    setState(() {
+      _isActionInProgress = true;
+      _actionError = null;
+    });
     try {
-      if (widget.assignmentId != null) {
-        await widget.apiClient.post<dynamic>(
-          '/api/v1/help-requests/${widget.assignmentId}:complete',
-          data: {'actualDurationMinutes': 60},
-        );
-      }
+      await widget.apiClient.post<dynamic>(
+        '/api/v1/help-requests/${widget.assignmentId}:complete',
+        data: {'actualDurationMinutes': 60},
+      );
       if (mounted) {
         setState(() {
           _isCompleted = true;
@@ -100,10 +188,12 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
         });
       }
     } catch (_) {
+      // P3-23 fix: same rule — a failed completion must surface as an
+      // error, never silently pretend the visit was recorded.
       if (mounted) {
         setState(() {
-          _isCompleted = true;
           _isActionInProgress = false;
+          _actionError = 'errors.generic'.tr();
         });
       }
     }
@@ -120,6 +210,26 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (_isLoading) {
+      return Scaffold(
+        body: SafeArea(child: AppLoading(message: 'common.loading'.tr())),
+      );
+    }
+
+    if (_loadError != null || _details == null) {
+      return Scaffold(
+        body: SafeArea(
+          child: AppErrorView(
+            message: _loadError ?? 'errors.generic'.tr(),
+            retryLabel: 'common.retry'.tr(),
+            onRetry: _loadAssignment,
+          ),
+        ),
+      );
+    }
+
+    final details = _details!;
 
     if (_isCompleted) {
       return Scaffold(
@@ -237,7 +347,9 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                                 radius: 24,
                                 backgroundColor: theme.colorScheme.primaryContainer,
                                 child: Text(
-                                  _seniorName.isNotEmpty ? _seniorName[0] : 'S',
+                                  (details.seniorDisplayName?.isNotEmpty ?? false)
+                                      ? details.seniorDisplayName![0]
+                                      : 'S',
                                   style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -250,13 +362,13 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      _seniorName,
+                                      details.seniorDisplayName ?? 'help.status.assigned'.tr(),
                                       style: theme.textTheme.titleLarge?.copyWith(
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     Text(
-                                      _categoryName.tr(),
+                                      details.categoryNameKey.tr(),
                                       style: theme.textTheme.bodyMedium?.copyWith(
                                         color: theme.colorScheme.onSurfaceVariant,
                                       ),
@@ -268,26 +380,30 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                           ),
                           const Divider(height: AppSpacing.xl),
 
-                          // Phone Call Action
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: Icon(Icons.phone, color: theme.colorScheme.primary),
-                            title: Text(_seniorPhone),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.call),
-                              onPressed: () => _makeCall(_seniorPhone),
+                          // Phone Call Action — only shown once the backend
+                          // actually revealed a number (BR-COMM-04).
+                          if (details.seniorPhone != null) ...[
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(Icons.phone, color: theme.colorScheme.primary),
+                              title: Text(details.seniorPhone!),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.call),
+                                onPressed: () => _makeCall(details.seniorPhone!),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
+                            const SizedBox(height: AppSpacing.xs),
+                          ],
 
                           // Address
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: Icon(Icons.place, color: theme.colorScheme.primary),
-                            title: Text(_address),
-                          ),
+                          if (details.address != null)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(Icons.place, color: theme.colorScheme.primary),
+                              title: Text(details.address!),
+                            ),
 
-                          if (_notes.isNotEmpty) ...[
+                          if ((details.notes ?? '').isNotEmpty) ...[
                             const SizedBox(height: AppSpacing.sm),
                             Container(
                               padding: const EdgeInsetsDirectional.all(AppSpacing.md),
@@ -296,7 +412,7 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                                 borderRadius: AppRadius.card,
                               ),
                               child: Text(
-                                _notes,
+                                details.notes!,
                                 style: theme.textTheme.bodyMedium,
                               ),
                             ),
@@ -306,6 +422,14 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
+
+                  if (_actionError != null) ...[
+                    Text(
+                      _actionError!,
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
 
                   // Check-in or Complete Action Button
                   if (!_isCheckedIn)

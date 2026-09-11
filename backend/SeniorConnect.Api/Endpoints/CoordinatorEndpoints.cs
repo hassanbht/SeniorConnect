@@ -53,6 +53,21 @@ public sealed record BroadcastVolunteerMessageRequest(
     string Message,
     string? RosterStatusFilter = null);
 
+/// <summary>
+/// P2-36 / ADR-020 §1: staff-only, private nomination aid. Never a public
+/// ranking, never shown to users, never an automatically-computed "winner" —
+/// the platform surfaces the numbers, a coordinator decides.
+/// </summary>
+public sealed record RecognitionCandidateDto(
+    Guid UserId,
+    string DisplayName,
+    int TotalConfirmedHours,
+    int CompletedActivityCount);
+
+public sealed record RecognitionShortlistDto(
+    IReadOnlyList<RecognitionCandidateDto> TopVolunteersByHoursGiven,
+    IReadOnlyList<RecognitionCandidateDto> TopSubjectsByActivitiesReceived);
+
 public static class CoordinatorEndpoints
 {
     public static IEndpointRouteBuilder MapCoordinatorEndpoints(this IEndpointRouteBuilder app)
@@ -209,41 +224,59 @@ public static class CoordinatorEndpoints
             INotificationService notificationService,
             CancellationToken ct) =>
         {
-            var currentMonth = DateOnly.FromDateTime(DateTime.UtcNow);
-            var firstOfMonth = new DateOnly(currentMonth.Year, currentMonth.Month, 1);
+            // P2-16 / BR-NOTIFY: idempotent per volunteer per month — see
+            // VolunteerEngagementJobs, shared with the daily background sweep.
+            var (silentCount, dispatchedCount) = await SeniorConnect.Infrastructure.BackgroundJobs.VolunteerEngagementJobs
+                .SendMonthlySilentVolunteerRemindersAsync(db, notificationService, organizationId, ct);
 
-            // Active volunteers with 0 activities in current month
-            var activeVolunteerIds = await db.VolunteerProfiles
-                .Select(p => p.UserId)
-                .Distinct()
-                .ToListAsync(ct);
-
-            var activeThisMonth = await db.Activities
-                .Where(a => a.OrganizationId == organizationId && a.OccurredOn >= firstOfMonth && !a.IsDeleted)
-                .Select(a => a.VolunteerUserId)
-                .Distinct()
-                .ToListAsync(ct);
-
-            var silentVolunteerIds = activeVolunteerIds.Except(activeThisMonth).ToList();
-            int dispatchedCount = 0;
-
-            foreach (var volId in silentVolunteerIds)
-            {
-                var dispatchResult = await notificationService.DispatchNotificationAsync(new DispatchNotificationRequest(
-                    RecipientUserId: volId,
-                    Category: NotificationCategory.HelpRequests,
-                    Priority: NotificationPriority.Normal,
-                    PreferredChannel: NotificationChannel.InApp,
-                    Title: "Monatsrückblick: Stunden erfassen",
-                    Body: "Hast du diesen Monat Nachbarschaftshilfe geleistet? Trage deine Stunden unkompliziert ein."), ct);
-
-                if (dispatchResult.IsSuccess) dispatchedCount++;
-            }
-
-            return Results.Ok(new { SilentVolunteersCount = silentVolunteerIds.Count, RemindersDispatched = dispatchedCount });
+            return Results.Ok(new { SilentVolunteersCount = silentCount, RemindersDispatched = dispatchedCount });
         })
         .WithName("SendMonthlyVolunteerReminders")
         .Produces(StatusCodes.Status200OK);
+
+        // P2-36 / ADR-020 §1: private, coordinator-only recognition shortlist.
+        // Never exposed to any non-staff endpoint, never a public ranking.
+        coordGroup.MapGet("/organizations/{organizationId:guid}/recognition-shortlist", async (
+            Guid organizationId,
+            int top,
+            SeniorConnectDbContext db,
+            CancellationToken ct) =>
+        {
+            var take = top > 0 ? top : 10;
+
+            var confirmed = db.Activities
+                .Where(a => a.OrganizationId == organizationId && !a.IsDeleted && a.Status == ActivityStatus.Confirmed);
+
+            var byVolunteer = await confirmed
+                .GroupBy(a => a.VolunteerUserId)
+                .Select(g => new { UserId = g.Key, Minutes = g.Sum(a => a.DurationMinutes), Count = g.Count() })
+                .OrderByDescending(g => g.Minutes)
+                .Take(take)
+                .ToListAsync(ct);
+
+            var bySubject = await confirmed
+                .Where(a => a.SubjectUserId != null)
+                .GroupBy(a => a.SubjectUserId!.Value)
+                .Select(g => new { UserId = g.Key, Minutes = g.Sum(a => a.DurationMinutes), Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .Take(take)
+                .ToListAsync(ct);
+
+            var allIds = byVolunteer.Select(x => x.UserId).Concat(bySubject.Select(x => x.UserId)).Distinct().ToList();
+            var names = await db.Users
+                .Where(u => allIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.DisplayName, ct);
+
+            var shortlist = new RecognitionShortlistDto(
+                TopVolunteersByHoursGiven: byVolunteer.Select(g => new RecognitionCandidateDto(
+                    g.UserId, names.GetValueOrDefault(g.UserId, "?"), g.Minutes / 60, g.Count)).ToList(),
+                TopSubjectsByActivitiesReceived: bySubject.Select(g => new RecognitionCandidateDto(
+                    g.UserId, names.GetValueOrDefault(g.UserId, "?"), g.Minutes / 60, g.Count)).ToList());
+
+            return Results.Ok(shortlist);
+        })
+        .WithName("GetRecognitionShortlist")
+        .Produces<RecognitionShortlistDto>(StatusCodes.Status200OK);
 
         coordGroup.MapPost("/activities:bulk-entry", async (
             BulkEntryRequest request,

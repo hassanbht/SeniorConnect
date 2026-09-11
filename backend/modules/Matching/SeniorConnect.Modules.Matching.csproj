@@ -12,9 +12,12 @@
     <ProjectReference Include="..\Profiles\SeniorConnect.Modules.Profiles.csproj" />
     <ProjectReference Include="..\Identity\SeniorConnect.Modules.Identity.csproj" />
     <ProjectReference Include="..\TrustSafety\SeniorConnect.Modules.TrustSafety.csproj" />
+    <ProjectReference Include="..\Organizations\SeniorConnect.Modules.Organizations.csproj" />
+    <ProjectReference Include="..\Notifications\SeniorConnect.Modules.Notifications.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0-*" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0-*" />
   </ItemGroup>
 </Project>

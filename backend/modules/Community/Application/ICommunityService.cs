@@ -93,6 +93,7 @@ public interface ICommunityService
 
     Task<Result<IReadOnlyList<ThreadMessageDto>>> GetMessagesAsync(
         Guid threadId,
+        Guid requestingUserId,
         CancellationToken cancellationToken = default);
 
     Task<Result<ThreadMessageDto>> PostMessageAsync(

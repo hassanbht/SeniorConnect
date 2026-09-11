@@ -99,6 +99,12 @@ public sealed record Error(
         ErrorKind.Conflict,
         new Dictionary<string, object> { ["referralGroup"] = referralGroup });
 
+    /// <summary>BR-COMM-06, ADR-020 — only an Organization may publish a public group/page.</summary>
+    public static Error OrganizationRequiredForGroup() => new(
+        "ORGANIZATION_REQUIRED",
+        "A community group can only be published by an organization, not an individual.",
+        ErrorKind.Validation);
+
     public static Error Validation(string detail) =>
         new("VALIDATION_FAILED", detail, ErrorKind.Validation);
 

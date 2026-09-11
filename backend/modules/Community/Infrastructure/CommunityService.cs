@@ -8,10 +8,12 @@ namespace SeniorConnect.Modules.Community.Infrastructure;
 public sealed class CommunityService : ICommunityService
 {
     private readonly ICommunityDbContext _db;
+    private readonly IMessageModerationService _moderation;
 
-    public CommunityService(ICommunityDbContext db)
+    public CommunityService(ICommunityDbContext db, IMessageModerationService moderation)
     {
         _db = db;
+        _moderation = moderation;
     }
 
     // --- Groups ---
@@ -581,6 +583,7 @@ public sealed class CommunityService : ICommunityService
 
     public async Task<Result<IReadOnlyList<ThreadMessageDto>>> GetMessagesAsync(
         Guid threadId,
+        Guid requestingUserId,
         CancellationToken cancellationToken = default)
     {
         var messages = await _db.ThreadMessages
@@ -588,7 +591,11 @@ public sealed class CommunityService : ICommunityService
             .OrderBy(m => m.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
-        var dtos = messages.Select(MapMessage).ToList();
+        // BR-COMM-05 / ADR-020: a flagged message is held for a coordinator,
+        // never silently shown to anyone but its own author while pending.
+        var visible = messages.Where(m => !m.IsFlaggedForModeration || m.SenderUserId == requestingUserId);
+
+        var dtos = visible.Select(MapMessage).ToList();
         return Result<IReadOnlyList<ThreadMessageDto>>.Success(dtos);
     }
 
@@ -618,6 +625,15 @@ public sealed class CommunityService : ICommunityService
         }
 
         var message = messageResult.Value!;
+
+        // BR-COMM-05 / ADR-020: screen before the message is visible to
+        // anyone but its author. Held, never silently deleted.
+        var verdict = _moderation.Screen(request.Content);
+        if (verdict.IsFlagged)
+        {
+            message.FlagForModeration(verdict.Reason!);
+        }
+
         _db.ThreadMessages.Add(message);
         await _db.SaveChangesAsync(cancellationToken);
 

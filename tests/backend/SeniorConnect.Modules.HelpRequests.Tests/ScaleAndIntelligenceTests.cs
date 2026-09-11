@@ -122,7 +122,9 @@ public sealed class ScaleAndIntelligenceTests
 
         var trustReader = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
         var safetyReader = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
-        var matchingService = new MatchingService(db, db, trustReader, safetyReader);
+        var matchingService = new MatchingService(db, db, trustReader, safetyReader, Microsoft.Extensions.Options.Options.Create(new MatchingConfig()),
+            new SeniorConnect.Modules.Notifications.Infrastructure.NotificationService(db),
+            new SeniorConnect.Modules.Organizations.Infrastructure.OrganizationCoordinatorReader(db));
         var hybridResult = await matchingService.GetHybridProposalsAsync(new HybridMatchingRequest(helpRequest.Id));
 
         Assert.True(hybridResult.IsSuccess);

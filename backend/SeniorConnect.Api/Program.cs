@@ -75,7 +75,7 @@ builder.Services.AddIdentityModule();
 builder.Services.AddProfilesModule();
 builder.Services.AddOrganizationsModule();
 builder.Services.AddHelpRequestsModule();
-builder.Services.AddMatchingModule();
+builder.Services.AddMatchingModule(builder.Configuration);
 builder.Services.AddTrustSafetyModule();
 builder.Services.AddReportingModule();
 builder.Services.AddCommunityModule();
@@ -84,6 +84,12 @@ builder.Services.AddNotificationModule();
 
 // P2-18 / P7-08: Data Maintenance Hosted Service
 builder.Services.AddHostedService<SeniorConnect.Infrastructure.BackgroundJobs.DataMaintenanceHostedService>();
+
+// P3-13 / P3-18: Help-request lifecycle sweep (tiered escalation, assignment reminders)
+builder.Services.AddHostedService<SeniorConnect.Infrastructure.BackgroundJobs.HelpRequestLifecycleHostedService>();
+
+// P2-16: Monthly silent-volunteer reminder sweep
+builder.Services.AddHostedService<SeniorConnect.Infrastructure.BackgroundJobs.MonthlyVolunteerReminderHostedService>();
 
 // P1-05 / P9-02: Production Health Checks & Probes
 builder.Services.AddHealthChecks()

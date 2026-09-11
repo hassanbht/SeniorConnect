@@ -18,8 +18,11 @@ import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_states.dart';
 
 enum _RequestStep {
+  loadingCategories,
+  categoriesFailed,
   selectCategory,
   selectTiming,
   addDetails,
@@ -33,13 +36,11 @@ class HelpCategoryItem {
     required this.id,
     required this.titleKey,
     required this.icon,
-    this.isBlocked = false,
   });
 
   final String id;
   final String titleKey;
   final IconData icon;
-  final bool isBlocked;
 }
 
 class SeniorRequestFlowScreen extends StatefulWidget {
@@ -55,13 +56,58 @@ class SeniorRequestFlowScreen extends StatefulWidget {
 }
 
 class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
-  _RequestStep _currentStep = _RequestStep.selectCategory;
+  _RequestStep _currentStep = _RequestStep.loadingCategories;
 
   HelpCategoryItem? _selectedCategory;
   String _selectedTiming = 'today';
   final _detailsController = TextEditingController();
   bool _isSubmitting = false;
   String? _errorMessage;
+
+  // P3-21 fix: real category ids fetched from the backend, never a
+  // hardcoded GUID — the server-side blocked-category/emergency routing
+  // (BR-SCOPE-02/03) depends entirely on the correct category being sent.
+  final Map<String, String> _categoryIdsByCode = {};
+  final Map<String, bool> _categoryBlockedByCode = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() => _currentStep = _RequestStep.loadingCategories);
+
+    try {
+      final data = await widget.apiClient.get<dynamic>(
+        '/api/v1/activities/categories',
+      );
+
+      if (data is! List) {
+        throw const FormatException('Unexpected categories response shape');
+      }
+
+      _categoryIdsByCode.clear();
+      _categoryBlockedByCode.clear();
+      for (final item in data) {
+        final m = item as Map<String, dynamic>;
+        final code = m['code'] as String?;
+        final id = m['id'] as String?;
+        if (code == null || id == null) continue;
+        _categoryIdsByCode[code] = id;
+        _categoryBlockedByCode[code] = m['isBlocked'] as bool? ?? false;
+      }
+
+      if (mounted) {
+        setState(() => _currentStep = _RequestStep.selectCategory);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _currentStep = _RequestStep.categoriesFailed);
+      }
+    }
+  }
 
   static const List<HelpCategoryItem> _categories = [
     HelpCategoryItem(
@@ -104,11 +150,10 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
       titleKey: 'help.category.mentoring',
       icon: Icons.school_outlined,
     ),
-    HelpCategoryItem(
-      id: 'other',
-      titleKey: 'help.category.other',
-      icon: Icons.help_outline,
-    ),
+    // No 'other' card: every offered category must resolve to a real
+    // backend ActivityCategory id (see _loadCategories) — a catch-all card
+    // that silently sent the wrong category id was exactly the P3-21 bug
+    // the Gate 3 audit found.
   ];
 
   @override
@@ -128,6 +173,16 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
   }
 
   void _onCategorySelected(HelpCategoryItem category) {
+    // BR-SCOPE-02/03: a blocked category never becomes a HelpRequest —
+    // route to the referral step instead of the normal flow.
+    if (_categoryBlockedByCode[category.id] ?? false) {
+      setState(() {
+        _selectedCategory = category;
+        _currentStep = _RequestStep.blockedReferral;
+      });
+      return;
+    }
+
     setState(() {
       _selectedCategory = category;
       _currentStep = _RequestStep.selectTiming;
@@ -182,6 +237,12 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
   }
 
   Future<void> _submitRequest() async {
+    final categoryId = _categoryIdsByCode[_selectedCategory?.id];
+    if (categoryId == null) {
+      setState(() => _errorMessage = 'errors.generic'.tr());
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
       _errorMessage = null;
@@ -197,7 +258,7 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
       }
 
       final payload = {
-        'categoryId': '00000000-0000-0000-0000-000000000001',
+        'categoryId': categoryId,
         'scheduledStartUtc': scheduledStart.toIso8601String(),
         'scheduledEndUtc': scheduledStart.add(const Duration(hours: 2)).toIso8601String(),
         'durationMinutes': 60,
@@ -229,6 +290,8 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
   void _onBackPressed() {
     setState(() {
       switch (_currentStep) {
+        case _RequestStep.loadingCategories:
+        case _RequestStep.categoriesFailed:
         case _RequestStep.selectCategory:
           context.pop();
           break;
@@ -278,6 +341,14 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
 
   Widget _buildCurrentStep(ThemeData theme) {
     switch (_currentStep) {
+      case _RequestStep.loadingCategories:
+        return AppLoading(message: 'common.loading'.tr());
+      case _RequestStep.categoriesFailed:
+        return AppErrorView(
+          message: 'errors.generic'.tr(),
+          retryLabel: 'common.retry'.tr(),
+          onRetry: _loadCategories,
+        );
       case _RequestStep.selectCategory:
         return _buildCategoryStep(theme);
       case _RequestStep.selectTiming:

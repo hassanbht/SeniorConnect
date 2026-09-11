@@ -1,11 +1,15 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SeniorConnect.Domain;
 using SeniorConnect.Modules.HelpRequests.Application;
 using SeniorConnect.Modules.HelpRequests.Domain;
 using SeniorConnect.Modules.Identity.Contracts;
 using SeniorConnect.Modules.Matching.Application;
 using SeniorConnect.Modules.Matching.Domain;
+using SeniorConnect.Modules.Notifications.Application;
+using SeniorConnect.Modules.Notifications.Domain;
+using SeniorConnect.Modules.Organizations.Contracts;
 using SeniorConnect.Modules.Profiles.Application;
 using SeniorConnect.Modules.TrustSafety.Contracts;
 
@@ -13,21 +17,33 @@ namespace SeniorConnect.Modules.Matching.Infrastructure;
 
 public sealed class MatchingService : IMatchingService
 {
+    // P3-13: how long a tier sits stale before widening/escalating.
+    private static readonly TimeSpan TierEscalationInterval = TimeSpan.FromMinutes(15);
+
     private readonly IHelpRequestsDbContext _helpDb;
     private readonly IProfilesDbContext _profileDb;
     private readonly ITrustLevelReader _trustLevelReader;
     private readonly ISafetyBoundaryReader _safetyBoundaryReader;
+    private readonly IOptions<MatchingConfig> _configuredWeights;
+    private readonly INotificationService _notificationService;
+    private readonly IOrganizationCoordinatorReader _coordinatorReader;
 
     public MatchingService(
         IHelpRequestsDbContext helpDb,
         IProfilesDbContext profileDb,
         ITrustLevelReader trustLevelReader,
-        ISafetyBoundaryReader safetyBoundaryReader)
+        ISafetyBoundaryReader safetyBoundaryReader,
+        IOptions<MatchingConfig> configuredWeights,
+        INotificationService notificationService,
+        IOrganizationCoordinatorReader coordinatorReader)
     {
         _helpDb = helpDb;
         _profileDb = profileDb;
         _trustLevelReader = trustLevelReader;
         _safetyBoundaryReader = safetyBoundaryReader;
+        _configuredWeights = configuredWeights;
+        _notificationService = notificationService;
+        _coordinatorReader = coordinatorReader;
     }
 
     public async Task<Result<IReadOnlyList<MatchingCandidate>>> FindCandidatesAsync(
@@ -35,7 +51,11 @@ public sealed class MatchingService : IMatchingService
         MatchingConfig? config = null,
         CancellationToken cancellationToken = default)
     {
-        var cfg = config ?? new MatchingConfig();
+        // P3-09 / Gate 3 item 6: an explicit caller-supplied config still
+        // wins (used by tests and any future A/B path); otherwise the
+        // configured "Matching:Weights" section from appsettings.json is
+        // used, so changing a weight never requires a rebuild.
+        var cfg = config ?? _configuredWeights.Value;
 
         var request = await _helpDb.HelpRequests
             .FirstOrDefaultAsync(r => r.Id == helpRequestId && !r.IsDeleted, cancellationToken);
@@ -196,7 +216,8 @@ public sealed class MatchingService : IMatchingService
                 LocationPostalCode: r.LocationPostalCode,
                 DistanceKm: Math.Round(dist, 1),
                 IsEligible: isEligible,
-                IneligibilityReason: ineligibilityReason));
+                IneligibilityReason: ineligibilityReason,
+                RowVersion: r.RowVersion));
         }
 
         return Result<IReadOnlyList<VolunteerFeedItem>>.Success(items);
@@ -263,6 +284,176 @@ public sealed class MatchingService : IMatchingService
             .ToList();
 
         return Result<IReadOnlyList<HybridMatchingProposal>>.Success(sortedProposals);
+    }
+
+    public async Task<int> AdvanceStaleOffersAsync(CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var cutoff = now - TierEscalationInterval;
+
+        var staleRequests = await _helpDb.HelpRequests
+            .Where(r => !r.IsDeleted
+                     && (r.Status == HelpRequestStatus.Open || r.Status == HelpRequestStatus.Matching || r.Status == HelpRequestStatus.Offered)
+                     && r.EscalatedToCoordinatorAtUtc == null
+                     && r.TierAdvancedAtUtc != null
+                     && r.TierAdvancedAtUtc <= cutoff)
+            .ToListAsync(cancellationToken);
+
+        var actedOn = 0;
+
+        foreach (var request in staleRequests)
+        {
+            if (request.OfferTier >= 3)
+            {
+                // Tier 3 has been sitting stale too — this is what Gate 3
+                // item 7 means by "tiers 1-3 produce nothing".
+                var escalateResult = request.MarkEscalatedToCoordinator();
+                if (escalateResult.IsFailure)
+                {
+                    continue;
+                }
+
+                actedOn++;
+
+                if (request.OrganizationId.HasValue)
+                {
+                    var coordinatorIds = await _coordinatorReader.GetActiveCoordinatorUserIdsAsync(
+                        request.OrganizationId.Value, cancellationToken);
+
+                    foreach (var coordinatorId in coordinatorIds)
+                    {
+                        await _notificationService.DispatchNotificationAsync(new DispatchNotificationRequest(
+                            RecipientUserId: coordinatorId,
+                            Category: NotificationCategory.HelpRequests,
+                            Priority: NotificationPriority.Urgent,
+                            PreferredChannel: NotificationChannel.Push,
+                            Title: "Anfrage braucht Ihre Aufmerksamkeit",
+                            Body: "Keine Freiwillige/r hat eine Anfrage angenommen, obwohl der Kreis mehrfach erweitert wurde.",
+                            PayloadJson: $"{{\"helpRequestId\":\"{request.Id}\"}}"), cancellationToken);
+                    }
+                }
+
+                continue;
+            }
+
+            var candidatesResult = await FindCandidatesAsync(request.Id, config: null, cancellationToken);
+            if (candidatesResult.IsFailure)
+            {
+                continue;
+            }
+
+            var eligible = candidatesResult.Value!.Where(c => c.IsEligible).ToList();
+            var nextTier = request.OfferTier + 1;
+            var take = TierCandidateCount(nextTier);
+            var batch = eligible.Take(take).Select(c => c.VolunteerUserId).ToList();
+
+            var advanceResult = request.AdvanceOfferTier(batch);
+            if (advanceResult.IsFailure)
+            {
+                continue;
+            }
+
+            actedOn++;
+
+            foreach (var volunteerId in batch)
+            {
+                await _notificationService.DispatchNotificationAsync(new DispatchNotificationRequest(
+                    RecipientUserId: volunteerId,
+                    Category: NotificationCategory.HelpRequests,
+                    Priority: NotificationPriority.Normal,
+                    PreferredChannel: NotificationChannel.Push,
+                    Title: "Neue Anfrage in Ihrer Nähe",
+                    Body: "Es gibt eine offene Anfrage, die zu Ihnen passen könnte."), cancellationToken);
+            }
+        }
+
+        if (actedOn > 0)
+        {
+            await _helpDb.SaveChangesAsync(cancellationToken);
+        }
+
+        return actedOn;
+    }
+
+    private static int TierCandidateCount(int tier) => tier switch
+    {
+        1 => 3,
+        2 => 7,
+        _ => int.MaxValue
+    };
+
+    public async Task<int> DispatchDueAssignmentRemindersAsync(CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        var dueFor24h = await _helpDb.HelpRequests
+            .Where(r => !r.IsDeleted
+                     && r.Status == HelpRequestStatus.Assigned
+                     && r.Reminder24hSentAtUtc == null
+                     && r.ScheduledStartUtc <= now.AddHours(24))
+            .ToListAsync(cancellationToken);
+
+        var dueFor2h = await _helpDb.HelpRequests
+            .Where(r => !r.IsDeleted
+                     && r.Status == HelpRequestStatus.Assigned
+                     && r.Reminder2hSentAtUtc == null
+                     && r.ScheduledStartUtc <= now.AddHours(2))
+            .ToListAsync(cancellationToken);
+
+        var sent = 0;
+
+        foreach (var request in dueFor24h)
+        {
+            if (!request.AssignedVolunteerUserId.HasValue)
+            {
+                continue;
+            }
+
+            if (request.MarkReminder24hSent().IsFailure)
+            {
+                continue;
+            }
+
+            await _notificationService.DispatchNotificationAsync(new DispatchNotificationRequest(
+                RecipientUserId: request.AssignedVolunteerUserId.Value,
+                Category: NotificationCategory.HelpRequests,
+                Priority: NotificationPriority.Normal,
+                PreferredChannel: NotificationChannel.Push,
+                Title: "Erinnerung: morgen",
+                Body: "Ihre Zusage beginnt in etwa 24 Stunden."), cancellationToken);
+
+            sent++;
+        }
+
+        foreach (var request in dueFor2h)
+        {
+            if (!request.AssignedVolunteerUserId.HasValue)
+            {
+                continue;
+            }
+
+            if (request.MarkReminder2hSent().IsFailure)
+            {
+                continue;
+            }
+
+            await _notificationService.DispatchNotificationAsync(new DispatchNotificationRequest(
+                RecipientUserId: request.AssignedVolunteerUserId.Value,
+                Category: NotificationCategory.HelpRequests,
+                Priority: NotificationPriority.Urgent,
+                PreferredChannel: NotificationChannel.Push,
+                Title: "Erinnerung: bald",
+                Body: "Ihre Zusage beginnt in etwa 2 Stunden. Ich komme / Ich schaffe es nicht?"), cancellationToken);
+
+            sent++;
+        }
+
+        if (sent > 0)
+        {
+            await _helpDb.SaveChangesAsync(cancellationToken);
+        }
+
+        return sent;
     }
 
     private static double CalculateDistanceKm(double lat1, double lon1, double lat2, double lon2)

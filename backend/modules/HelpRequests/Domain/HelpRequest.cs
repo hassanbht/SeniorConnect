@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SeniorConnect.Domain;
 
 namespace SeniorConnect.Modules.HelpRequests.Domain;
@@ -71,6 +72,23 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
 
     [DataClass(DataClass.Operational)]
     public string OfferedVolunteersJson { get; private set; } = "[]";
+
+    /// <summary>P3-13: 1 = first 3 candidates, 2 = first 7, 3 = all eligible.</summary>
+    [DataClass(DataClass.Operational)]
+    public int OfferTier { get; private set; } = 1;
+
+    [DataClass(DataClass.Operational)]
+    public DateTimeOffset? TierAdvancedAtUtc { get; private set; }
+
+    [DataClass(DataClass.Operational)]
+    public DateTimeOffset? EscalatedToCoordinatorAtUtc { get; private set; }
+
+    /// <summary>P3-18 / BR-NOTIFY-01: at most 2 reminders per assignment, ever.</summary>
+    [DataClass(DataClass.Operational)]
+    public DateTimeOffset? Reminder24hSentAtUtc { get; private set; }
+
+    [DataClass(DataClass.Operational)]
+    public DateTimeOffset? Reminder2hSentAtUtc { get; private set; }
 
     [DataClass(DataClass.Operational)]
     public DateTimeOffset? AssignedAtUtc { get; private set; }
@@ -187,9 +205,79 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
             return Error.InvalidStateTransition(Status.ToString(), nameof(HelpRequestStatus.Open));
         }
 
+        var now = DateTimeOffset.UtcNow;
         Status = HelpRequestStatus.Open;
+        OfferTier = 1;
+        TierAdvancedAtUtc = now;
         RowVersion++;
+        UpdatedAtUtc = now;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// P3-13: widens the offer from 3 → 7 → all eligible candidates. Returns
+    /// false when already at the widest tier — the caller must escalate to
+    /// a coordinator instead of advancing further.
+    /// </summary>
+    public Result<bool> AdvanceOfferTier(IReadOnlyCollection<Guid> newlyOfferedVolunteerIds)
+    {
+        if (OfferTier >= 3)
+        {
+            return Result<bool>.Success(false);
+        }
+
+        OfferTier++;
+
+        var already = JsonSerializer.Deserialize<List<Guid>>(OfferedVolunteersJson) ?? [];
+        foreach (var id in newlyOfferedVolunteerIds)
+        {
+            if (!already.Contains(id))
+            {
+                already.Add(id);
+            }
+        }
+
+        OfferedVolunteersJson = JsonSerializer.Serialize(already);
+        TierAdvancedAtUtc = DateTimeOffset.UtcNow;
         UpdatedAtUtc = DateTimeOffset.UtcNow;
+
+        return Result<bool>.Success(true);
+    }
+
+    /// <summary>P3-13 / Gate 3 item 7: reached only once tier 3 also produces nothing.</summary>
+    public Result MarkEscalatedToCoordinator()
+    {
+        if (EscalatedToCoordinatorAtUtc.HasValue)
+        {
+            return Error.Conflict("ALREADY_ESCALATED", "This request was already escalated to a coordinator.");
+        }
+
+        EscalatedToCoordinatorAtUtc = DateTimeOffset.UtcNow;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+        return Result.Success();
+    }
+
+    /// <summary>P3-18 / BR-NOTIFY-01: the T-24h reminder, sent at most once.</summary>
+    public Result MarkReminder24hSent()
+    {
+        if (Reminder24hSentAtUtc.HasValue)
+        {
+            return Error.Conflict("REMINDER_ALREADY_SENT", "The 24-hour reminder was already sent.");
+        }
+
+        Reminder24hSentAtUtc = DateTimeOffset.UtcNow;
+        return Result.Success();
+    }
+
+    /// <summary>P3-18 / BR-NOTIFY-01: the T-2h reminder, sent at most once.</summary>
+    public Result MarkReminder2hSent()
+    {
+        if (Reminder2hSentAtUtc.HasValue)
+        {
+            return Error.Conflict("REMINDER_ALREADY_SENT", "The 2-hour reminder was already sent.");
+        }
+
+        Reminder2hSentAtUtc = DateTimeOffset.UtcNow;
         return Result.Success();
     }
 

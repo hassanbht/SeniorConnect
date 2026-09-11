@@ -34,4 +34,5 @@ public sealed record VolunteerFeedItem(
     string? LocationPostalCode,
     double DistanceKm,
     bool IsEligible,
-    string? IneligibilityReason);
+    string? IneligibilityReason,
+    int RowVersion);

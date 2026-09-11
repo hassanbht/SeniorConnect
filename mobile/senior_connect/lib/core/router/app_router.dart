@@ -108,9 +108,12 @@ GoRouter buildRouter({required ApiClient apiClient}) {
             builder: (context, state) => VolunteerFeedScreen(apiClient: apiClient),
           ),
           GoRoute(
-            path: AppRoutes.activeAssignment,
+            path: '${AppRoutes.activeAssignment}/:id',
             name: 'active-assignment',
-            builder: (context, state) => ActiveAssignmentScreen(apiClient: apiClient),
+            builder: (context, state) => ActiveAssignmentScreen(
+              apiClient: apiClient,
+              assignmentId: state.pathParameters['id'],
+            ),
           ),
           GoRoute(
             path: AppRoutes.logActivity,

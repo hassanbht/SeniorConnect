@@ -39,6 +39,12 @@ public sealed class VolunteerProfile : Entity, IAuditable
     [DataClass(DataClass.Operational)]
     public DateTimeOffset? ActiveSinceUtc { get; private set; }
 
+    /// <summary>P2-16 / BR-NOTIFY: first-of-month marker so the silent-volunteer
+    /// reminder fires at most once per calendar month, however often the
+    /// sweep runs.</summary>
+    [DataClass(DataClass.Operational)]
+    public DateOnly? LastMonthlyReminderMonth { get; private set; }
+
     [DataClass(DataClass.Operational)]
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
@@ -107,6 +113,19 @@ public sealed class VolunteerProfile : Entity, IAuditable
     {
         IsAcceptingRequests = isAcceptingRequests;
         UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>Returns false (no-op) if this month's reminder was already sent.</summary>
+    public bool TryMarkMonthlyReminderSent(DateOnly firstOfMonth)
+    {
+        if (LastMonthlyReminderMonth == firstOfMonth)
+        {
+            return false;
+        }
+
+        LastMonthlyReminderMonth = firstOfMonth;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+        return true;
     }
 
     public void UpdateReliability(decimal? score)

@@ -31,7 +31,6 @@ class HelpRequestFeedItem {
     required this.rowVersion,
     this.isEligible = true,
     this.ineligibleReason,
-    this.howToGetEligible,
   });
 
   final String id;
@@ -43,7 +42,6 @@ class HelpRequestFeedItem {
   final int rowVersion;
   final bool isEligible;
   final String? ineligibleReason;
-  final String? howToGetEligible;
 }
 
 class VolunteerFeedScreen extends StatefulWidget {
@@ -78,75 +76,52 @@ class _VolunteerFeedScreenState extends State<VolunteerFeedScreen> {
     });
 
     try {
+      // P3-22 fix: the purpose-built feed endpoint, not the raw request
+      // list — it carries real distance/category/eligibility per BR-SAFETY,
+      // computed server-side, never faked on the client.
       final data = await widget.apiClient.get<dynamic>(
-        '/api/v1/help-requests',
+        '/api/v1/matching/feed',
+        queryParameters: {'radiusKm': _maxDistance},
       );
 
-      if (data is List) {
-        _requests = data.map((item) {
-          final m = item as Map<String, dynamic>;
-          return HelpRequestFeedItem(
-            id: m['id'] as String? ?? '',
-            title: m['notes'] as String? ?? 'help.category.shopping'.tr(),
-            categoryName: 'help.category.shopping'.tr(),
-            distanceKm: 2.5,
-            scheduledTime: 'common.today'.tr() + ', 14:00',
-            durationMinutes: (m['durationMinutes'] as num?)?.toInt() ?? 60,
-            rowVersion: (m['rowVersion'] as num?)?.toInt() ?? 1,
-            isEligible: true,
-          );
-        }).toList();
-      } else {
-        _requests = _getMockFeedItems();
+      if (data is! List) {
+        throw const FormatException('Unexpected feed response shape');
       }
+
+      _requests = data.map((item) {
+        final m = item as Map<String, dynamic>;
+        final startUtc = DateTime.tryParse(
+          m['scheduledStartUtc'] as String? ?? '',
+        )?.toLocal();
+
+        return HelpRequestFeedItem(
+          id: m['helpRequestId'] as String? ?? '',
+          title: (m['categoryNameKey'] as String? ?? 'help.category.shopping').tr(),
+          categoryName: (m['categoryNameKey'] as String? ?? 'help.category.shopping').tr(),
+          distanceKm: (m['distanceKm'] as num?)?.toDouble() ?? 0,
+          scheduledTime: startUtc == null
+              ? ''
+              : '${startUtc.day}.${startUtc.month}., ${startUtc.hour.toString().padLeft(2, '0')}:${startUtc.minute.toString().padLeft(2, '0')}',
+          durationMinutes: (m['durationMinutes'] as num?)?.toInt() ?? 60,
+          rowVersion: (m['rowVersion'] as num?)?.toInt() ?? 0,
+          isEligible: m['isEligible'] as bool? ?? false,
+          ineligibleReason: m['ineligibilityReason'] as String?,
+        );
+      }).toList();
 
       if (mounted) {
         setState(() => _isLoading = false);
       }
     } catch (_) {
+      // P3-22 fix: a real failure is shown as a real error, never masked
+      // behind fabricated demo cards.
       if (mounted) {
-        // Fallback to demo items if local backend is empty or unreachable
-        _requests = _getMockFeedItems();
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'errors.generic'.tr();
+        });
       }
     }
-  }
-
-  List<HelpRequestFeedItem> _getMockFeedItems() {
-    return [
-      HelpRequestFeedItem(
-        id: '1',
-        title: 'Begleitung zum Arzttermin in der Hauptstraße',
-        categoryName: 'help.category.doctor'.tr(),
-        distanceKm: 1.2,
-        scheduledTime: 'common.today'.tr() + ', 10:30',
-        durationMinutes: 90,
-        rowVersion: 1,
-        isEligible: true,
-      ),
-      HelpRequestFeedItem(
-        id: '2',
-        title: 'Hilfe beim Lebensmitteleinkauf (BILLA)',
-        categoryName: 'help.category.shopping'.tr(),
-        distanceKm: 3.5,
-        scheduledTime: 'common.tomorrow'.tr() + ', 15:00',
-        durationMinutes: 60,
-        rowVersion: 1,
-        isEligible: true,
-      ),
-      HelpRequestFeedItem(
-        id: '3',
-        title: 'Fahrt zum Facharzt nach Salzburg (Privat-PKW)',
-        categoryName: 'help.category.doctor'.tr(),
-        distanceKm: 4.8,
-        scheduledTime: 'common.this_week'.tr() + ', Fr 09:00',
-        durationMinutes: 120,
-        rowVersion: 1,
-        isEligible: false,
-        ineligibleReason: 'trust.missing_title'.tr() + ' Kfz-Versicherungsnachweis',
-        howToGetEligible: 'trust.how_to_get_it'.tr() + ': Im Profil unter Bestätigungen hochladen.',
-      ),
-    ];
   }
 
   Future<void> _acceptRequest(HelpRequestFeedItem item) async {
@@ -166,7 +141,7 @@ class _VolunteerFeedScreenState extends State<VolunteerFeedScreen> {
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
-        context.push(AppRoutes.activeAssignment);
+        context.push('${AppRoutes.activeAssignment}/${item.id}');
       }
     } catch (e) {
       if (mounted) {
@@ -196,18 +171,7 @@ class _VolunteerFeedScreenState extends State<VolunteerFeedScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('trust.missing_title'.tr()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(item.ineligibleReason ?? ''),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              item.howToGetEligible ?? '',
-              style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
-            ),
-          ],
-        ),
+        content: Text(item.ineligibleReason ?? ''),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -294,6 +258,7 @@ class _VolunteerFeedScreenState extends State<VolunteerFeedScreen> {
                   max: 25,
                   divisions: 24,
                   onChanged: (v) => setState(() => _maxDistance = v),
+                  onChangeEnd: (_) => _loadFeed(),
                 ),
               ),
             ],

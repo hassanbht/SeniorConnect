@@ -34,6 +34,10 @@ Date: YYYY-MM-DD
 | 015 | Roadmap re-cut around the coordinator wedge | Hours, roster and impact reporting move from Phase 6 to Phase 2. Community and Family move later — they have zero interview evidence. Full ADR written. |
 | 016 | Passwordless authentication | Phone + SMS OTP primary; password only for staff. Both known prior-tool failures were login failures. Full ADR written. |
 | 017 | Funder is a distinct scope | A Gemeinde funds organizations, owns no users, and sees only aggregates with a minimum cohort of 10. Separate API namespace. Full ADR written. |
+| 018 | Scope expansion — general mutual-aid platform | Seniors-only framing broadened to also serve newcomers, isolated families, mentors. `senior_profiles` renamed to `support_profiles`. New forbidden-fields rule (BR-GDPR-07). Full ADR written. |
+| 019 | Naming reconciliation | Evaluated Mitanand vs. a 19-name brainstorm against the expanded scope. **Accepted 2026-09: keep SeniorConnect** — the actual codebase was already built under this name. Full ADR written. |
+| 020 | Recognition without public scores, org-only pages, moderation gate, MVP lockdown | Rejects public leaderboard/points (conflicts with ADR-009); only `Organization` records get a public page, individuals do not; a local moderation classifier gates any group/broadcast message feature; v1 locks to the Coordinator Wedge for the named pilot partner, Freiwilligenzentrum Innsbruck-Land. **§2/§3 implemented in `backend/modules/Community/`.** Full ADR written. |
 
-ADR-015, ADR-016 and ADR-017 exist as full files. Write 001–014 out as full ADR files
-during Phase 0 — the table is the index, not the record.
+ADR-015, ADR-016, ADR-017, ADR-018, ADR-019 and ADR-020 exist as full files.
+Write 001–014 out as full ADR files during Phase 0 — the table is the index,
+not the record.

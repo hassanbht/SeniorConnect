@@ -257,10 +257,14 @@ public static class CommunityEndpoints
 
         group.MapGet("/threads/{threadId:guid}/messages", async (
             Guid threadId,
+            ClaimsPrincipal user,
             ICommunityService communityService,
             CancellationToken ct) =>
         {
-            var result = await communityService.GetMessagesAsync(threadId, ct);
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await communityService.GetMessagesAsync(threadId, userId.Value, ct);
             return result.ToHttpResult();
         })
         .WithName("GetThreadMessages")

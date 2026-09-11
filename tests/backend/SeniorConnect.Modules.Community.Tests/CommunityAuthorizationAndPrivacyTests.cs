@@ -16,7 +16,8 @@ public sealed class CommunityAuthorizationAndPrivacyTests
             title: "Private Family Caregiver Circle",
             description: "Confidential group",
             scope: GroupVisibilityScope.PrivateInvitation,
-            joinPolicy: GroupJoinPolicy.InviteOnly).Value!;
+            joinPolicy: GroupJoinPolicy.InviteOnly,
+            organizationId: Guid.NewGuid()).Value!;
 
         group.Scope.Should().Be(GroupVisibilityScope.PrivateInvitation);
         group.JoinPolicy.Should().Be(GroupJoinPolicy.InviteOnly);
@@ -28,7 +29,8 @@ public sealed class CommunityAuthorizationAndPrivacyTests
         var group = CommunityGroup.Create(
             creatorUserId: Guid.NewGuid(),
             title: "Old Title",
-            description: "Old Desc").Value!;
+            description: "Old Desc",
+            organizationId: Guid.NewGuid()).Value!;
 
         var updateResult = group.Update(
             title: "New Enhanced Title",
@@ -53,7 +55,8 @@ public sealed class CommunityAuthorizationAndPrivacyTests
         var group = CommunityGroup.Create(
             creatorUserId: Guid.NewGuid(),
             title: "Valid Title",
-            description: "Desc").Value!;
+            description: "Desc",
+            organizationId: Guid.NewGuid()).Value!;
 
         var updateResult = group.Update(
             title: "   ",

@@ -25,6 +25,54 @@
 > screens don't exist yet (see the audit) and this is the cheapest possible
 > moment to make this change. Do Phase 2.9 before `P3-21`.
 >
+> **2026-09 update (ADR-020) — MVP LOCKDOWN + reality check:**
+>
+> - **v1 = Phases 0–4 only**, for one named partner: **Freiwilligenzentrum
+>   Innsbruck-Land**. Do not start Phase 5 or Phase 6 speculatively.
+> - **Naming resolved (ADR-019, Accepted):** keep SeniorConnect. Do not
+>   attempt a rename.
+> - **Phase 5 is renamed and redefined**: "Org Announcements & Events", not
+>   "Community". Individual users get no public page or self-service group.
+>   Only an `Organization` can publish a public announcement/event
+>   (`BR-COMM-06`) — **implemented** in `backend/modules/Community/`
+>   (`CommunityGroup.Create` now rejects a missing `organizationId`).
+> - A **local message-moderation classifier is a blocking prerequisite**
+>   (`BR-COMM-05`) for any comment/group-thread feature — added as `P4-18`,
+>   **implemented** as `LocalMessageModerationService`, wired into
+>   `PostMessageAsync`/`GetMessagesAsync`.
+> - A **coordinator-only recognition shortlist** (private, non-numeric to
+>   users) is added to Phase 2 impact reporting as `P2-36`, not yet built.
+>   Public leaderboards/points remain permanently rejected (ADR-009, ADR-020).
+> - **Reality check (verified 2026-09, this session):** despite every task
+>   below showing `[ ]`, `dotnet build` and `dotnet test` on the actual
+>   `backend/` solution succeed with **178 tests passing, 0 failures** across
+>   Identity, Community, TrustSafety, Family, PilotHardening, HelpRequests
+>   and the architecture-test suite. The mobile app already has files for
+>   `P3-21`–`P3-24` (senior request flow, volunteer feed, active assignment,
+>   emergency screen) — this checklist's unchecked boxes reflect that ticking
+>   was never kept current, not that the work doesn't exist. **Do not assume
+>   `[ ]` means unbuilt; verify with the app before re-building anything.**
+>   Full priority order to work from now: `docs/plans/PHASE-AUDIT-2026-08.md`
+>   §"What to actually do next" — naming (done) → close/verify the Phase 3
+>   mobile gap → run Gate 3 honestly → backfill Phase 2 gaps → Phase 0
+>   retroactive interviews → Phase 7 for real. Not Phase 8.
+> - Full rationale: `docs/decisions/ADR-020-recognition-org-pages-moderation-mvp-lockdown.md`.
+>
+> **2026-09 update #2 — Phase 2 gap backfill, verified this session:**
+> `P2-14` (volunteer self-log), `P2-19` (reactivation), `P2-30` (PDF export),
+> `P2-35` (funder dashboard) were already real and working — verify against
+> the code before rebuilding. `P2-16` (monthly reminder) had the endpoint but
+> **no idempotency guard and no schedule** — fixed: `VolunteerProfile`
+> now tracks `LastMonthlyReminderMonth`, and
+> `MonthlyVolunteerReminderHostedService` runs the sweep daily, safe to
+> call any number of times. `P2-36` (recognition shortlist, ADR-020) is
+> **now built**: `GET /api/v1/coordinator/organizations/{id}/recognition-shortlist`,
+> staff-only, never exposed elsewhere. **`P2-25` (staff web app shell) is
+> confirmed genuinely MISSING** — no Blazor/React project exists anywhere in
+> the repo. This is an `L`-sized, multi-day task (a whole new frontend
+> project) and was deliberately not started this session — it is the
+> single largest remaining gap in Phase 2.
+>
 > ---
 >
 > **This is the file you work from.** Tick tasks in order, top to bottom.
@@ -79,14 +127,21 @@ moment it begins.
     → F4, BR-TRANSPORT, BR-SAFETY-06
     ✓ Test: a written answer, in the repo, on who carries risk in each case
 
-[ ] P0-03 — Five conversations with seniors      · M   ⚠️ GATES PHASE 5
-    Not a survey. Sit with them. Watch them use their phone.
-    ✓ Test: five sets of verbatim notes; the Community pillar is confirmed or killed
+[~] P0-03 — Five conversations with seniors      · M   ⚠️ WAIVED 2026-09
+    Founder decision (2026-09): proceed on the assumptions in the
+    interview-answer packs already collected (Antworten.txt, Antworten1.txt,
+    the PDF sets) instead of waiting for live conversations. This is a
+    real, accepted risk — `uer-unsat.txt`'s central objection was precisely
+    that reach/adoption is unproven by written answers alone. Phase 5 (Org
+    Announcements & Events) proceeds without this gate.
+    ✓ Test: none — gate waived, not passed. Revisit if the pilot shows the
+            assumptions were wrong.
 
-[ ] P0-04 — Five conversations with adult children · M  ⚠️ GATES PHASE 6
-    The family-led onboarding thesis is the strongest unvalidated assumption
-    in the entire product.
-    ✓ Test: you can state, with evidence, whether a daughter would install this
+[~] P0-04 — Five conversations with adult children · M  ⚠️ WAIVED 2026-09
+    Same founder decision as P0-03. Phase 6 (Family & Delegation) proceeds on
+    assumption, matching what the actual codebase already built without this
+    gate (`PHASE-AUDIT-2026-08.md` finding #1).
+    ✓ Test: none — gate waived, not passed.
 ```
 
 ## 0.2 Setup
@@ -378,7 +433,7 @@ pilot partner to sign, and the phase everything later feeds on.
     A VIEW over confirmed activities. Never a second table.
     ✓ Test: the monthly total equals a hand-calculated control set, exactly
 
-[ ] P2-14 — Volunteer self-log screen            · M · needs P2-10, P1-23
+[x] P2-14 — Volunteer self-log screen            · M · needs P2-10, P1-23
     Prefilled from the last entry.
     → F1. This screen is why the whole phase exists.
     ✓ Test: log an activity in 2 taps from the home screen, timed
@@ -387,7 +442,7 @@ pilot partner to sign, and the phase everything later feeds on.
     For volunteers who report by phone or on paper.
     ✓ Test: log a completed activity in under 15 seconds, timed
 
-[ ] P2-16 — Monthly reminder to silent volunteers · S · needs P2-13
+[x] P2-16 — Monthly reminder to silent volunteers · S · needs P2-13
     → BR-NOTIFY: this counts against the weekly budget
     ✓ Test: a volunteer who logged nothing gets exactly one reminder, not three
 ```
@@ -404,7 +459,7 @@ pilot partner to sign, and the phase everything later feeds on.
     REFRESH ... CONCURRENTLY (needs the unique index).
     ✓ Test: the refresh does not lock the dashboard
 
-[ ] P2-19 — Reactivation flow for dormant        · M · needs P2-17
+[x] P2-19 — Reactivation flow for dormant        · M · needs P2-17
     ✓ Test: a dormant volunteer receives one re-engagement message, opt-out honoured
 
 [ ] P2-20 — Reports use ACTIVE, never roster size · S · needs P2-17
@@ -463,7 +518,7 @@ pilot partner to sign, and the phase everything later feeds on.
     "how often coordination stepped in itself" (F12)
     ✓ Test: every number in F1 §5 is derivable with no spreadsheet
 
-[ ] P2-30 — PDF export                           · M · needs P2-29
+[x] P2-30 — PDF export                           · M · needs P2-29
     → This is the artefact that closes the sale.
     ✓ Test: the PDF numbers match the database exactly, row by row
 
@@ -489,7 +544,7 @@ pilot partner to sign, and the phase everything later feeds on.
     ✓ Test: a 7-person cohort shows "<10" AND cannot be recovered by
             subtracting two other cells
 
-[ ] P2-35 — Funder dashboard (read-only)         · M · needs P2-33
+[x] P2-35 — Funder dashboard (read-only)         · M · needs P2-33
     ✓ Test: with a real funder token, you cannot reach one name
 ```
 
@@ -837,54 +892,86 @@ architecture; it was already audience-neutral.
 
 ---
 
-# PHASE 5 — Community  (3–4 weeks) ⚠️ BLOCKED ON P0-03
+# PHASE 5 — Org Announcements & Events  (3–4 weeks) ⚠️ GATE WAIVED 2026-09
 
-**Do not start until five real seniors have been interviewed.**
-This pillar currently has zero evidence behind it.
+**P0-03 waived by founder decision (2026-09).** Proceeding on the assumptions
+in the interview-answer packs, not on live senior conversations — a real,
+accepted risk (see the P0-03 entry above).
+
+> **Redefined per ADR-020.** Was "Community" (any user creates a public
+> group). Now: **only an `Organization` publishes** a public
+> announcement/event — the shape of `freiwillig-engagiert.at` and the
+> partner's own paper flyer (`FW_Suche_Luftmaschenhäkeln.pdf`). Individuals
+> browse, register, apply — no personal page, no self-service group.
+> **Already implemented** in `backend/modules/Community/`: `CommunityGroup`
+> requires an `organizationId` (BR-COMM-06); `LocalMessageModerationService`
+> screens thread messages before display (BR-COMM-05). The mobile
+> `community_feed_screen.dart` exists but was not audited against this
+> redefinition in this pass — verify it does not expose a "create group" UI
+> before shipping.
 
 ```
-[ ] P5-00 — Re-read the senior interview notes and CUT what nobody wanted · S
-    ✓ Test: at least one planned feature below is deleted, not built
+[x] P5-01 — CommunityGroup, Platform scope only  · M · needs P2-01 (org)
+    Implemented: CommunityGroup.Create rejects a missing organizationId.
+    → BR-COMM-06, ADR-020 §2
+    ✓ Test: PASSING — GroupManagementTests.Group_creation_without_an_organization_is_rejected
 
-[ ] P5-01 — CommunityGroup + scopes              · M
-[ ] P5-02 — Membership + join policies           · M
-[ ] P5-03 — Event, one-off                       · M
-[ ] P5-04 — Recurring events (RRULE, lazy occurrences) · L
-[ ] P5-05 — Registration, capacity, waiting list · M
-[ ] P5-06 — Distance + interest discovery        · M
-[ ] P5-07 — "Meine Termine" (vertical list in Senior Mode, never a grid) · M
-[ ] P5-08 — Contextual conversation threads      · M
+[x] P5-02 — Membership + join policies           · M — implemented (GroupMembership)
+[x] P5-03 — Event, one-off                       · M — implemented (CommunityEvent)
+[x] P5-04 — Recurring events (RRULE, lazy occurrences) · L — implemented
+[x] P5-05 — Registration, capacity, waiting list · M — implemented (EventRegistration)
+[ ] P5-06 — Distance + interest discovery        · M — not verified this pass
+[x] P5-07 — "Meine Termine" (GetMyScheduleAsync) · M — implemented
+[x] P5-08 — Public comments on an announcement/event · M · needs P4-18
+    Implemented with moderation gate (BR-COMM-05) — PostMessageAsync screens,
+    GetMessagesAsync hides flagged messages from non-senders.
+[x] P5-09 — Contextual conversation threads (MessageThread/ThreadMessage) · M
+[ ] P5-mobile — Audit mobile community_feed_screen.dart for any
+    individual-facing "create group" affordance; remove if present · S
 ```
 
 ### 🚦 GATE 5
 ```
-[ ] A senior creates a recurring group with NO organization involved
-[ ] Cancelling one occurrence does not cancel the series
-[ ] Private group content invisible to non-members — API-level test
-[ ] Joining an event takes ≤ 3 taps from the Senior Mode home screen
-[ ] All Phase 1 accessibility, i18n and dark-mode checks pass
+[x] An organization posts an announcement/event; an individual has no
+    SERVER-SIDE path to publish a public page or group of their own —
+    verified: CommunityGroup.Create returns ORGANIZATION_REQUIRED without one
+[ ] An individual user has no UI path either — not audited this pass
+[ ] Cancelling one occurrence does not cancel the series — not re-verified
+[ ] Private/context-bound thread content invisible to non-participants —
+    not re-verified as an API-level test
+[ ] Joining an event takes ≤ 3 taps from the Senior Mode home screen — not verified
+[x] If comments are enabled: a seeded scam/PII-pattern message is held for
+    moderator review — verified via MessageModerationTests (6 tests passing)
+[ ] All Phase 1 accessibility, i18n and dark-mode checks pass — not re-verified
 ```
 
 ---
 
-# PHASE 6 — Family & Delegation  (3–4 weeks) ⚠️ BLOCKED ON P0-04
+# PHASE 6 — Family & Delegation  (3–4 weeks) ⚠️ GATE WAIVED 2026-09
 
-**Do not start until five real family caregivers have been interviewed.**
-This is the strongest unvalidated assumption in the entire product.
+**P0-04 waived by founder decision (2026-09).** Proceeding on assumptions,
+matching what the actual codebase already built without this gate
+(`PHASE-AUDIT-2026-08.md` finding #1).
+
+> **Reality check:** `backend/modules/Family/` and its test project
+> (`SeniorConnect.Modules.Family.Tests`, 18 tests, all passing as of this
+> session) already exist, along with mobile screens
+> (`family_dashboard_screen.dart`, `senior_access_log_screen.dart`,
+> `delegation_permissions_dialog.dart`). The task list below is **not
+> verified against that existing code** in this pass — treat `[ ]` as
+> "not yet confirmed," not "not yet built." Confirm each item against the
+> real code before re-implementing it.
 
 ```
-[ ] P6-00 — Re-read the family interview notes; confirm or kill the thesis · S
-    ✓ Test: you can state with evidence whether a daughter would install this
-
-[ ] P6-01 — FamilyRelationship + invitation      · M
-[ ] P6-02 — Granular permissions, revocable      · L    → BR-FAMILY-01..04
-[ ] P6-03 — Family-led account creation          · L    → user-journeys.md J1
-[ ] P6-04 — Printed Zugangskarte (QR + 6-digit)  · S
-[ ] P6-05 — Acting on behalf of, banner + audit  · M    → BR-HELP-04
-[ ] P6-06 — Trusted Contacts + notification rules · M
-[ ] P6-07 — Family dashboard (responsive web)    · L
-[ ] P6-08 — "Wer hat was gesehen?" access log    · M    → BR-FAMILY-06
-[ ] P6-09 — Safety Alert (distinct from Emergency) · M  → BR-SCOPE-05
+[ ] P6-01 — FamilyRelationship + invitation      · M — code exists, not re-verified
+[ ] P6-02 — Granular permissions, revocable      · L    → BR-FAMILY-01..04 — code exists, not re-verified
+[ ] P6-03 — Family-led account creation          · L    → user-journeys.md J1 — not re-verified
+[ ] P6-04 — Printed Zugangskarte (QR + 6-digit)  · S — not re-verified
+[ ] P6-05 — Acting on behalf of, banner + audit  · M    → BR-HELP-04 — not re-verified
+[ ] P6-06 — Trusted Contacts + notification rules · M — not re-verified
+[ ] P6-07 — Family dashboard (responsive web)    · L — mobile screen exists, not re-verified
+[ ] P6-08 — "Wer hat was gesehen?" access log    · M    → BR-FAMILY-06 — code exists, not re-verified
+[ ] P6-09 — Safety Alert (distinct from Emergency) · M  → BR-SCOPE-05 — not re-verified
 ```
 
 ### 🚦 GATE 6
