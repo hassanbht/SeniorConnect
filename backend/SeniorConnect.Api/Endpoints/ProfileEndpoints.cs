@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using SeniorConnect.Api.Common;
+using SeniorConnect.Modules.Organizations.Contracts;
 using SeniorConnect.Modules.Profiles.Application;
 
 namespace SeniorConnect.Api.Endpoints;
@@ -128,6 +129,21 @@ public static class ProfileEndpoints
         .WithName("UpdateAvailability")
         .Produces<IReadOnlyList<AvailabilitySlotDto>>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        meGroup.MapGet("/organizations", async (
+            ClaimsPrincipal user,
+            IOrganizationCoordinatorReader orgReader,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var memberships = await orgReader.GetActiveMembershipsForUserAsync(userId.Value, ct);
+            return Results.Ok(memberships);
+        })
+        .WithName("GetMyOrganizations")
+        .Produces<IReadOnlyList<StaffOrganizationDto>>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         return app;

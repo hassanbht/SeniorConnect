@@ -188,6 +188,42 @@ public static class CommunityEndpoints
         .Produces<CommunityEventDto>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status404NotFound);
 
+        group.MapPut("/events/{id:guid}", async (
+            Guid id,
+            UpdateCommunityEventRequest request,
+            ClaimsPrincipal user,
+            ICommunityService communityService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await communityService.UpdateEventAsync(id, userId.Value, request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("UpdateCommunityEvent")
+        .Produces<CommunityEventDto>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapPost("/events/{id:guid}:cancel", async (
+            Guid id,
+            CancelCommunityEventRequest request,
+            ClaimsPrincipal user,
+            ICommunityService communityService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await communityService.CancelEventAsync(id, userId.Value, request.Reason, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("CancelCommunityEvent")
+        .Produces(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
         group.MapPost("/events/{id:guid}/register", async (
             Guid id,
             RegisterEventRequest request,
