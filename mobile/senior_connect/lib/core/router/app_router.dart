@@ -24,6 +24,8 @@ import '../../features/help_requests/presentation/emergency_screen.dart';
 import '../../features/help_requests/presentation/senior_request_flow_screen.dart';
 import '../../features/help_requests/presentation/volunteer_feed_screen.dart';
 import '../../features/organizations/presentation/log_activity_screen.dart';
+import '../../features/organizations/presentation/organization_profile_screen.dart';
+import '../../features/organizations/presentation/organizations_list_screen.dart';
 import '../../features/profile/presentation/help_faq_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_view_screen.dart';
@@ -44,6 +46,7 @@ abstract final class AppRoutes {
   static const emergency = '/emergency';
   static const logActivity = '/activities/log';
   static const community = '/community';
+  static const organizations = '/organizations';
   static const myAppointments = '/community/my-appointments';
   static const family = '/family';
   static const familyAccessLog = '/family/access-log';
@@ -100,12 +103,14 @@ GoRouter buildRouter({required ApiClient apiClient}) {
           GoRoute(
             path: AppRoutes.helpRequestCreate,
             name: 'help-request-create',
-            builder: (context, state) => SeniorRequestFlowScreen(apiClient: apiClient),
+            builder: (context, state) =>
+                SeniorRequestFlowScreen(apiClient: apiClient),
           ),
           GoRoute(
             path: AppRoutes.volunteerFeed,
             name: 'volunteer-feed',
-            builder: (context, state) => VolunteerFeedScreen(apiClient: apiClient),
+            builder: (context, state) =>
+                VolunteerFeedScreen(apiClient: apiClient),
           ),
           GoRoute(
             path: '${AppRoutes.activeAssignment}/:id',
@@ -118,27 +123,46 @@ GoRouter buildRouter({required ApiClient apiClient}) {
           GoRoute(
             path: AppRoutes.logActivity,
             name: 'log-activity',
-            builder: (context, state) => LogActivityScreen(apiClient: apiClient),
+            builder: (context, state) =>
+                LogActivityScreen(apiClient: apiClient),
           ),
           GoRoute(
             path: AppRoutes.community,
             name: 'community',
-            builder: (context, state) => CommunityFeedScreen(apiClient: apiClient),
+            builder: (context, state) =>
+                CommunityFeedScreen(apiClient: apiClient),
+          ),
+          GoRoute(
+            path: AppRoutes.organizations,
+            name: 'organizations',
+            builder: (context, state) =>
+                OrganizationsListScreen(apiClient: apiClient),
+          ),
+          GoRoute(
+            path: '${AppRoutes.organizations}/:id',
+            name: 'organization-profile',
+            builder: (context, state) => OrganizationProfileScreen(
+              organizationId: state.pathParameters['id']!,
+              apiClient: apiClient,
+            ),
           ),
           GoRoute(
             path: AppRoutes.myAppointments,
             name: 'my-appointments',
-            builder: (context, state) => MyAppointmentsScreen(apiClient: apiClient),
+            builder: (context, state) =>
+                MyAppointmentsScreen(apiClient: apiClient),
           ),
           GoRoute(
             path: AppRoutes.family,
             name: 'family',
-            builder: (context, state) => FamilyDashboardScreen(apiClient: apiClient),
+            builder: (context, state) =>
+                FamilyDashboardScreen(apiClient: apiClient),
           ),
           GoRoute(
             path: AppRoutes.familyAccessLog,
             name: 'family-access-log',
-            builder: (context, state) => SeniorAccessLogScreen(apiClient: apiClient),
+            builder: (context, state) =>
+                SeniorAccessLogScreen(apiClient: apiClient),
           ),
           GoRoute(
             path: AppRoutes.helpFaq,
@@ -199,6 +223,12 @@ class _HomeScreen extends StatelessWidget {
           onTap: () => context.push(AppRoutes.community),
         ),
         SeniorAction(
+          icon: Icons.apartment_outlined,
+          label: 'organizations.directory_title'.tr(),
+          semanticLabel: 'organizations.directory_title'.tr(),
+          onTap: () => context.push(AppRoutes.organizations),
+        ),
+        SeniorAction(
           icon: Icons.calendar_month_outlined,
           label: 'community.my_appointments'.tr(),
           semanticLabel: 'community.my_appointments'.tr(),
@@ -231,9 +261,7 @@ class _RouterErrorScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Text(error?.toString() ?? 'Navigation error'),
-      ),
+      body: Center(child: Text(error?.toString() ?? 'Navigation error')),
     );
   }
 }

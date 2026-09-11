@@ -8,6 +8,7 @@
 // - ActiveAssignmentScreen (P3-23)
 // - LogActivityScreen (P2-14)
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:senior_connect/core/network/api_client.dart';
@@ -24,6 +25,9 @@ import 'package:senior_connect/features/help_requests/presentation/volunteer_fee
 import 'package:senior_connect/features/help_requests/presentation/widgets/first_meeting_protocol_dialog.dart';
 import 'package:senior_connect/features/help_requests/presentation/widgets/safeguarding_concern_dialog.dart';
 import 'package:senior_connect/features/organizations/presentation/log_activity_screen.dart';
+import 'package:senior_connect/features/organizations/presentation/organization_post_form_screen.dart';
+import 'package:senior_connect/features/organizations/presentation/organization_profile_screen.dart';
+import 'package:senior_connect/features/organizations/presentation/organizations_list_screen.dart';
 import 'package:senior_connect/features/profile/presentation/help_faq_screen.dart';
 
 import 'matrix.dart';
@@ -32,45 +36,41 @@ void main() {
   final testApiClient = ApiClient(baseUrl: 'http://localhost:5000');
 
   group('OnboardingPersonaScreen (PSG-05)', () {
-    testAcrossMatrix(
-      'renders 4 persona cards without overflow',
-      (tester, c) async {
-        PersonaOption? selected;
-        await tester.pumpWidget(wrapForTest(
-          OnboardingPersonaScreen(
-            onPersonaSelected: (opt) => selected = opt,
-          ),
+    testAcrossMatrix('renders 4 persona cards without overflow', (
+      tester,
+      c,
+    ) async {
+      PersonaOption? selected;
+      await tester.pumpWidget(
+        wrapForTest(
+          OnboardingPersonaScreen(onPersonaSelected: (opt) => selected = opt),
           c,
-        ));
-        await tester.pumpAndSettle();
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        await expectNoOverflow(tester);
+      await expectNoOverflow(tester);
 
-        // Verify the 4 cards exist
-        expect(find.byKey(const Key('persona_family_support')), findsOneWidget);
-        expect(find.byKey(const Key('persona_need_help')), findsOneWidget);
-        expect(find.byKey(const Key('persona_new_in_austria')), findsOneWidget);
-        expect(find.byKey(const Key('persona_want_to_help')), findsOneWidget);
+      // Verify the 4 cards exist
+      expect(find.byKey(const Key('persona_family_support')), findsOneWidget);
+      expect(find.byKey(const Key('persona_need_help')), findsOneWidget);
+      expect(find.byKey(const Key('persona_new_in_austria')), findsOneWidget);
+      expect(find.byKey(const Key('persona_want_to_help')), findsOneWidget);
 
-        // Tap newcomer card and verify callback
-        final newcomerCard = find.byKey(const Key('persona_new_in_austria'));
-        await tester.ensureVisible(newcomerCard);
-        await tester.tap(newcomerCard);
-        await tester.pump();
-        expect(selected, PersonaOption.newInAustria);
-      },
-      matrix: smokeMatrix(),
-    );
+      // Tap newcomer card and verify callback
+      final newcomerCard = find.byKey(const Key('persona_new_in_austria'));
+      await tester.ensureVisible(newcomerCard);
+      await tester.tap(newcomerCard);
+      await tester.pump();
+      expect(selected, PersonaOption.newInAustria);
+    }, matrix: smokeMatrix());
   });
 
   group('EmergencyScreen (P3-24)', () {
     testAcrossMatrix(
       'renders 144 and 112 emergency call options with disclaimers',
       (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          const EmergencyScreen(),
-          c,
-        ));
+        await tester.pumpWidget(wrapForTest(const EmergencyScreen(), c));
         await tester.pumpAndSettle();
 
         await expectNoOverflow(tester);
@@ -84,125 +84,115 @@ void main() {
   });
 
   group('SeniorRequestFlowScreen (P3-21)', () {
-    testAcrossMatrix(
-      'renders category picker and advances steps',
-      (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          SeniorRequestFlowScreen(apiClient: testApiClient),
-          c,
-        ));
-        await tester.pumpAndSettle();
+    testAcrossMatrix('renders category picker and advances steps', (
+      tester,
+      c,
+    ) async {
+      await tester.pumpWidget(
+        wrapForTest(SeniorRequestFlowScreen(apiClient: testApiClient), c),
+      );
+      await tester.pumpAndSettle();
 
-        await expectNoOverflow(tester);
+      await expectNoOverflow(tester);
 
-        // Verify category cards render (including newcomer categories)
-        expect(find.byType(InkWell), findsWidgets);
+      // Verify category cards render (including newcomer categories)
+      expect(find.byType(InkWell), findsWidgets);
 
-        // Select first category card
-        final firstCategoryCard = find.byType(InkWell).first;
-        await tester.ensureVisible(firstCategoryCard);
-        await tester.tap(firstCategoryCard);
-        await tester.pumpAndSettle();
+      // Select first category card
+      final firstCategoryCard = find.byType(InkWell).first;
+      await tester.ensureVisible(firstCategoryCard);
+      await tester.tap(firstCategoryCard);
+      await tester.pumpAndSettle();
 
-        // Step 2: timing step renders
-        await expectNoOverflow(tester);
-      },
-      matrix: smokeMatrix(),
-    );
+      // Step 2: timing step renders
+      await expectNoOverflow(tester);
+    }, matrix: smokeMatrix());
   });
 
   group('VolunteerFeedScreen (P3-22)', () {
-    testAcrossMatrix(
-      'renders feed list or state views without overflow',
-      (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          VolunteerFeedScreen(apiClient: testApiClient),
-          c,
-        ));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
+    testAcrossMatrix('renders feed list or state views without overflow', (
+      tester,
+      c,
+    ) async {
+      await tester.pumpWidget(
+        wrapForTest(VolunteerFeedScreen(apiClient: testApiClient), c),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-        await expectNoOverflow(tester);
-      },
-      matrix: smokeMatrix(),
-    );
+      await expectNoOverflow(tester);
+    }, matrix: smokeMatrix());
   });
 
   group('ActiveAssignmentScreen (P3-23)', () {
-    testAcrossMatrix(
-      'renders active assignment actions without overflow',
-      (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          ActiveAssignmentScreen(apiClient: testApiClient),
-          c,
-        ));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
+    testAcrossMatrix('renders active assignment actions without overflow', (
+      tester,
+      c,
+    ) async {
+      await tester.pumpWidget(
+        wrapForTest(ActiveAssignmentScreen(apiClient: testApiClient), c),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-        await expectNoOverflow(tester);
-      },
-      matrix: smokeMatrix(),
-    );
+      await expectNoOverflow(tester);
+    }, matrix: smokeMatrix());
   });
 
   group('LogActivityScreen (P2-14)', () {
-    testAcrossMatrix(
-      'renders self-log form and controls without overflow',
-      (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          LogActivityScreen(apiClient: testApiClient),
-          c,
-        ));
-        await tester.pumpAndSettle();
+    testAcrossMatrix('renders self-log form and controls without overflow', (
+      tester,
+      c,
+    ) async {
+      await tester.pumpWidget(
+        wrapForTest(LogActivityScreen(apiClient: testApiClient), c),
+      );
+      await tester.pumpAndSettle();
 
-        await expectNoOverflow(tester);
-      },
-      matrix: smokeMatrix(),
-    );
+      await expectNoOverflow(tester);
+    }, matrix: smokeMatrix());
   });
 
   group('FirstMeetingProtocolDialog (P4-08)', () {
-    testAcrossMatrix(
-      'renders protocol checklist without overflow',
-      (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          const FirstMeetingProtocolDialog(),
-          c,
-        ));
-        await tester.pumpAndSettle();
+    testAcrossMatrix('renders protocol checklist without overflow', (
+      tester,
+      c,
+    ) async {
+      await tester.pumpWidget(
+        wrapForTest(const FirstMeetingProtocolDialog(), c),
+      );
+      await tester.pumpAndSettle();
 
-        await expectNoOverflow(tester);
-        expect(find.byType(FirstMeetingProtocolDialog), findsOneWidget);
-      },
-      matrix: smokeMatrix(),
-    );
+      await expectNoOverflow(tester);
+      expect(find.byType(FirstMeetingProtocolDialog), findsOneWidget);
+    }, matrix: smokeMatrix());
   });
 
   group('SafeguardingConcernDialog (P4-10)', () {
-    testAcrossMatrix(
-      'renders concern reporting dialog without overflow',
-      (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
+    testAcrossMatrix('renders concern reporting dialog without overflow', (
+      tester,
+      c,
+    ) async {
+      await tester.pumpWidget(
+        wrapForTest(
           const SafeguardingConcernDialog(subjectUserId: 'user-123'),
           c,
-        ));
-        await tester.pumpAndSettle();
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        await expectNoOverflow(tester);
-        expect(find.byType(SafeguardingConcernDialog), findsOneWidget);
-      },
-      matrix: smokeMatrix(),
-    );
+      await expectNoOverflow(tester);
+      expect(find.byType(SafeguardingConcernDialog), findsOneWidget);
+    }, matrix: smokeMatrix());
   });
 
   group('CommunityFeedScreen (P5-06)', () {
     testAcrossMatrix(
       'renders community feed with category chips without overflow',
       (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          CommunityFeedScreen(apiClient: testApiClient),
-          c,
-        ));
+        await tester.pumpWidget(
+          wrapForTest(CommunityFeedScreen(apiClient: testApiClient), c),
+        );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
 
@@ -217,10 +207,9 @@ void main() {
     testAcrossMatrix(
       'renders vertical list of appointments in Senior Mode without overflow',
       (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          MyAppointmentsScreen(apiClient: testApiClient),
-          c,
-        ));
+        await tester.pumpWidget(
+          wrapForTest(MyAppointmentsScreen(apiClient: testApiClient), c),
+        );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
 
@@ -232,31 +221,31 @@ void main() {
   });
 
   group('EventDetailScreen (P5-03)', () {
-    testAcrossMatrix(
-      'renders event detail and RSVP action without overflow',
-      (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
+    testAcrossMatrix('renders event detail and RSVP action without overflow', (
+      tester,
+      c,
+    ) async {
+      await tester.pumpWidget(
+        wrapForTest(
           EventDetailScreen(eventId: 'ev-1', apiClient: testApiClient),
           c,
-        ));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-        await expectNoOverflow(tester);
-        expect(find.byType(EventDetailScreen), findsOneWidget);
-      },
-      matrix: smokeMatrix(),
-    );
+      await expectNoOverflow(tester);
+      expect(find.byType(EventDetailScreen), findsOneWidget);
+    }, matrix: smokeMatrix());
   });
 
   group('FamilyDashboardScreen (P6-07)', () {
     testAcrossMatrix(
       'renders family dashboard and connected seniors without overflow',
       (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          FamilyDashboardScreen(apiClient: testApiClient),
-          c,
-        ));
+        await tester.pumpWidget(
+          wrapForTest(FamilyDashboardScreen(apiClient: testApiClient), c),
+        );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
 
@@ -271,10 +260,9 @@ void main() {
     testAcrossMatrix(
       'renders 30-day transparency access log without overflow',
       (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          SeniorAccessLogScreen(apiClient: testApiClient),
-          c,
-        ));
+        await tester.pumpWidget(
+          wrapForTest(SeniorAccessLogScreen(apiClient: testApiClient), c),
+        );
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
 
@@ -289,15 +277,80 @@ void main() {
     testAcrossMatrix(
       'renders accessible help & FAQ accordion without overflow',
       (tester, c) async {
-        await tester.pumpWidget(wrapForTest(
-          const HelpFaqScreen(),
-          c,
-        ));
+        await tester.pumpWidget(wrapForTest(const HelpFaqScreen(), c));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
 
         await expectNoOverflow(tester);
         expect(find.byType(HelpFaqScreen), findsOneWidget);
+      },
+      matrix: smokeMatrix(),
+    );
+  });
+
+  group('OrganizationsListScreen (P2-25)', () {
+    testAcrossMatrix('renders organization directory without overflow', (
+      tester,
+      c,
+    ) async {
+      await tester.pumpWidget(
+        wrapForTest(OrganizationsListScreen(apiClient: testApiClient), c),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await expectNoOverflow(tester);
+      expect(find.byType(OrganizationsListScreen), findsOneWidget);
+    }, matrix: smokeMatrix());
+  });
+
+  group('OrganizationProfileScreen (P2-25)', () {
+    testAcrossMatrix(
+      'renders organization header, news and events without overflow',
+      (tester, c) async {
+        await tester.pumpWidget(
+          wrapForTest(
+            OrganizationProfileScreen(
+              organizationId: 'org-1',
+              apiClient: testApiClient,
+            ),
+            c,
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await expectNoOverflow(tester);
+        expect(find.byType(OrganizationProfileScreen), findsOneWidget);
+      },
+      matrix: smokeMatrix(),
+    );
+  });
+
+  group('OrganizationPostFormScreen (P2-25)', () {
+    testAcrossMatrix(
+      'toggles date and capacity fields between news and event categories',
+      (tester, c) async {
+        await tester.pumpWidget(
+          wrapForTest(
+            OrganizationPostFormScreen(
+              organizationId: 'org-1',
+              apiClient: testApiClient,
+            ),
+            c,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await expectNoOverflow(tester);
+
+        // Defaults to "event" — date fields visible.
+        expect(find.text('organizations.starts_at_label'.tr()), findsOneWidget);
+
+        // Switch to "news" — date fields hidden.
+        await tester.tap(find.text('organizations.post_type_news'.tr()));
+        await tester.pumpAndSettle();
+        expect(find.text('organizations.starts_at_label'.tr()), findsNothing);
       },
       matrix: smokeMatrix(),
     );
