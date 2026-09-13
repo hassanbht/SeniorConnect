@@ -11,6 +11,7 @@ using SeniorConnect.Modules.Identity.Domain;
 using SeniorConnect.Modules.Identity.Infrastructure;
 using SeniorConnect.Modules.Profiles.Domain;
 using SeniorConnect.Modules.Profiles.Infrastructure;
+using SeniorConnect.Modules.Geography.Domain;
 using SeniorConnect.Domain;
 using FunderEntity = SeniorConnect.Modules.Reporting.Domain.Funder;
 
@@ -20,6 +21,7 @@ using SeniorConnect.Modules.Organizations.Application;
 using SeniorConnect.Modules.HelpRequests.Application;
 using SeniorConnect.Modules.TrustSafety.Application;
 using SeniorConnect.Modules.Reporting.Application;
+using SeniorConnect.Modules.Geography.Application;
 
 using SeniorConnect.Modules.Community.Domain;
 using SeniorConnect.Modules.Community.Application;
@@ -43,7 +45,7 @@ public interface ITenantContext
 
 public sealed class SeniorConnectDbContext(
     DbContextOptions<SeniorConnectDbContext> options,
-    ITenantContext tenant) : DbContext(options), IIdentityDbContext, IProfilesDbContext, IOrganizationsDbContext, IHelpRequestsDbContext, ITrustSafetyDbContext, IReportingDbContext, ICommunityDbContext, IFamilyDbContext, INotificationsDbContext
+    ITenantContext tenant) : DbContext(options), IIdentityDbContext, IProfilesDbContext, IOrganizationsDbContext, IHelpRequestsDbContext, ITrustSafetyDbContext, IReportingDbContext, ICommunityDbContext, IFamilyDbContext, INotificationsDbContext, IGeographyDbContext
 {
     // --- Identity & GDPR ---
     public DbSet<User> Users => Set<User>();
@@ -54,6 +56,8 @@ public sealed class SeniorConnectDbContext(
     public DbSet<TrustLevelSnapshot> TrustLevelSnapshots => Set<TrustLevelSnapshot>();
     public DbSet<Consent> Consents => Set<Consent>();
     public DbSet<AccountDeletionRequest> AccountDeletionRequests => Set<AccountDeletionRequest>();
+    public DbSet<UserExternalLogin> UserExternalLogins => Set<UserExternalLogin>();
+    public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
 
     // --- Profiles ---
     public DbSet<SupportProfile> SupportProfiles => Set<SupportProfile>();
@@ -73,6 +77,10 @@ public sealed class SeniorConnectDbContext(
     public DbSet<OrganizationBranch> OrganizationBranches => Set<OrganizationBranch>();
     public DbSet<OrganizationMembership> OrganizationMemberships => Set<OrganizationMembership>();
     public DbSet<OrganizationPolicy> OrganizationPolicies => Set<OrganizationPolicy>();
+    public DbSet<OrganizationIntakeForm> OrganizationIntakeForms => Set<OrganizationIntakeForm>();
+    public DbSet<IntakeFormSection> IntakeFormSections => Set<IntakeFormSection>();
+    public DbSet<IntakeFormField> IntakeFormFields => Set<IntakeFormField>();
+    public DbSet<IntakeFormSubmission> IntakeFormSubmissions => Set<IntakeFormSubmission>();
 
     // --- Activities & Help Requests ---
     public DbSet<Activity> Activities => Set<Activity>();
@@ -109,6 +117,9 @@ public sealed class SeniorConnectDbContext(
     public DbSet<NotificationMessage> NotificationMessages => Set<NotificationMessage>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
     public DbSet<NotificationBudgetTracker> NotificationBudgetTrackers => Set<NotificationBudgetTracker>();
+
+    // --- Geography ---
+    public DbSet<AustrianAdministrativeUnit> AustrianAdministrativeUnits => Set<AustrianAdministrativeUnit>();
 
     // --- Funders ---
     public DbSet<FunderEntity> Funders => Set<FunderEntity>();
@@ -184,6 +195,11 @@ public sealed class SeniorConnectDbContext(
             tenant.IsPlatformScope
             || v.OrganizationId == null
             || v.OrganizationId == tenant.OrganizationId);
+
+        modelBuilder.Entity<IntakeFormSubmission>().HasQueryFilter(s =>
+            tenant.IsPlatformScope
+            || s.OrganizationId == null
+            || s.OrganizationId == tenant.OrganizationId);
 
         // --- Concurrency -----------------------------------------------------
         modelBuilder.Entity<Activity>().Property<uint>("xmin").HasColumnType("xmin").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();

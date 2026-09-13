@@ -37,7 +37,9 @@ Date: YYYY-MM-DD
 | 018 | Scope expansion — general mutual-aid platform | Seniors-only framing broadened to also serve newcomers, isolated families, mentors. `senior_profiles` renamed to `support_profiles`. New forbidden-fields rule (BR-GDPR-07). Full ADR written. |
 | 019 | Naming reconciliation | Evaluated Mitanand vs. a 19-name brainstorm against the expanded scope. **Accepted 2026-09: keep SeniorConnect** — the actual codebase was already built under this name. Full ADR written. |
 | 020 | Recognition without public scores, org-only pages, moderation gate, MVP lockdown | Rejects public leaderboard/points (conflicts with ADR-009); only `Organization` records get a public page, individuals do not; a local moderation classifier gates any group/broadcast message feature; v1 locks to the Coordinator Wedge for the named pilot partner, Freiwilligenzentrum Innsbruck-Land. **§2/§3 implemented in `backend/modules/Community/`.** Full ADR written. |
+| 021 | Multi-provider auth, Austrian geo directory, geocoding & dynamic org intake forms | Google Sign-In, Email+Password with verification, ID Austria eIDAS, Austrian administrative divisions & proximity, map address geocoding, and custom organization intake forms (FWZ Innsbruck-Land standard). Amends ADR-016, ADR-005, ADR-013. Full ADR written. |
 
-ADR-015, ADR-016, ADR-017, ADR-018, ADR-019 and ADR-020 exist as full files.
+ADR-015, ADR-016, ADR-017, ADR-018, ADR-019, ADR-020 and ADR-021 exist as full files.
 Write 001–014 out as full ADR files during Phase 0 — the table is the index,
 not the record.
+

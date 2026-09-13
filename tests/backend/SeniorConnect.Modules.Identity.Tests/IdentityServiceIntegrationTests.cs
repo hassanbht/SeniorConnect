@@ -28,6 +28,8 @@ public sealed class IdentityServiceIntegrationTests : IDisposable
         var passwordHasher = new PasswordHasher();
         var smsSender = new SmsSender(NullLogger<SmsSender>.Instance);
         var emailSender = new EmailSender(NullLogger<EmailSender>.Instance);
+        var googleValidator = new GoogleIdTokenValidatorStub(NullLogger<GoogleIdTokenValidatorStub>.Instance);
+        var idAustriaClient = new IdAustriaClientStub(NullLogger<IdAustriaClientStub>.Instance);
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -50,7 +52,9 @@ public sealed class IdentityServiceIntegrationTests : IDisposable
             passwordHasher,
             trustCalculator,
             capabilityService,
-            _hashing);
+            _hashing,
+            googleValidator,
+            idAustriaClient);
     }
 
     [Fact]

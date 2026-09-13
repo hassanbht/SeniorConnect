@@ -29,6 +29,8 @@ using SeniorConnect.Modules.Family.Application;
 using SeniorConnect.Modules.Family.Infrastructure;
 using SeniorConnect.Modules.Notifications.Application;
 using SeniorConnect.Modules.Notifications.Infrastructure;
+using SeniorConnect.Modules.Geography.Application;
+using SeniorConnect.Modules.Geography.Infrastructure;
 
 // Load environment variables from .env file
 DotNetEnv.Env.TraversePath().Load();
@@ -69,6 +71,7 @@ builder.Services.AddScoped<IReportingDbContext>(sp => sp.GetRequiredService<Seni
 builder.Services.AddScoped<ICommunityDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 builder.Services.AddScoped<IFamilyDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 builder.Services.AddScoped<INotificationsDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
+builder.Services.AddScoped<IGeographyDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 
 // Add Module services
 builder.Services.AddIdentityModule();
@@ -81,6 +84,7 @@ builder.Services.AddReportingModule();
 builder.Services.AddCommunityModule();
 builder.Services.AddFamilyModule();
 builder.Services.AddNotificationModule();
+builder.Services.AddGeographyModule();
 
 // P2-18 / P7-08: Data Maintenance Hosted Service
 builder.Services.AddHostedService<SeniorConnect.Infrastructure.BackgroundJobs.DataMaintenanceHostedService>();
@@ -230,6 +234,7 @@ app.MapPrivacyEndpoints();
 app.MapCoordinatorEndpoints();
 app.MapFunderEndpoints();
 app.MapReportingEndpoints();
+app.MapGeographyEndpoints();
 
 // Seed reference data on startup
 try

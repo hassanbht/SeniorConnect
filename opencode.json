@@ -1,16 +1,30 @@
 {
   "$schema": "https://opencode.ai/config.json",
+
   "provider": {
     "omniroute": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "OmniRoute",
       "options": {
         "baseURL": "http://localhost:20128/v1",
-        "apiKey": "sk-f7b4138479aef150-4765d9-76d0fb96"
+        "apiKey": "sk-4c0aa81b3021ff47-0cfa03-86f47101"
       },
       "models": {
         "auto/coding:free": {
           "name": "Auto Coding (Free)"
+        }
+      }
+    },
+    "krouter": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "kRouter",
+      "options": {
+        "baseURL": "http://localhost:20228/v1",
+        "apiKey": "sk-d36e9548571c9393-nirp6d-2fdca424"
+      },
+      "models": {
+        "free-only": {
+          "name": "kRouter Free Only"
         }
       }
     }

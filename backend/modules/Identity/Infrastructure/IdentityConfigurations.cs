@@ -4,6 +4,56 @@ using SeniorConnect.Modules.Identity.Domain;
 
 namespace SeniorConnect.Modules.Identity.Infrastructure;
 
+public sealed class UserExternalLoginConfiguration : IEntityTypeConfiguration<UserExternalLogin>
+{
+    public void Configure(EntityTypeBuilder<UserExternalLogin> builder)
+    {
+        builder.ToTable("user_external_logins", t =>
+        {
+            t.HasCheckConstraint("ck_user_external_logins_provider", "provider IN ('google','id_austria')");
+        });
+
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
+        builder.Property(x => x.Provider).HasColumnName("provider").IsRequired();
+        builder.Property(x => x.ProviderKey).HasColumnName("provider_key").IsRequired();
+        builder.Property(x => x.Email).HasColumnName("email");
+        builder.Property(x => x.DisplayName).HasColumnName("display_name");
+        builder.Property(x => x.LinkedAtUtc).HasColumnName("linked_at_utc").HasColumnType("timestamptz").HasDefaultValueSql("now()").IsRequired();
+
+        builder.HasIndex(x => new { x.Provider, x.ProviderKey })
+            .HasDatabaseName("ux_user_external_logins_provider_key")
+            .IsUnique();
+
+        builder.HasIndex(x => x.UserId)
+            .HasDatabaseName("ix_user_external_logins_user");
+    }
+}
+
+public sealed class EmailVerificationTokenConfiguration : IEntityTypeConfiguration<EmailVerificationToken>
+{
+    public void Configure(EntityTypeBuilder<EmailVerificationToken> builder)
+    {
+        builder.ToTable("email_verification_tokens");
+
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
+        builder.Property(x => x.TokenHash).HasColumnName("token_hash").IsRequired();
+        builder.Property(x => x.ExpiresAtUtc).HasColumnName("expires_at_utc").HasColumnType("timestamptz").IsRequired();
+        builder.Property(x => x.UsedAtUtc).HasColumnName("used_at_utc").HasColumnType("timestamptz");
+        builder.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc").HasColumnType("timestamptz").HasDefaultValueSql("now()").IsRequired();
+        builder.Property(x => x.CreatedBy).HasColumnName("created_by");
+        builder.Property(x => x.UpdatedAtUtc).HasColumnName("updated_at_utc").HasColumnType("timestamptz").HasDefaultValueSql("now()").IsRequired();
+        builder.Property(x => x.UpdatedBy).HasColumnName("updated_by");
+
+        builder.HasIndex(x => x.UserId)
+            .HasDatabaseName("ix_email_verification_tokens_user")
+            .HasFilter("used_at_utc IS NULL");
+    }
+}
+
 public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
@@ -13,7 +63,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             t.HasCheckConstraint("ck_users_status", "status IN ('active','suspended','deactivated','deleted')");
             t.HasCheckConstraint("ck_users_locale", "preferred_locale IN ('de','en','fa')");
             t.HasCheckConstraint("ck_users_contact", "email IS NOT NULL OR phone IS NOT NULL");
-            t.HasCheckConstraint("ck_users_auth_method", "primary_auth_method IN ('phone_otp','email_magic_link','password')");
+            t.HasCheckConstraint("ck_users_auth_method", "primary_auth_method IN ('phone_otp','email_magic_link','password','google','id_austria','email_password')");
             t.HasCheckConstraint("ck_users_password_only_for_password_auth", "(primary_auth_method = 'password') = (password_hash IS NOT NULL)");
             t.HasCheckConstraint("ck_users_phone_auth_needs_phone", "primary_auth_method <> 'phone_otp' OR phone IS NOT NULL");
         });
@@ -58,7 +108,7 @@ public sealed class OtpChallengeConfiguration : IEntityTypeConfiguration<OtpChal
         builder.ToTable("otp_challenges", t =>
         {
             t.HasCheckConstraint("ck_otp_channel", "channel IN ('sms','email')");
-            t.HasCheckConstraint("ck_otp_purpose", "purpose IN ('login','registration','phone_change','email_change','recovery')");
+            t.HasCheckConstraint("ck_otp_purpose", "purpose IN ('login','registration','phone_change','email_change','recovery','phone_verification')");
             t.HasCheckConstraint("ck_otp_attempts", "attempts <= max_attempts");
         });
 

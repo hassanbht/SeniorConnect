@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SeniorConnect.Infrastructure;
@@ -11,9 +12,11 @@ using SeniorConnect.Infrastructure;
 namespace SeniorConnect.Infrastructure.Migrations
 {
     [DbContext(typeof(SeniorConnectDbContext))]
-    partial class SeniorConnectDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912105733_20260912_Adr021_Phase2_IntakeForms")]
+    partial class _20260912_Adr021_Phase2_IntakeForms
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

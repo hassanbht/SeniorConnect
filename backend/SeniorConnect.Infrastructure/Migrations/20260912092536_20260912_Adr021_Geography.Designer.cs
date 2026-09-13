@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SeniorConnect.Infrastructure;
@@ -11,9 +12,11 @@ using SeniorConnect.Infrastructure;
 namespace SeniorConnect.Infrastructure.Migrations
 {
     [DbContext(typeof(SeniorConnectDbContext))]
-    partial class SeniorConnectDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912092536_20260912_Adr021_Geography")]
+    partial class _20260912_Adr021_Geography
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1754,224 +1757,6 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.ToTable("NotificationPreferences", "public");
                 });
 
-            modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.IntakeFormField", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("FieldKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("field_key");
-
-                    b.Property<string>("FieldType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("field_type");
-
-                    b.Property<bool>("IsRequired")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_required");
-
-                    b.Property<string>("LabelKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("label_key");
-
-                    b.Property<string>("OptionsJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("options_json");
-
-                    b.Property<Guid>("SectionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("section_id");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("sort_order");
-
-                    b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at_utc");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SectionId", "SortOrder")
-                        .HasDatabaseName("ix_intake_form_fields_section_order");
-
-                    b.ToTable("intake_form_fields", "public", t =>
-                        {
-                            t.HasCheckConstraint("ck_intake_fields_type", "field_type IN ('text','textarea','single_choice','multi_choice','boolean','date','time_slots')");
-                        });
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.IntakeFormSection", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<Guid>("FormId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("form_id");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("sort_order");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("title");
-
-                    b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at_utc");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FormId", "SortOrder")
-                        .HasDatabaseName("ix_intake_form_sections_form_order");
-
-                    b.ToTable("intake_form_sections", "public");
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.IntakeFormSubmission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<bool>("CriminalClearanceDeclared")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("criminal_clearance_declared");
-
-                    b.Property<DateTimeOffset?>("CriminalClearanceDeclaredAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("criminal_clearance_declared_at_utc");
-
-                    b.Property<DateTimeOffset?>("DecidedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("decided_at_utc");
-
-                    b.Property<Guid?>("DecidedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("decided_by_user_id");
-
-                    b.Property<bool>("EventInvitationOptIn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("event_invitation_opt_in");
-
-                    b.Property<Guid>("FormId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("form_id");
-
-                    b.Property<bool>("GdprConsentAccepted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("gdpr_consent_accepted");
-
-                    b.Property<DateTimeOffset?>("GdprConsentAcceptedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("gdpr_consent_accepted_at_utc");
-
-                    b.Property<Guid?>("OrganizationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("organization_id");
-
-                    b.Property<string>("ReviewNotes")
-                        .HasColumnType("text")
-                        .HasColumnName("review_notes");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("Submitted")
-                        .HasColumnName("status");
-
-                    b.Property<string>("SubmissionDataJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("submission_data_json");
-
-                    b.Property<DateTimeOffset?>("SubmittedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("submitted_at_utc");
-
-                    b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at_utc");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrganizationId", "Status")
-                        .HasDatabaseName("ix_submissions_org_status");
-
-                    b.HasIndex("FormId", "OrganizationId", "UserId")
-                        .HasDatabaseName("ix_submissions_form_org_user");
-
-                    b.ToTable("intake_form_submissions", "public", t =>
-                        {
-                            t.HasCheckConstraint("ck_submissions_status", "status IN ('draft','submitted','approved','declined')");
-                        });
-                });
-
             modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.Organization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2113,70 +1898,6 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.ToTable("organization_branches", "public", t =>
                         {
                             t.HasCheckConstraint("ck_branches_geo_pair", "(latitude IS NULL) = (longitude IS NULL)");
-                        });
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.OrganizationIntakeForm", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<string>("FormType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("form_type");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("organization_id");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("title");
-
-                    b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at_utc");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
-
-                    b.Property<int>("Version")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(1)
-                        .HasColumnName("version");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrganizationId", "FormType", "IsActive")
-                        .HasDatabaseName("ix_intake_forms_org_type_active");
-
-                    b.ToTable("organization_intake_forms", "public", t =>
-                        {
-                            t.HasCheckConstraint("ck_intake_forms_type", "form_type IN ('volunteer','help_seeker')");
                         });
                 });
 

@@ -72,3 +72,97 @@ public sealed record PolicyDto(
 
 public sealed record SetPolicyRequest(
     string PolicyValueJson);
+
+// Intake Forms DTOs (ADR-021, BR-ORG-FORM)
+public sealed record OrganizationIntakeFormDto(
+    Guid Id,
+    Guid OrganizationId,
+    FormType FormType,
+    string Title,
+    string? Description,
+    bool IsActive,
+    int Version,
+    DateTimeOffset CreatedAtUtc);
+
+public sealed record CreateIntakeFormRequest(
+    FormType FormType,
+    string Title,
+    string? Description = null);
+
+public sealed record UpdateIntakeFormRequest(
+    string Title,
+    string? Description = null);
+
+public sealed record IntakeFormSectionDto(
+    Guid Id,
+    Guid FormId,
+    string Title,
+    string? Description,
+    int SortOrder);
+
+public sealed record CreateIntakeFormSectionRequest(
+    string Title,
+    string? Description = null,
+    int SortOrder = 0);
+
+public sealed record UpdateIntakeFormSectionRequest(
+    string Title,
+    string? Description = null,
+    int SortOrder = 0);
+
+public sealed record IntakeFormFieldDto(
+    Guid Id,
+    Guid SectionId,
+    string FieldKey,
+    string LabelKey,
+    FieldType FieldType,
+    bool IsRequired,
+    string? OptionsJson,
+    int SortOrder);
+
+public sealed record CreateIntakeFormFieldRequest(
+    string FieldKey,
+    string LabelKey,
+    FieldType FieldType,
+    bool IsRequired = false,
+    string? OptionsJson = null,
+    int SortOrder = 0);
+
+public sealed record UpdateIntakeFormFieldRequest(
+    string FieldKey,
+    string LabelKey,
+    FieldType FieldType,
+    bool IsRequired = false,
+    string? OptionsJson = null,
+    int SortOrder = 0);
+
+public sealed record IntakeFormSubmissionDto(
+    Guid Id,
+    Guid FormId,
+    Guid? OrganizationId,
+    Guid UserId,
+    SubmissionStatus Status,
+    string SubmissionDataJson,
+    bool CriminalClearanceDeclared,
+    DateTimeOffset? CriminalClearanceDeclaredAtUtc,
+    bool GdprConsentAccepted,
+    DateTimeOffset? GdprConsentAcceptedAtUtc,
+    bool EventInvitationOptIn,
+    DateTimeOffset? SubmittedAtUtc,
+    DateTimeOffset? DecidedAtUtc,
+    Guid? DecidedByUserId,
+    string? ReviewNotes,
+    DateTimeOffset CreatedAtUtc);
+
+public sealed record SubmitIntakeFormRequest(
+    string SubmissionDataJson,
+    bool CriminalClearanceDeclared,
+    bool GdprConsentAccepted,
+    bool EventInvitationOptIn);
+
+public sealed record DecideIntakeFormSubmissionRequest(
+    bool Approve,
+    string? ReviewNotes = null);
+
+public sealed record ActivateFwzTemplateRequest(
+    FormType FormType);

@@ -13,6 +13,8 @@ public interface IIdentityDbContext
     DbSet<TrustLevelSnapshot> TrustLevelSnapshots { get; }
     DbSet<Consent> Consents { get; }
     DbSet<AccountDeletionRequest> AccountDeletionRequests { get; }
+    DbSet<UserExternalLogin> UserExternalLogins { get; }
+    DbSet<EmailVerificationToken> EmailVerificationTokens { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

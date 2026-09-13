@@ -19,6 +19,8 @@ public static class IdentityModuleExtensions
         services.AddScoped<IPrivacyService, PrivacyService>();
         services.AddScoped<IIdentityVerificationProvider, ManualVerificationProvider>();
         services.AddScoped<IIdentityVerificationProvider, OrganizationVerificationProvider>();
+        services.AddScoped<IGoogleIdTokenValidator, GoogleIdTokenValidatorStub>();
+        services.AddScoped<IIdAustriaClient, IdAustriaClientStub>();
         services.AddScoped<SeniorConnect.Modules.Identity.Contracts.ITrustLevelReader, TrustLevelReader>();
         services.AddScoped<SeniorConnect.Modules.Identity.Contracts.IUserContactReader, UserContactReader>();
 

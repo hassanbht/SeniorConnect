@@ -101,3 +101,122 @@ public sealed class OrganizationPolicyConfiguration : IEntityTypeConfiguration<O
         builder.Property(p => p.UpdatedBy).HasColumnName("updated_by");
     }
 }
+
+public sealed class OrganizationIntakeFormConfiguration : IEntityTypeConfiguration<OrganizationIntakeForm>
+{
+    public void Configure(EntityTypeBuilder<OrganizationIntakeForm> builder)
+    {
+        builder.ToTable("organization_intake_forms", t =>
+        {
+            t.HasCheckConstraint("ck_intake_forms_type", "form_type IN ('volunteer','help_seeker')");
+        });
+
+        builder.HasKey(f => f.Id);
+        builder.Property(f => f.Id).HasColumnName("id");
+        builder.Property(f => f.OrganizationId).HasColumnName("organization_id").IsRequired();
+        builder.Property(f => f.FormType).HasColumnName("form_type").HasConversion<string>().IsRequired();
+        builder.Property(f => f.Title).HasColumnName("title").IsRequired();
+        builder.Property(f => f.Description).HasColumnName("description");
+        builder.Property(f => f.IsActive).HasColumnName("is_active").HasDefaultValue(true).IsRequired();
+        builder.Property(f => f.Version).HasColumnName("version").HasDefaultValue(1).IsRequired();
+
+        builder.Property(f => f.CreatedAtUtc).HasColumnName("created_at_utc").HasColumnType("timestamptz").IsRequired();
+        builder.Property(f => f.CreatedBy).HasColumnName("created_by");
+        builder.Property(f => f.UpdatedAtUtc).HasColumnName("updated_at_utc").HasColumnType("timestamptz").IsRequired();
+        builder.Property(f => f.UpdatedBy).HasColumnName("updated_by");
+
+        builder.HasIndex(f => new { f.OrganizationId, f.FormType, f.IsActive })
+            .HasDatabaseName("ix_intake_forms_org_type_active");
+    }
+}
+
+public sealed class IntakeFormSectionConfiguration : IEntityTypeConfiguration<IntakeFormSection>
+{
+    public void Configure(EntityTypeBuilder<IntakeFormSection> builder)
+    {
+        builder.ToTable("intake_form_sections");
+
+        builder.HasKey(s => s.Id);
+        builder.Property(s => s.Id).HasColumnName("id");
+        builder.Property(s => s.FormId).HasColumnName("form_id").IsRequired();
+        builder.Property(s => s.Title).HasColumnName("title").IsRequired();
+        builder.Property(s => s.Description).HasColumnName("description");
+        builder.Property(s => s.SortOrder).HasColumnName("sort_order").IsRequired();
+
+        builder.Property(s => s.CreatedAtUtc).HasColumnName("created_at_utc").HasColumnType("timestamptz").IsRequired();
+        builder.Property(s => s.CreatedBy).HasColumnName("created_by");
+        builder.Property(s => s.UpdatedAtUtc).HasColumnName("updated_at_utc").HasColumnType("timestamptz").IsRequired();
+        builder.Property(s => s.UpdatedBy).HasColumnName("updated_by");
+
+        builder.HasIndex(s => new { s.FormId, s.SortOrder })
+            .HasDatabaseName("ix_intake_form_sections_form_order");
+    }
+}
+
+public sealed class IntakeFormFieldConfiguration : IEntityTypeConfiguration<IntakeFormField>
+{
+    public void Configure(EntityTypeBuilder<IntakeFormField> builder)
+    {
+        builder.ToTable("intake_form_fields", t =>
+        {
+            t.HasCheckConstraint("ck_intake_fields_type", "field_type IN ('text','textarea','single_choice','multi_choice','boolean','date','time_slots')");
+        });
+
+        builder.HasKey(f => f.Id);
+        builder.Property(f => f.Id).HasColumnName("id");
+        builder.Property(f => f.SectionId).HasColumnName("section_id").IsRequired();
+        builder.Property(f => f.FieldKey).HasColumnName("field_key").IsRequired();
+        builder.Property(f => f.LabelKey).HasColumnName("label_key").IsRequired();
+        builder.Property(f => f.FieldType).HasColumnName("field_type").HasConversion<string>().IsRequired();
+        builder.Property(f => f.IsRequired).HasColumnName("is_required").HasDefaultValue(false).IsRequired();
+        builder.Property(f => f.OptionsJson).HasColumnName("options_json").HasColumnType("jsonb");
+        builder.Property(f => f.SortOrder).HasColumnName("sort_order").IsRequired();
+
+        builder.Property(f => f.CreatedAtUtc).HasColumnName("created_at_utc").HasColumnType("timestamptz").IsRequired();
+        builder.Property(f => f.CreatedBy).HasColumnName("created_by");
+        builder.Property(f => f.UpdatedAtUtc).HasColumnName("updated_at_utc").HasColumnType("timestamptz").IsRequired();
+        builder.Property(f => f.UpdatedBy).HasColumnName("updated_by");
+
+        builder.HasIndex(f => new { f.SectionId, f.SortOrder })
+            .HasDatabaseName("ix_intake_form_fields_section_order");
+    }
+}
+
+public sealed class IntakeFormSubmissionConfiguration : IEntityTypeConfiguration<IntakeFormSubmission>
+{
+    public void Configure(EntityTypeBuilder<IntakeFormSubmission> builder)
+    {
+        builder.ToTable("intake_form_submissions", t =>
+        {
+            t.HasCheckConstraint("ck_submissions_status", "status IN ('draft','submitted','approved','declined')");
+        });
+
+        builder.HasKey(s => s.Id);
+        builder.Property(s => s.Id).HasColumnName("id");
+        builder.Property(s => s.FormId).HasColumnName("form_id").IsRequired();
+        builder.Property(s => s.OrganizationId).HasColumnName("organization_id");
+        builder.Property(s => s.UserId).HasColumnName("user_id").IsRequired();
+        builder.Property(s => s.Status).HasColumnName("status").HasConversion<string>().HasDefaultValue(SubmissionStatus.Submitted).IsRequired();
+        builder.Property(s => s.SubmissionDataJson).HasColumnName("submission_data_json").HasColumnType("jsonb").IsRequired();
+        builder.Property(s => s.CriminalClearanceDeclared).HasColumnName("criminal_clearance_declared").HasDefaultValue(false).IsRequired();
+        builder.Property(s => s.CriminalClearanceDeclaredAtUtc).HasColumnName("criminal_clearance_declared_at_utc").HasColumnType("timestamptz");
+        builder.Property(s => s.GdprConsentAccepted).HasColumnName("gdpr_consent_accepted").HasDefaultValue(false).IsRequired();
+        builder.Property(s => s.GdprConsentAcceptedAtUtc).HasColumnName("gdpr_consent_accepted_at_utc").HasColumnType("timestamptz");
+        builder.Property(s => s.EventInvitationOptIn).HasColumnName("event_invitation_opt_in").HasDefaultValue(false).IsRequired();
+        builder.Property(s => s.SubmittedAtUtc).HasColumnName("submitted_at_utc").HasColumnType("timestamptz");
+        builder.Property(s => s.DecidedAtUtc).HasColumnName("decided_at_utc").HasColumnType("timestamptz");
+        builder.Property(s => s.DecidedByUserId).HasColumnName("decided_by_user_id");
+        builder.Property(s => s.ReviewNotes).HasColumnName("review_notes");
+
+        builder.Property(s => s.CreatedAtUtc).HasColumnName("created_at_utc").HasColumnType("timestamptz").IsRequired();
+        builder.Property(s => s.CreatedBy).HasColumnName("created_by");
+        builder.Property(s => s.UpdatedAtUtc).HasColumnName("updated_at_utc").HasColumnType("timestamptz").IsRequired();
+        builder.Property(s => s.UpdatedBy).HasColumnName("updated_by");
+
+        builder.HasIndex(s => new { s.FormId, s.OrganizationId, s.UserId })
+            .HasDatabaseName("ix_submissions_form_org_user");
+
+        builder.HasIndex(s => new { s.OrganizationId, s.Status })
+            .HasDatabaseName("ix_submissions_org_status");
+    }
+}

@@ -77,4 +77,37 @@ public interface IIdentityService
         RecordConsentRequest request,
         string? ipAddress,
         CancellationToken cancellationToken = default);
+
+    // ADR-021 additions
+    Task<Result<string>> RegisterEmailPasswordAsync(
+        RegisterEmailPasswordRequest request,
+        string? ipAddress,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> VerifyEmailRegistrationAsync(
+        VerifyEmailRegistrationRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<AuthResponse>> EmailPasswordLoginAsync(
+        EmailPasswordLoginRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<AuthResponse>> LoginWithGoogleAsync(
+        GoogleLoginRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<AuthResponse>> LoginWithIdAustriaAsync(
+        IdAustriaLoginRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<string>> RequestProfilePhoneVerificationAsync(
+        Guid userId,
+        RequestProfilePhoneVerificationRequest request,
+        string? ipAddress,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> VerifyProfilePhoneAsync(
+        Guid userId,
+        VerifyProfilePhoneRequest request,
+        CancellationToken cancellationToken = default);
 }

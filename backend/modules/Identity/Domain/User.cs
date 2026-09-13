@@ -129,6 +129,76 @@ public sealed class User : Entity, IAuditable, ISoftDeletable
         };
     }
 
+    public static User CreateWithEmailPassword(
+        string email,
+        string displayName,
+        string passwordHash,
+        string preferredLocale = "de")
+    {
+        var now = DateTimeOffset.UtcNow;
+        return new User
+        {
+            Id = Guid.CreateVersion7(),
+            Email = email,
+            DisplayName = displayName,
+            PasswordHash = passwordHash,
+            PrimaryAuthMethod = AuthMethod.EmailPassword,
+            PreferredLocale = preferredLocale,
+            Status = UserStatus.Active,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+            IsDeleted = false
+        };
+    }
+
+    public static User CreateWithGoogle(
+        string email,
+        string displayName,
+        string providerKey,
+        string preferredLocale = "de")
+    {
+        var now = DateTimeOffset.UtcNow;
+        return new User
+        {
+            Id = Guid.CreateVersion7(),
+            Email = email,
+            DisplayName = displayName,
+            PrimaryAuthMethod = AuthMethod.Google,
+            PreferredLocale = preferredLocale,
+            Status = UserStatus.Active,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+            IsDeleted = false
+        };
+    }
+
+    public static User CreateWithIdAustria(
+        string email,
+        string displayName,
+        string providerKey,
+        string preferredLocale = "de")
+    {
+        var now = DateTimeOffset.UtcNow;
+        return new User
+        {
+            Id = Guid.CreateVersion7(),
+            Email = email,
+            DisplayName = displayName,
+            PrimaryAuthMethod = AuthMethod.IdAustria,
+            PreferredLocale = preferredLocale,
+            Status = UserStatus.Active,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+            IsDeleted = false
+        };
+    }
+
+    public void LinkExternalLogin(AuthMethod authMethod, string providerKey)
+    {
+        PrimaryAuthMethod = authMethod;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
     public void VerifyPhone()
     {
         PhoneVerifiedAtUtc = DateTimeOffset.UtcNow;
@@ -205,7 +275,10 @@ public enum AuthMethod
 {
     PhoneOtp,
     EmailMagicLink,
-    Password
+    Password,
+    Google,
+    IdAustria,
+    EmailPassword
 }
 
 public enum UserStatus

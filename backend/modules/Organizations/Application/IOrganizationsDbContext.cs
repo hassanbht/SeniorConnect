@@ -9,6 +9,10 @@ public interface IOrganizationsDbContext
     DbSet<OrganizationBranch> OrganizationBranches { get; }
     DbSet<OrganizationMembership> OrganizationMemberships { get; }
     DbSet<OrganizationPolicy> OrganizationPolicies { get; }
+    DbSet<OrganizationIntakeForm> OrganizationIntakeForms { get; }
+    DbSet<IntakeFormSection> IntakeFormSections { get; }
+    DbSet<IntakeFormField> IntakeFormFields { get; }
+    DbSet<IntakeFormSubmission> IntakeFormSubmissions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

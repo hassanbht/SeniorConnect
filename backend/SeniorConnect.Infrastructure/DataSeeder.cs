@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using SeniorConnect.Domain;
+using SeniorConnect.Modules.Geography.Domain;
 using SeniorConnect.Modules.HelpRequests.Domain;
 using SeniorConnect.Modules.Organizations.Domain;
 
@@ -10,7 +11,15 @@ public static class DataSeeder
 {
     public static async Task SeedInitialDataAsync(SeniorConnectDbContext db, CancellationToken cancellationToken = default)
     {
-        // 1. Seed Activity Categories (Reference Taxonomy: P1-15, P2-06, PSG-06)
+        // 1. Seed Austrian Administrative Units (P1-15b)
+        if (!await db.AustrianAdministrativeUnits.AnyAsync(cancellationToken))
+        {
+            var units = CreateAustrianAdministrativeUnits();
+            await db.AustrianAdministrativeUnits.AddRangeAsync(units, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        // 2. Seed Activity Categories (Reference Taxonomy: P1-15, P2-06, PSG-06)
         if (!await db.ActivityCategories.AnyAsync(cancellationToken))
         {
             var categories = new List<ActivityCategory>
@@ -58,7 +67,7 @@ public static class DataSeeder
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        // 2. Seed Pilot Organizations (P2-01)
+        // 3. Seed Pilot Organizations (P2-01)
         if (!await db.Organizations.AnyAsync(cancellationToken))
         {
             var org = Organization.Create(
@@ -71,6 +80,91 @@ public static class DataSeeder
             await db.Organizations.AddAsync(org, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private static List<AustrianAdministrativeUnit> CreateAustrianAdministrativeUnits()
+    {
+        var units = new List<AustrianAdministrativeUnit>();
+
+        // All 9 Bundesländer with their codes (Statistik Austria codes)
+        var bundeslaender = new[]
+        {
+            new { Code = "1", Name = "Burgenland" },
+            new { Code = "2", Name = "Kärnten" },
+            new { Code = "3", Name = "Niederösterreich" },
+            new { Code = "4", Name = "Oberösterreich" },
+            new { Code = "5", Name = "Salzburg" },
+            new { Code = "6", Name = "Steiermark" },
+            new { Code = "7", Name = "Tirol" },
+            new { Code = "8", Name = "Vorarlberg" },
+            new { Code = "9", Name = "Wien" }
+        };
+
+        foreach (var bl in bundeslaender)
+        {
+            // Add Bundesland level entry
+            units.Add(AustrianAdministrativeUnit.Create(
+                bundeslandCode: bl.Code,
+                bundeslandName: bl.Name,
+                bezirkCode: "",
+                bezirkName: "",
+                gemeindeCode: "",
+                gemeindeName: "",
+                postalCode: "",
+                localityName: "",
+                latitude: 0,
+                longitude: 0));
+        }
+
+        // Pilot region: Tirol (7) - Innsbruck-Land (703) with key Gemeinden
+        // This is a representative subset for the pilot
+        var tirolGemeinden = new[]
+        {
+            new { GemeindeCode = "70320", GemeindeName = "Kematen in Tirol", PLZ = "6175", Lat = 47.2600, Lon = 11.2433, Locality = "Kematen in Tirol" },
+            new { GemeindeCode = "70321", GemeindeName = "Zirl", PLZ = "6170", Lat = 47.2719, Lon = 11.2336, Locality = "Zirl" },
+            new { GemeindeCode = "70322", GemeindeName = "Völs", PLZ = "6176", Lat = 47.2481, Lon = 11.3092, Locality = "Völs" },
+            new { GemeindeCode = "70101", GemeindeName = "Innsbruck", PLZ = "6020", Lat = 47.2692, Lon = 11.4041, Locality = "Innsbruck" },
+            new { GemeindeCode = "70101", GemeindeName = "Innsbruck", PLZ = "6010", Lat = 47.2692, Lon = 11.4041, Locality = "Innsbruck" },
+            new { GemeindeCode = "70101", GemeindeName = "Innsbruck", PLZ = "6060", Lat = 47.2692, Lon = 11.4041, Locality = "Innsbruck" },
+        };
+
+        foreach (var g in tirolGemeinden)
+        {
+            units.Add(AustrianAdministrativeUnit.Create(
+                bundeslandCode: "7",
+                bundeslandName: "Tirol",
+                bezirkCode: "703",
+                bezirkName: "Innsbruck-Land",
+                gemeindeCode: g.GemeindeCode,
+                gemeindeName: g.GemeindeName,
+                postalCode: g.PLZ,
+                localityName: g.Locality,
+                latitude: g.Lat,
+                longitude: g.Lon));
+        }
+
+        // Also add Innsbruck-Stadt (Bezirk 701) entries
+        var innsbruckGemeinden = new[]
+        {
+            new { GemeindeCode = "70101", GemeindeName = "Innsbruck", PLZ = "6020", Lat = 47.2692, Lon = 11.4041, Locality = "Innsbruck" },
+        };
+
+        foreach (var g in innsbruckGemeinden)
+        {
+            units.Add(AustrianAdministrativeUnit.Create(
+                bundeslandCode: "7",
+                bundeslandName: "Tirol",
+                bezirkCode: "701",
+                bezirkName: "Innsbruck",
+                gemeindeCode: g.GemeindeCode,
+                gemeindeName: g.GemeindeName,
+                postalCode: g.PLZ,
+                localityName: g.Locality,
+                latitude: g.Lat,
+                longitude: g.Lon));
+        }
+
+        return units;
     }
 
     private static ActivityCategory CreateCategory(
