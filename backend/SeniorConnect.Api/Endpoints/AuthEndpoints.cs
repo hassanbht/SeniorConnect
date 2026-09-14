@@ -71,6 +71,74 @@ public static class AuthEndpoints
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .ProducesProblem(StatusCodes.Status409Conflict);
 
+        // ADR-021: Email + Password registration + verification
+        authGroup.MapPost("/register", async (
+            RegisterEmailPasswordRequest request,
+            HttpContext httpContext,
+            IIdentityService identityService,
+            CancellationToken ct) =>
+        {
+            var ip = httpContext.GetClientIp();
+            var result = await identityService.RegisterEmailPasswordAsync(request, ip, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("RegisterEmailPassword")
+        .Produces<string>(StatusCodes.Status201Created)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status409Conflict);
+
+        authGroup.MapGet("/verify-email", async (
+            string token,
+            IIdentityService identityService,
+            CancellationToken ct) =>
+        {
+            var result = await identityService.VerifyEmailRegistrationAsync(new VerifyEmailRegistrationRequest(token), ct);
+            return result.ToHttpResult();
+        })
+        .WithName("VerifyEmailRegistration")
+        .Produces(StatusCodes.Status204NoContent)
+        .ProducesProblem(StatusCodes.Status409Conflict);
+
+        authGroup.MapPost("/login", async (
+            EmailPasswordLoginRequest request,
+            IIdentityService identityService,
+            CancellationToken ct) =>
+        {
+            var result = await identityService.EmailPasswordLoginAsync(request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("EmailPasswordLogin")
+        .Produces<AuthResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        authGroup.MapPost("/google", async (
+            GoogleLoginRequest request,
+            IIdentityService identityService,
+            CancellationToken ct) =>
+        {
+            var result = await identityService.LoginWithGoogleAsync(request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("GoogleLogin")
+        .Produces<AuthResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        authGroup.MapPost("/id-austria", async (
+            IdAustriaLoginRequest request,
+            IIdentityService identityService,
+            CancellationToken ct) =>
+        {
+            var result = await identityService.LoginWithIdAustriaAsync(request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("IdAustriaLogin")
+        .Produces<AuthResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
         authGroup.MapPost("/staff-login", async (
             StaffLoginRequest request,
             IIdentityService identityService,
@@ -192,6 +260,48 @@ public static class AuthEndpoints
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        // ADR-021: In-profile phone verification
+        var mePhoneGroup = app.MapGroup("/api/v1/me/phone")
+            .WithTags("User Profile")
+            .RequireAuthorization();
+
+        mePhoneGroup.MapPost("/request-verification", async (
+            RequestProfilePhoneVerificationRequest request,
+            ClaimsPrincipal user,
+            HttpContext httpContext,
+            IIdentityService identityService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var ip = httpContext.GetClientIp();
+            var result = await identityService.RequestProfilePhoneVerificationAsync(userId.Value, request, ip, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("RequestProfilePhoneVerification")
+        .Produces<string>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        mePhoneGroup.MapPost("/verify", async (
+            VerifyProfilePhoneRequest request,
+            ClaimsPrincipal user,
+            IIdentityService identityService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await identityService.VerifyProfilePhoneAsync(userId.Value, request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("VerifyProfilePhone")
+        .Produces(StatusCodes.Status204NoContent)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status409Conflict);
 
         // --- /me endpoints ---
         var meGroup = app.MapGroup("/api/v1/me")

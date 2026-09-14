@@ -71,5 +71,12 @@ final class _UnknownError extends AppError {
   final String code;
 
   @override
-  String get l10nKey => 'errors.generic';
+  String get l10nKey => switch (code) {
+        'RATE_LIMITED' => 'auth.otp.rate_limited',
+        'EMAIL_ALREADY_REGISTERED' => 'auth.register.email_already_registered',
+        'PASSWORDS_DO_NOT_MATCH' => 'auth.register.password_mismatch',
+        'INVALID_CREDENTIALS' => 'auth.login.invalid_credentials',
+        'EMAIL_VERIFICATION_REQUIRED' => 'auth.login.email_verification_required',
+        _ => 'errors.generic',
+      };
 }

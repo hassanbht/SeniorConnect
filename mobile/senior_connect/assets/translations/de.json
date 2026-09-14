@@ -53,7 +53,11 @@
       "email": "E-Mail-Adresse",
       "password": "Passwort",
       "submit": "Anmelden",
-      "forgot": "Passwort vergessen?"
+      "forgot": "Passwort vergessen?",
+      "invalid_credentials": "E-Mail-Adresse oder Passwort ist falsch.",
+      "email_verification_required": "Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.",
+      "switch_to_register": "Noch kein Konto? Registrieren",
+      "switch_to_login": "Bereits ein Konto? Anmelden"
     },
     "register": {
       "title": "Konto erstellen",
@@ -61,7 +65,36 @@
       "i_support_someone": "Ich möchte jemanden unterstützen",
       "i_need_help": "Ich brauche Unterstützung",
       "i_am_new_in_austria": "Ich bin neu in Österreich",
-      "i_want_to_help": "Ich möchte helfen / mitmachen"
+      "i_want_to_help": "Ich möchte helfen / mitmachen",
+      "email": "E-Mail-Adresse",
+      "password": "Passwort",
+      "confirm_password": "Passwort bestätigen",
+      "confirm_password_required": "Bitte bestätigen Sie Ihr Passwort.",
+      "password_mismatch": "Die Passwörter stimmen nicht überein.",
+      "password_too_short": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+      "password_required": "Bitte geben Sie ein Passwort ein.",
+      "submit": "Registrieren",
+      "email_verification_sent": "Wir haben Ihnen eine Bestätigungs-E-Mail geschickt. Bitte prüfen Sie Ihr Postfach.",
+      "email_verification_pending": "Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link in der E-Mail.",
+      "email_already_registered": "Diese E-Mail ist bereits registriert.",
+      "email_invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
+    },
+    "google": {
+      "button": "Mit Google anmelden",
+      "button_semantic": "Mit Google anmelden. Öffnet das Google-Anmeldefenster."
+    },
+    "id_austria": {
+      "button": "Mit ID Austria anmelden",
+      "button_semantic": "Mit ID Austria anmelden. Öffnet das ID Austria-Anmeldefenster."
+    },
+    "phone_verification": {
+      "title": "Telefonnummer bestätigen",
+      "description": "Wir senden Ihnen einen 6-stelligen Code per SMS an {phone}.",
+      "button": "Telefonnummer bestätigen",
+      "submit": "Bestätigen",
+      "resend": "Neuen Code anfordern",
+      "success": "Telefonnummer erfolgreich bestätigt.",
+      "verified": "Bestätigt"
     }
   },
   "home": {
@@ -272,7 +305,28 @@
     "interests": "Interessen",
     "interests_coming_soon": "Interessen können bald hinzugefügt werden.",
     "languages": "Sprachen",
-    "languages_coming_soon": "Sprachen können bald hinzugefügt werden."
+    "languages_coming_soon": "Sprachen können bald hinzugefügt werden.",
+    "phone": "Telefonnummer",
+    "phone_verified": "Bestätigt",
+    "verify_phone_button": "Telefonnummer bestätigen",
+    "verify_phone_semantic": "Telefonnummer per SMS bestätigen",
+    "address": "Adresse",
+    "bundesland": "Bundesland",
+    "bezirk": "Bezirk",
+    "gemeinde": "Gemeinde",
+    "plz": "PLZ",
+    "street": "Straße & Hausnummer",
+    "lookup_address": "Adresse auf Karte suchen",
+    "lookup_address_semantic": "Adresse auf der Karte suchen und Koordinaten übernehmen",
+    "select_bundesland": "Bundesland auswählen",
+    "select_bezirk": "Bezirk auswählen",
+    "select_gemeinde": "Gemeinde auswählen",
+    "map_preview": "Karten-Vorschau",
+    "confirm_location": "Standort bestätigen",
+    "location_saved": "Standort gespeichert",
+    "coordinates": "Koordinaten",
+    "latitude": "Breitengrad",
+    "longitude": "Längengrad"
   },
   "empty": {
     "no_activities": "Sie haben noch keine Termine.",

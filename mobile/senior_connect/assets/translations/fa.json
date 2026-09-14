@@ -53,7 +53,11 @@
       "email": "آدرس ایمیل",
       "password": "رمز عبور",
       "submit": "ورود",
-      "forgot": "رمز عبور را فراموش کرده‌اید؟"
+      "forgot": "رمز عبور را فراموش کرده‌اید؟",
+      "invalid_credentials": "ایمیل یا رمز عبور اشتباه است.",
+      "email_verification_required": "لطفاً پیش از ورود، آدرس ایمیل خود را تأیید کنید.",
+      "switch_to_register": "حساب کاربری ندارید؟ ثبت‌نام کنید",
+      "switch_to_login": "قبلاً ثبت‌نام کرده‌اید؟ وارد شوید"
     },
     "register": {
       "title": "ایجاد حساب کاربری",
@@ -61,7 +65,36 @@
       "i_support_someone": "می‌خواهم به عنوان حامی/خانواده ثبت‌نام کنم",
       "i_need_help": "به کمک و همراهی نیاز دارم",
       "i_am_new_in_austria": "تازه وارد اتریش شده‌ام",
-      "i_want_to_help": "می‌خواهم داوطلب شوم"
+      "i_want_to_help": "می‌خواهم داوطلب شوم",
+      "email": "آدرس ایمیل",
+      "password": "رمز عبور",
+      "confirm_password": "تأیید رمز عبور",
+      "confirm_password_required": "لطفاً رمز عبور خود را تأیید کنید.",
+      "password_mismatch": "رمزهای عبور با یکدیگر مطابقت ندارند.",
+      "password_too_short": "رمز عبور باید حداقل ۸ کاراکتر باشد.",
+      "password_required": "لطفاً یک رمز عبور وارد کنید.",
+      "submit": "ثبت‌نام",
+      "email_verification_sent": "ایمیل تأیید ارسال شد. لطفاً ورودی‌های خود را بررسی کنید.",
+      "email_verification_pending": "لطفاً آدرس ایمیل خود را از طریق لینک در ایمیل تأیید کنید.",
+      "email_already_registered": "این ایمیل قبلاً ثبت‌نام کرده است.",
+      "email_invalid": "لطفاً یک آدرس ایمیل معتبر وارد کنید."
+    },
+    "google": {
+      "button": "ورود با گوگل",
+      "button_semantic": "ورود با گوگل. باز کردن پنجره ورود گوگل."
+    },
+    "id_austria": {
+      "button": "ورود با ID Austria",
+      "button_semantic": "ورود با ID Austria. باز کردن پنجره ورود ID Austria."
+    },
+    "phone_verification": {
+      "title": "تأیید شماره تلفن",
+      "description": "ما یک کد ۶ رقمی به شماره {phone} ارسال می‌کنیم.",
+      "button": "تأیید شماره تلفن",
+      "submit": "تأیید",
+      "resend": "ارسال مجدد کد",
+      "success": "شماره تلفن با موفقیت تأیید شد.",
+      "verified": "تأیید شده"
     }
   },
   "home": {
@@ -272,7 +305,28 @@
     "interests": "علاقه‌مندی‌ها",
     "interests_coming_soon": "امکان افزودن علاقه‌مندی‌ها به‌زودی فعال می‌شود.",
     "languages": "زبان‌ها",
-    "languages_coming_soon": "امکان افزودن زبان‌ها به‌زودی فعال می‌شود."
+    "languages_coming_soon": "امکان افزودن زبان‌ها به‌زودی فعال می‌شود.",
+    "phone": "شماره تلفن",
+    "phone_verified": "تأیید شده",
+    "verify_phone_button": "تأیید شماره تلفن",
+    "verify_phone_semantic": "تأیید شماره تلفن از طریق پیامک",
+    "address": "آدرس",
+    "bundesland": "استان",
+    "bezirk": "منطقه",
+    "gemeinde": "شهر / روستا",
+    "plz": "کد پستی",
+    "street": "خیابان و پلاک",
+    "lookup_address": "جستجوی آدرس روی نقشه",
+    "lookup_address_semantic": "جستجوی آدرس روی نقشه و گرفتن مختصات",
+    "select_bundesland": "انتخاب استان",
+    "select_bezirk": "انتخاب منطقه",
+    "select_gemeinde": "انتخاب شهر / روستا",
+    "map_preview": "پیش‌نمایش نقشه",
+    "confirm_location": "تأیید موقعیت",
+    "location_saved": "موقعیت ذخیره شد",
+    "coordinates": "مختصات",
+    "latitude": "عرض جغرافیایی",
+    "longitude": "طول جغرافیایی"
   },
   "empty": {
     "no_activities": "شما در حال حاضر قراری ندارید.",

@@ -11,9 +11,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/auth/presentation/onboarding_persona_screen.dart';
 import '../../features/auth/presentation/otp_verify_screen.dart';
-import '../../features/auth/presentation/phone_entry_screen.dart';
 import '../../features/community/presentation/community_feed_screen.dart';
 import '../../features/community/presentation/event_detail_screen.dart';
 import '../../features/community/presentation/my_appointments_screen.dart';
@@ -75,14 +75,17 @@ GoRouter buildRouter({required ApiClient apiClient}) {
       GoRoute(
         path: AppRoutes.phoneEntry,
         name: 'phone-entry',
-        builder: (context, state) => const PhoneEntryScreen(),
+        builder: (context, state) => AuthScreen(apiClient: apiClient),
       ),
       GoRoute(
         path: AppRoutes.otpVerify,
         name: 'otp-verify',
         builder: (context, state) {
           final phone = state.uri.queryParameters['phone'] ?? '';
-          return OtpVerifyScreen(phone: phone);
+          final purpose = state.uri.queryParameters['purpose'] == 'phone_verification'
+              ? OtpPurpose.phoneVerification
+              : OtpPurpose.login;
+          return OtpVerifyScreen(phone: phone, apiClient: apiClient, purpose: purpose);
         },
       ),
       GoRoute(
@@ -177,7 +180,7 @@ GoRouter buildRouter({required ApiClient apiClient}) {
               GoRoute(
                 path: 'edit',
                 name: 'profile-edit',
-                builder: (context, state) => const ProfileEditScreen(),
+                builder: (context, state) => ProfileEditScreen(apiClient: apiClient),
               ),
             ],
           ),

@@ -425,20 +425,20 @@ surface it is legally not permitted to have.*
 
 ---
 
-## 15. Authentication (BR-AUTH) — *from F3, see ADR-016*
+## 15. Authentication (BR-AUTH) — *from F3, see ADR-016 & ADR-021*
 
-**BR-AUTH-01** Phone number + one-time SMS code is the **primary** credential for
-seniors, volunteers and family members. Email magic link is the alternative.
+**BR-AUTH-01** Authentication provides a multi-provider tier for maximum reach:
+- **Google Sign-In** (OAuth 2.0 / OpenID Connect)
+- **Email + Password + Password Confirmation** (with email verification token)
+- **ID Austria** (Austrian national eIDAS-compliant digital identity)
+- **Phone number + SMS OTP**
 
-**BR-AUTH-02** Email + password is available **only** to organization staff and
-platform admins, and those accounts additionally support TOTP.
+**BR-AUTH-02** Email + Password registration requires identical password and password confirmation inputs, followed by a mandatory email verification link. The account status reflects `email_verified = false` until the link is verified.
 
-**BR-AUTH-03** A senior-facing or volunteer-facing screen must never present a
-password field. This is a defect, not a design choice.
+**BR-AUTH-03** Password fields are permitted on the email registration/login screen, provided one-tap passwordless alternatives (Google Sign-In, ID Austria, and SMS OTP) remain clearly visible to accommodate users who struggle with complex passwords.
 
 **BR-AUTH-04** Sessions last 90 days on a device marked personal, refreshed
-silently. Sensitive screens re-authenticate with biometrics or the device PIN,
-never with a password.
+silently. Sensitive screens re-authenticate with biometrics, device PIN, or fresh token.
 
 **BR-AUTH-05** Re-authentication is required only for: changing the phone number,
 changing family permissions, and any safeguarding screen.
@@ -449,9 +449,13 @@ number and the email address, and is audited. *(SIM-swap mitigation.)*
 **BR-AUTH-07** OTP requests are rate-limited per number and per IP, and OTP codes
 expire in 5 minutes with a maximum of 5 verification attempts.
 
-*Rationale: F3 — both reported prior-software failures were login failures, not
-feature failures. "The login kept breaking." "It needed a complex password every
-time I opened it. I deleted it."*
+**BR-AUTH-08** **ID Austria Trust Elevation:** Logging in via ID Austria verifies the citizen's legal identity through the Austrian federal trust federation, automatically granting Trust Level 1/2 without requiring paper ID scans or manual coordinator verification.
+
+**BR-AUTH-09** **In-Profile Mobile Phone Verification:** Users can supply or update their mobile phone number in their Profile. An explicit "Verify Phone Number" button dispatches an SMS OTP challenge, setting `phone_verified_at_utc` upon successful confirmation.
+
+**BR-AUTH-10** **Email Verification Enforcement:** Email accounts must complete email verification within 24 hours of registration. Unverified accounts cannot create community announcements, apply to organizations, or accept assignments.
+
+*Rationale: F3 & ADR-021 — balancing zero-barrier login for seniors with mainstream Google OAuth, sovereign ID Austria verification, and standard email registration with strong email/phone verification guards.*
 
 ---
 
@@ -550,3 +554,60 @@ is confirmed, only to the assigned counterparty (BR-COMM-04).
 *Rationale: F8 — the volunteer actively does not want health information, for
 liability reasons: "I prefer to know nothing about illnesses." Data minimisation
 here is a user requirement, not only a compliance requirement.*
+
+---
+
+## 20. Austrian Geography, Address Geocoding & Proximity Discovery (BR-GEO) — *see ADR-021*
+
+**BR-GEO-01** **Austrian Administrative Hierarchy Master Dataset:**
+The platform maintains an official directory of all Austrian administrative divisions:
+- 9 Federal States (*Bundesländer*: Wien, Tirol, Vorarlberg, Salzburg, Kärnten, Steiermark, Oberösterreich, Niederösterreich, Burgenland)
+- 94 Districts (*Bezirke* and *Statutarstädte*)
+- 2,093 Municipalities (*Gemeinden*)
+- All official Postal Codes (*Postleitzahlen / PLZ*) and localities (*Ortschaften*).
+
+**BR-GEO-02** **Smart Address Completion:**
+Profile address entry provides cascading dropdowns and autocomplete driven by the Austrian administrative hierarchy. A user selecting a PLZ or typing a Gemeinde gets immediate canonical validation.
+
+**BR-GEO-03** **Address Geocoding & Map Confirmation:**
+Users can trigger address resolution via an "Address Lookup" action (`POST /reference/geocode-address`), which resolves latitude and longitude coordinates and renders an interactive map pin for confirmation before persisting.
+
+**BR-GEO-04** **Spatial Proximity Computation:**
+Distances between users, organizations, and activities are computed server-side via spatial math (Haversine/PostGIS) to dynamically determine the closest towns/cities and match individuals within configurable radii (default 5 km, 10 km, 25 km or same Gemeinde/Bezirk).
+
+**BR-GEO-05** **Mutual Local Discovery:**
+- **Citizens & Seniors:** Can browse nearby social organizations/charities and independent/free volunteers (*Freiwillige*) operating within their geographic perimeter.
+- **Independent Volunteers:** Can browse nearby registered social organizations and active community help requests within their preferred distance radius (`max_distance_km`).
+
+**BR-GEO-06** **Privacy Location Fuzzing:**
+Exact street numbers and coordinate precision are fuzzed in public and discovery views. Unassigned users see only the locality name, postal code, and approximate distance. Precise address coordinates are strictly unmasked only after mutual confirmation of an assignment.
+
+---
+
+## 21. Organization Custom Intake Forms & Volunteer Categorization (BR-ORG-FORM) — *see ADR-021*
+
+**BR-ORG-FORM-01** **Custom Membership & Intake Form Builder:**
+Every social organization can configure distinct digital intake forms for:
+- Volunteer applicants (*Freiwilligen-Aufnahme*)
+- Help-seekers / community members (*Hilfesuchende / Mitglieder-Aufnahme*)
+
+**BR-ORG-FORM-02** **Field-Level Requirement Control:**
+Every section and field within an organization's custom form can be independently flagged by the coordinator as:
+- **Mandatory** (`Pflichtfeld`)
+- **Optional** (`Freiwillig`)
+
+**BR-ORG-FORM-03** **FWZ Innsbruck-Land Standard Taxonomy:**
+Organizations can activate or adapt the standard Austrian Freiwilligenzentrum intake template (`Interesse für Freiwilligentätigkeit`), featuring:
+1. **Activity Domains (*Bereiche*):** *Soziales*, *Natur*, *E-Volunteering*, *Klima und Nachhaltigkeit*, *Handwerkliches / Kreatives*, *Kunst und Kultur*, *Freiwilligenpool*, *Lernbetreuung*.
+2. **Target Groups (*Personengruppen*):** *Geflüchtete / Personen mit Migrationshintergrund*, *Familien*, *Senior:innen*, *Menschen mit Behinderung*, *Kinder und Jugendliche*, *Sonstige*.
+3. **Time Commitment & Flexibility (*Zeitaufwand*):** *einmalig*, *regelmäßig (pro Woche, pro Monat, pro Jahr)*, *Stundenanzahl*, *Tageszeit*, *Wochentag(e)*, *Flexibel*, *WhatsApp-Zustimmung zur Kontaktaufnahme*.
+4. **Skills & Free Notes (*Fähigkeiten / Anmerkungen*).**
+
+**BR-ORG-FORM-04** **Criminal Clearance Declaration (*Strafrechtliche Unbescholtenheit*):**
+Volunteer intake forms include a mandatory legal affirmation:
+*"Ich erkläre, dass gegen mich keinerlei strafgerichtliche Verurteilungen, die noch nicht getilgt sind, bestehen und, dass gegen mich derzeit keine strafgerichtlichen Ermittlungen laufen."*
+Accepted as a timestamped boolean in `intake_form_submissions` (no physical certificate scanned or stored, upholding BR-GDPR-01 & ADR-008).
+
+**BR-ORG-FORM-05** **GDPR Consent (*Einwilligung zur Datenverarbeitung*):**
+The intake flow incorporates explicit, unbundled GDPR consent checkboxes for data processing by the local volunteer center and coordinating state office, plus an optional consent for event and training invitations.
+

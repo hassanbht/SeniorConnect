@@ -9,6 +9,40 @@ public sealed record RequestPhoneOtpRequest(
     bool SeniorModeDefault = false,
     OtpPurpose Purpose = OtpPurpose.Login);
 
+public sealed record RegisterEmailPasswordRequest(
+    string Email,
+    string Password,
+    string ConfirmPassword,
+    string PreferredLocale = "de");
+
+public sealed record VerifyEmailRegistrationRequest(
+    string Token);
+
+public sealed record EmailPasswordLoginRequest(
+    string Email,
+    string Password,
+    string? DeviceLabel = null,
+    bool IsPersonalDevice = true);
+
+public sealed record GoogleLoginRequest(
+    string IdToken,
+    string? DeviceLabel = null,
+    bool IsPersonalDevice = true);
+
+public sealed record IdAustriaLoginRequest(
+    string Code,
+    string? State = null,
+    string? DeviceLabel = null,
+    bool IsPersonalDevice = true);
+
+public sealed record RequestProfilePhoneVerificationRequest(
+    string Phone,
+    string PreferredLocale = "de");
+
+public sealed record VerifyProfilePhoneRequest(
+    string Phone,
+    string Code);
+
 public sealed record VerifyPhoneOtpRequest(
     string Phone,
     string Code,

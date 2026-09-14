@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using SeniorConnect.Modules.Identity.Application;
 using SeniorConnect.Modules.Identity.Domain;
@@ -14,6 +15,9 @@ public sealed class IdentityService : IIdentityService
     private readonly ITrustLevelCalculator _trustCalculator;
     private readonly ICapabilityService _capabilityService;
     private readonly IIdentityHashingService _hashing;
+    private readonly IGoogleIdTokenValidator _googleValidator;
+    private readonly IIdAustriaClient _idAustriaClient;
+    private readonly IEmailSender _emailSender;
 
     public IdentityService(
         IIdentityDbContext db,
@@ -22,7 +26,10 @@ public sealed class IdentityService : IIdentityService
         IPasswordHasher passwordHasher,
         ITrustLevelCalculator trustCalculator,
         ICapabilityService capabilityService,
-        IIdentityHashingService hashing)
+        IIdentityHashingService hashing,
+        IGoogleIdTokenValidator googleValidator,
+        IIdAustriaClient idAustriaClient,
+        IEmailSender emailSender)
     {
         _db = db;
         _otpService = otpService;
@@ -31,6 +38,9 @@ public sealed class IdentityService : IIdentityService
         _trustCalculator = trustCalculator;
         _capabilityService = capabilityService;
         _hashing = hashing;
+        _googleValidator = googleValidator;
+        _idAustriaClient = idAustriaClient;
+        _emailSender = emailSender;
     }
 
     public async Task<Result<string>> RequestPhoneOtpAsync(
@@ -442,6 +452,374 @@ public sealed class IdentityService : IIdentityService
             ipHash: ipHash);
 
         _db.Consents.Add(consent);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+
+    // ADR-021: Email + Password registration with verification
+    public async Task<Result<string>> RegisterEmailPasswordAsync(
+        RegisterEmailPasswordRequest request,
+        string? ipAddress,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return Error.Validation("Email is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            return Error.Validation("Password is required.");
+        }
+
+        if (request.Password != request.ConfirmPassword)
+        {
+            return new Error("PASSWORDS_DO_NOT_MATCH", "Password and confirmation do not match.", ErrorKind.Validation);
+        }
+
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
+        var existingUser = await _db.Users
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && !u.IsDeleted, cancellationToken);
+
+        if (existingUser is not null)
+        {
+            return new Error("EMAIL_ALREADY_REGISTERED", "An account with this email already exists.", ErrorKind.Conflict);
+        }
+
+        var passwordHash = _passwordHasher.HashPassword(request.Password);
+
+        var user = User.CreateWithEmailPassword(
+            email: normalizedEmail,
+            displayName: normalizedEmail.Split('@')[0],
+            passwordHash: passwordHash,
+            preferredLocale: request.PreferredLocale);
+
+        _db.Users.Add(user);
+
+        // Create email verification token (24h expiry)
+        var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+        var tokenHash = _hashing.HashToken(rawToken);
+        var verificationToken = EmailVerificationToken.Create(
+            userId: user.Id,
+            tokenHash: tokenHash,
+            expiresAtUtc: DateTimeOffset.UtcNow.AddHours(24));
+
+        _db.EmailVerificationTokens.Add(verificationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var verificationLink = $"https://seniorconnect.at/verify-email?token={rawToken}";
+        var (subject, body) = request.PreferredLocale switch
+        {
+            "fa" => ("تایید ایمیل شما در میتاناند", $"برای تایید ایمیل خود روی این لینک کلیک کنید: {verificationLink} (اعتبار: ۲۴ ساعت)"),
+            "en" => ("Verify your SeniorConnect email", $"Please verify your email by clicking: {verificationLink} (valid 24 hours)"),
+            _ => ("Bestätigen Sie Ihre SeniorConnect E-Mail", $"Bitte bestätigen Sie Ihre E-Mail-Adresse: {verificationLink} (24 Stunden gültig)")
+        };
+        await _emailSender.SendEmailAsync(normalizedEmail, subject, body, cancellationToken);
+
+        return Result<string>.Success(user.Id.ToString());
+    }
+
+    public async Task<Result> VerifyEmailRegistrationAsync(
+        VerifyEmailRegistrationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+        {
+            return Error.Validation("Verification token is required.");
+        }
+
+        var tokenHash = _hashing.HashToken(request.Token.Trim());
+
+        var token = await _db.EmailVerificationTokens
+            .FirstOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);
+
+        if (token is null || !token.IsValid)
+        {
+            return new Error("TOKEN_INVALID_OR_EXPIRED", "The verification token is invalid or has expired.", ErrorKind.Conflict);
+        }
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == token.UserId && !u.IsDeleted, cancellationToken);
+
+        if (user is null)
+        {
+            return Error.NotFound("User");
+        }
+
+        user.VerifyEmail();
+        token.MarkUsed();
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+
+    public async Task<Result<AuthResponse>> EmailPasswordLoginAsync(
+        EmailPasswordLoginRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            return Error.Validation("Email and password are required.");
+        }
+
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && !u.IsDeleted, cancellationToken);
+
+        if (user is null || user.PrimaryAuthMethod != AuthMethod.EmailPassword || user.PasswordHash is null)
+        {
+            return new Error("INVALID_CREDENTIALS", "Invalid email or password.", ErrorKind.Unauthenticated);
+        }
+
+        if (user.Status != UserStatus.Active)
+        {
+            return new Error("ACCOUNT_SUSPENDED", "Account is not active.", ErrorKind.Forbidden);
+        }
+
+        if (!user.EmailVerifiedAtUtc.HasValue)
+        {
+            return new Error("EMAIL_VERIFICATION_REQUIRED", "Please verify your email address before logging in.", ErrorKind.Forbidden,
+                new Dictionary<string, object> { ["emailVerified"] = false });
+        }
+
+        if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        {
+            return new Error("INVALID_CREDENTIALS", "Invalid email or password.", ErrorKind.Unauthenticated);
+        }
+
+        user.RecordLogin();
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return await BuildAuthResponseAsync(user, request.DeviceLabel, request.IsPersonalDevice, cancellationToken);
+    }
+
+    public async Task<Result<AuthResponse>> LoginWithGoogleAsync(
+        GoogleLoginRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.IdToken))
+        {
+            return Error.Validation("Google ID token is required.");
+        }
+
+        var validationResult = await _googleValidator.ValidateAsync(request.IdToken, cancellationToken);
+        if (validationResult.IsFailure)
+        {
+            return validationResult.Error!;
+        }
+
+        var payload = validationResult.Value!;
+        var normalizedEmail = payload.Email.Trim().ToLowerInvariant();
+
+        // Check if Google account is already linked
+        var existingLogin = await _db.UserExternalLogins
+            .FirstOrDefaultAsync(l => l.Provider == "google" && l.ProviderKey == payload.Subject, cancellationToken);
+
+        if (existingLogin is not null)
+        {
+            var existingUser = await _db.Users
+                .FirstOrDefaultAsync(u => u.Id == existingLogin.UserId && !u.IsDeleted, cancellationToken);
+
+            if (existingUser is not null)
+            {
+                existingUser.RecordLogin();
+                await _db.SaveChangesAsync(cancellationToken);
+                return await BuildAuthResponseAsync(existingUser, request.DeviceLabel, request.IsPersonalDevice, cancellationToken);
+            }
+        }
+
+        // Check if email exists
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && !u.IsDeleted, cancellationToken);
+
+        if (user is not null)
+        {
+            // Link Google to existing account
+            user.LinkExternalLogin(AuthMethod.Google, payload.Subject);
+            _db.UserExternalLogins.Add(UserExternalLogin.Create(user.Id, "google", payload.Subject, payload.Email, payload.Name));
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        else
+        {
+            // Create new user with Google auth
+            user = User.CreateWithGoogle(normalizedEmail, payload.Name ?? normalizedEmail.Split('@')[0], payload.Subject);
+            _db.Users.Add(user);
+            _db.UserExternalLogins.Add(UserExternalLogin.Create(user.Id, "google", payload.Subject, payload.Email, payload.Name));
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        return await BuildAuthResponseAsync(user, request.DeviceLabel, request.IsPersonalDevice, cancellationToken);
+    }
+
+    public async Task<Result<AuthResponse>> LoginWithIdAustriaAsync(
+        IdAustriaLoginRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Code))
+        {
+            return Error.Validation("Authorization code is required.");
+        }
+
+        var tokenResult = await _idAustriaClient.ExchangeCodeForTokensAsync(request.Code, request.State, cancellationToken);
+        if (tokenResult.IsFailure)
+        {
+            return tokenResult.Error!;
+        }
+
+        var tokenResponse = tokenResult.Value!;
+
+        var userInfoResult = await _idAustriaClient.GetUserInfoAsync(tokenResponse.AccessToken, cancellationToken);
+        if (userInfoResult.IsFailure)
+        {
+            return userInfoResult.Error!;
+        }
+
+        var userInfo = userInfoResult.Value!;
+        var normalizedEmail = userInfo.Email.Trim().ToLowerInvariant();
+
+        // Check if ID Austria account is already linked
+        var existingLogin = await _db.UserExternalLogins
+            .FirstOrDefaultAsync(l => l.Provider == "id_austria" && l.ProviderKey == userInfo.Subject, cancellationToken);
+
+        if (existingLogin is not null)
+        {
+            var existingUser = await _db.Users
+                .FirstOrDefaultAsync(u => u.Id == existingLogin.UserId && !u.IsDeleted, cancellationToken);
+
+            if (existingUser is not null)
+            {
+                existingUser.RecordLogin();
+                await _db.SaveChangesAsync(cancellationToken);
+                return await BuildAuthResponseAsync(existingUser, request.DeviceLabel, request.IsPersonalDevice, cancellationToken);
+            }
+        }
+
+        // Check if email exists
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && !u.IsDeleted, cancellationToken);
+
+        if (user is not null)
+        {
+            // Link ID Austria to existing account
+            user.LinkExternalLogin(AuthMethod.IdAustria, userInfo.Subject);
+            _db.UserExternalLogins.Add(UserExternalLogin.Create(user.Id, "id_austria", userInfo.Subject, userInfo.Email, $"{userInfo.GivenName} {userInfo.FamilyName}".Trim()));
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        else
+        {
+            // Create new user with ID Austria auth
+            user = User.CreateWithIdAustria(normalizedEmail, $"{userInfo.GivenName} {userInfo.FamilyName}".Trim(), userInfo.Subject);
+            _db.Users.Add(user);
+            _db.UserExternalLogins.Add(UserExternalLogin.Create(user.Id, "id_austria", userInfo.Subject, userInfo.Email, $"{userInfo.GivenName} {userInfo.FamilyName}".Trim()));
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        // ID Austria login automatically grants Identity verification -> trust level 1/2 (BR-AUTH-08)
+        var identityVerification = await _db.Verifications
+            .FirstOrDefaultAsync(v => v.UserId == user.Id && v.Type == VerificationType.Identity && v.Provider == VerificationProvider.IdAustria, cancellationToken);
+
+        if (identityVerification is null)
+        {
+            identityVerification = Verification.Create(user.Id, VerificationType.Identity, VerificationProvider.IdAustria);
+            identityVerification.Verify(user.Id, validUntilUtc: null, verifiedByOrganizationId: null, externalReference: userInfo.Subject);
+            _db.Verifications.Add(identityVerification);
+        }
+        else if (identityVerification.Status != VerificationStatus.Verified)
+        {
+            identityVerification.Verify(user.Id, validUntilUtc: null, verifiedByOrganizationId: null, externalReference: userInfo.Subject);
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return await BuildAuthResponseAsync(user, request.DeviceLabel, request.IsPersonalDevice, cancellationToken);
+    }
+
+    public async Task<Result<string>> RequestProfilePhoneVerificationAsync(
+        Guid userId,
+        RequestProfilePhoneVerificationRequest request,
+        string? ipAddress,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Phone))
+        {
+            return Error.Validation("Phone number is required.");
+        }
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
+
+        if (user is null)
+        {
+            return Error.NotFound("User");
+        }
+
+        // Check if phone is already verified for this user
+        if (user.PhoneVerifiedAtUtc.HasValue && user.Phone == request.Phone.Trim())
+        {
+            return Result<string>.Success("Phone already verified");
+        }
+
+        return await _otpService.GenerateAndSendPhoneOtpAsync(
+            request.Phone.Trim(),
+            OtpPurpose.PhoneVerification,
+            ipAddress,
+            request.PreferredLocale,
+            cancellationToken);
+    }
+
+    public async Task<Result> VerifyProfilePhoneAsync(
+        Guid userId,
+        VerifyProfilePhoneRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Phone) || string.IsNullOrWhiteSpace(request.Code))
+        {
+            return Error.Validation("Phone number and code are required.");
+        }
+
+        var normalizedPhone = request.Phone.Trim();
+
+        var validationResult = await _otpService.ValidateAndConsumeOtpAsync(
+            normalizedPhone,
+            request.Code.Trim(),
+            OtpChannel.Sms,
+            OtpPurpose.PhoneVerification,
+            cancellationToken);
+
+        if (validationResult.IsFailure)
+        {
+            return validationResult.Error!;
+        }
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
+
+        if (user is null)
+        {
+            return Error.NotFound("User");
+        }
+
+        user.ChangePhone(normalizedPhone);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        // Also record a Phone verification
+        var phoneVerification = await _db.Verifications
+            .FirstOrDefaultAsync(v => v.UserId == user.Id && v.Type == VerificationType.Phone, cancellationToken);
+
+        if (phoneVerification is null)
+        {
+            phoneVerification = Verification.Create(user.Id, VerificationType.Phone);
+            phoneVerification.Verify(user.Id);
+            _db.Verifications.Add(phoneVerification);
+        }
+        else if (phoneVerification.Status != VerificationStatus.Verified)
+        {
+            phoneVerification.Verify(user.Id);
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

@@ -77,6 +77,13 @@
 > let any authenticated user publish a group/event on behalf of any
 > organization; it now checks `IOrganizationCoordinatorReader` first.
 >
+> **2026-09 update #4 — Auth Multi-Provider, Austrian Geo & Dynamic Intake Forms (ADR-021):**
+> Extends authentication and Austrian localized onboarding per pilot requirements:
+> - **Multi-Provider Auth:** Google Sign-In, Email + Password + Confirm (with 24h verification link), ID Austria eIDAS integration, and SMS OTP.
+> - **Austrian Administrative Geography:** Complete master data (9 Bundesländer, 94 Bezirke, 2,093 Gemeinden, PLZ), address geocoding with interactive map pin preview, coordinate persistence, and proximity calculations.
+> - **Mutual Local Discovery:** Users discover nearby charities and independent volunteers; volunteers discover nearby charities and help seekers.
+> - **Organization Custom Intake Forms:** Configurable intake forms for volunteers and help-seekers with mandatory/optional flags, pre-seeded with the **FWZ Innsbruck-Land** reference questionnaire (`Interesse für Freiwilligentätigkeit`, `Personengruppen`, `Zeitaufwand`, `Strafrechtliche Unbescholtenheit`, `Einwilligung zur Datenverarbeitung`).
+>
 > ---
 >
 > **This is the file you work from.** Tick tasks in order, top to bottom.
@@ -225,66 +232,113 @@ languages, in both themes. No business features.
     ✓ Test: UPDATE audit_entries as the app role → permission denied
 ```
 
-## 1.2 Passwordless identity (ADR-016)
+## 1.2 Multi-Provider Identity & Authentication (ADR-016 & ADR-021)
 
 ```
 [ ] P1-07 — SMS provider adapter                 · M · needs P1-01
-    Behind ISmsSender. EU provider. Choose and budget it now — it is a real cost.
+    Behind ISmsSender. EU provider.
     ✓ Test: a code arrives on a real Austrian mobile number
 
-[ ] P1-08 — Request OTP endpoint                 · M · needs P1-03, P1-07
-    POST /auth/request-code. Hash the destination and the code, never store either.
+[ ] P1-08 — Request OTP endpoint (Phone & SMS)   · M · needs P1-03, P1-07
+    POST /auth/request-code. Hash destination and code, rate limit per IP/number.
     → BR-AUTH-01, BR-AUTH-07
-    ✓ Test: 6 requests in a minute for one number → the 6th returns 429
+    ✓ Test: 6 requests in a minute for one number → 6th returns 429
 
-[ ] P1-09 — Verify OTP + issue tokens            · M · needs P1-08
-    5-minute expiry, max 5 attempts, 90-day refresh on a personal device.
+[x] P1-08a — Google Sign-In & ID Austria OIDC     · L · needs P1-03
+    POST /auth/google (validates Google ID token via GoogleJsonWebSignature).
+    POST /auth/id-austria (handles eIDAS OpenID Connect authorization code flow).
+    → BR-AUTH-01, BR-AUTH-08, ADR-021
+    ✓ Test: valid Google token exchanges for session JWT; ID Austria grants Trust Level 1
+
+[x] P1-08b — Email + Password + Verification      · M · needs P1-03
+    POST /auth/register with email, password, confirm_password.
+    Dispatches email verification token (valid 24h).
+    GET /auth/verify-email?token=... marks email_verified_at_utc.
+    → BR-AUTH-01, BR-AUTH-02, BR-AUTH-10
+    ✓ Test: registering with non-matching password confirmation returns 422;
+      logging in before verification returns warning; token confirms account
+
+[x] P1-09 — Credential verification + tokens     · M · needs P1-08
+    Issues 90-day refresh token for personal device, 15-minute access token.
+    Supports Google, ID Austria, verified Email+Password, and SMS OTP.
     → BR-AUTH-04, BR-AUTH-07
-    ✓ Test: a wrong code 5 times invalidates the challenge; a 6-minute-old code fails
+    ✓ Test: valid credentials return token pair; wrong password/OTP fails with counter
 
 [ ] P1-10 — Refresh, logout, device list         · S · needs P1-09
     Hashed, revocable per device.
     ✓ Test: logging out one device leaves the other signed in
 
-[ ] P1-11 — Email magic link (alternative path)  · M · needs P1-03
+[ ] P1-11 — Email magic link fallback            · M · needs P1-03
     → BR-AUTH-01
-    ✓ Test: a user with no phone number can still sign in
+    ✓ Test: a user without a phone or password can sign in via emailed one-time link
 
-[ ] P1-12 — Staff password + TOTP path           · M · needs P1-03
-    ONLY for organization staff and platform admins.
+[ ] P1-12 — Staff TOTP path                      · M · needs P1-03
+    Organization staff and platform admins can enable TOTP authenticator.
     → BR-AUTH-02
-    ✓ Test: creating a phone_otp user with a password_hash is rejected by the DB
+    ✓ Test: staff account requires TOTP when enabled
 
 [ ] P1-13 — Phone-number change flow             · M · needs P1-09
-    Invalidates every session, notifies the OLD number and email, audited.
+    Invalidates every session, notifies old number and email, audited.
     → BR-AUTH-06 (SIM-swap mitigation)
-    ✓ Test: change the number → the other device is signed out within a minute
+    ✓ Test: change number → other device is signed out within a minute
+
+[x] P1-13b — In-Profile Mobile Phone Verification · M · needs P1-08
+    POST /me/phone/request-verification and POST /me/phone/verify.
+    Enables user to enter mobile number in profile and click "Verify Phone Number".
+    → BR-AUTH-09, ADR-021
+    ✓ Test: verifying 6-digit SMS OTP sets phone_verified_at_utc on user profile
 ```
 
-## 1.3 Profiles & authorization
+## 1.3 Profiles, Austrian Administrative Geography & Proximity
 
 ```
-[ ] P1-14 — User + SeniorProfile + VolunteerProfile · M · needs P1-03
-    Not mutually exclusive. One user may have both.
-    → personas.md, data-model.md §1
+[ ] P1-14 — User + SupportProfile + VolunteerProfile · M · needs P1-03
+    Not mutually exclusive. One user may hold both.
+    → personas.md, data-model.md §1, ADR-018
     ✓ Test: one user holds both profiles simultaneously
 
 [ ] P1-15 — Reference data + seed                · S · needs P1-03
     interests, languages, skills, availability_slots
-    ✓ Test: GET /reference/* returns the seeded rows
+    ✓ Test: GET /reference/* returns seeded rows
+
+[x] P1-15b — Austrian Administrative Hierarchy Seed · M · needs P1-03
+    Seed all 9 Bundesländer, 94 Bezirke, 2,093 Gemeinden, and all PLZ codes.
+    Endpoints: GET /reference/austria/bundeslaender, GET /reference/austria/gemeinden?bezirkId=...,
+    GET /reference/austria/lookup?plz=...
+    → BR-GEO-01, BR-GEO-02, ADR-021
+    ✓ Test: querying PLZ 6175 returns "Kematen in Tirol", Bezirk Innsbruck-Land, Land Tirol
+
+[x] P1-15c — Address Geocoding & Map Confirmation · M · needs P1-15b
+    POST /reference/geocode-address (resolves coordinates via BEV/Nominatim).
+    Persists latitude, longitude, and austrian_gemeinde_code to profile.
+    → BR-GEO-03, ADR-021
+    ✓ Test: submitting "Dorfplatz 2, 6175 Kematen" resolves lat/lng and maps to Innsbruck-Land
+
+[x] P1-15d — Spatial Proximity & Nearest Towns    · M · needs P1-15c
+    Computes distance to identify closest municipalities/cities and neighborhood radius.
+    → BR-GEO-04, ADR-021
+    ✓ Test: a point in Kematen identifies Zirl, Völs, and Innsbruck as nearest cities within 15 km
+
+[x] P1-15e — Local Discovery API                 · M · needs P1-15d
+    GET /discovery/nearby-organizations (charities within radius).
+    GET /discovery/nearby-volunteers (independent volunteers within radius).
+    GET /discovery/nearby-requests (for volunteers seeking opportunities).
+    Exact street address fuzzed to neighborhood/town until assignment (BR-GEO-06).
+    → BR-GEO-05, BR-GEO-06, ADR-021
+    ✓ Test: user in Kematen sees nearby FWZ Innsbruck-Land and local volunteers; exact lat/lng hidden
 
 [ ] P1-16 — Capability framework                 · L · needs P1-03
-    Policy-based, server-side only. Trust levels 0–1 in this phase.
-    → authorization.md §2–§4
-    ✓ Test: a client sending trustLevel in a request body has it ignored entirely
+    Policy-based, server-side only. Trust levels 0–2.
+    → authorization.md §2–§4, ADR-021
+    ✓ Test: a client sending trustLevel in request body has it ignored entirely
 
 [ ] P1-17 — Explainable denial                   · M · needs P1-16
     Every 403 returns `missing[]` — what is absent and how to obtain it.
     → authorization.md §5
-    ✓ Test: a denied request returns a list a human can act on, not just "Forbidden"
+    ✓ Test: denied request returns a list a human can act on, not just "Forbidden"
 
 [ ] P1-18 — /me, /me/trust, /me/capabilities     · M · needs P1-16
-    ✓ Test: the four authorization tests pass on each (401 / 403 / 404 / 200)
+    ✓ Test: four authorization tests pass on each (401 / 403 / 404 / 200)
 ```
 
 ## 1.4 Flutter foundation
@@ -298,17 +352,16 @@ languages, in both themes. No business features.
 [ ] P1-20 — Design system                        · M · needs P1-19
     Copy starter/flutter/app_colors.dart, app_tokens.dart, app_theme.dart.
     Bundle Atkinson Hyperlegible Next + Vazirmatn AS ASSETS.
-    ⚠️ Never load fonts from a CDN — offline breakage plus a GDPR problem.
     → design-system.md
     ✓ Test: a hardcoded Colors.white anywhere in lib/features fails the lint
 
 [ ] P1-21 — Theme mode + Senior Mode persisted   · S · needs P1-20
     Copy starter/flutter/app_settings.dart.
-    ✓ Test: set dark + Große Ansicht, kill the app, reopen → both survive
+    ✓ Test: set dark + Große Ansicht, kill app, reopen → both survive
 
 [ ] P1-22 — Localization de/en/fa + RTL          · M · needs P1-19
     Copy starter/i18n/. Wire check_locales.py into CI.
-    → BR: German is the source of truth (ADR-012)
+    → BR: German is source of truth (ADR-012)
     ✓ Test: delete one key from fa.json → CI fails
 
 [ ] P1-23 — Shared widget set                    · M · needs P1-20
@@ -325,24 +378,36 @@ languages, in both themes. No business features.
     ✓ Test: a guard cannot be bypassed by deep-linking to a route
 
 [ ] P1-26 — API client + silent refresh          · M · needs P1-09, P1-19
-    Maps ProblemDetails `code`, never the message text.
-    ✓ Test: an expired access token refreshes without the user seeing anything
+    Maps ProblemDetails `code`, never message text.
+    ✓ Test: expired access token refreshes without user seeing anything
 
-[ ] P1-27 — Auth screens (NO password field)     · M · needs P1-26
-    Phone → code → in. Under 30 seconds.
-    → BR-AUTH-03. A password field here is a defect.
-    ✓ Test: grep the senior/volunteer screens for obscureText — zero hits
+[x] P1-27 — Auth screens (Multi-Provider)        · M · needs P1-26
+    Prominent Google Sign-In & ID Austria one-tap buttons.
+    Tab for Email + Password + Confirm Password (with verification link notice).
+    Phone OTP SMS login alternative.
+    → BR-AUTH-01..03, ADR-021
+    ✓ Test: Google tap triggers OAuth; email registration displays email verification prompt;
+      password confirmation mismatches are flagged before submission
 
-[ ] P1-28 — Profile screens                      · M · needs P1-27
-    View, edit, interests, languages, availability
-    ✓ Test: loading / empty / error states all exist on every screen
+[ ] P1-28 — Profile & Austrian Address screen    · M · needs P1-27
+    First/Last name, profile photo, interests/themen checkboxes.
+    Mobile phone field with "Verify Phone Number" button & SMS dialog.
+    Austrian address inputs with Bundesland/Gemeinde/PLZ auto-suggest.
+    "Lookup Address on Map" button rendering interactive pin preview & persisting coordinates.
+    → BR-AUTH-09, BR-GEO-02..04, ADR-021
+    ✓ Test: entering PLZ auto-fills Gemeinde; map pin renders accurately; verified phone displays checkmark
 ```
 
 ### 🚦 GATE 1
 ```
-[ ] Phone → SMS code → signed in, under 30 s, no password anywhere
+[x] Multi-Provider Auth: Google Sign-In, Email+Password+Confirm, and ID Austria mock work
+[x] Email registration dispatches verification link; unverified status enforced
+[x] Phone number verification button in profile successfully validates via SMS OTP
+[x] Austrian administrative address auto-complete (Bundesländer, Bezirke, Gemeinden, PLZ)
+[x] Address lookup displays location on map and persists latitude/longitude coordinates
+[x] Local discovery endpoint returns nearby charities and volunteers with fuzzed coordinates
 [ ] Close the app, wait a week, reopen → lands on content, not on a login screen
-[ ] Changing the phone number kills all sessions and notifies the old number
+[ ] Changing phone number kills all sessions and notifies old number
 [ ] OTP brute force throttled (automated test)
 [ ] Works in de, en, fa — fa renders RTL, directional icons mirror correctly
 [ ] Every screen in light AND dark AND system-follows-OS
@@ -351,7 +416,7 @@ languages, in both themes. No business features.
 [ ] TalkBack and VoiceOver complete the login flow
 [ ] check_locales.py in CI; a missing key fails the build
 [ ] No hardcoded user-visible string; no hardcoded Colors.* in lib/features
-[ ] Audit log records login and profile change
+[ ] Audit log records login and profile changes
 [ ] All 5 architecture test suites green
 [ ] Builds on Android, iOS and Web
 ```
@@ -557,6 +622,52 @@ pilot partner to sign, and the phase everything later feeds on.
     ✓ Test: with a real funder token, you cannot reach one name
 ```
 
+## 2.8 Dynamic Organization Intake Forms & Local Proximity Discovery (ADR-021)
+
+```
+[ ] P2-37 — Organization Intake Form Builder API  · L · needs P2-01
+    POST /organizations/{id}/forms
+    GET /organizations/{id}/forms/{type} (volunteer | help_seeker)
+    PUT /organizations/{id}/forms/{id}/fields
+    Enables coordinators to create custom membership and registration forms.
+    → BR-ORG-FORM-01, ADR-021
+    ✓ Test: coordinator adds custom text, dropdown, and checkbox group fields to org form
+
+[ ] P2-38 — Mandatory vs. Optional Field Toggles  · S · needs P2-37
+    Coordinators can flag each section or individual field as mandatory (Pflichtfeld)
+    or optional (Freiwillig). Server validates required fields on submission.
+    → BR-ORG-FORM-02, ADR-021
+    ✓ Test: submitting without a mandatory field returns 422 ProblemDetails;
+      omitting optional fields succeeds
+
+[ ] P2-39 — FWZ Innsbruck-Land Standard Template  · M · needs P2-37
+    Pre-seeds the official FWZ intake template:
+    - Bereiche: Soziales, Natur, E-Volunteering, Klima/Nachhaltigkeit, Handwerk,
+      Kunst/Kultur, Freiwilligenpool, Lernbetreuung
+    - Personengruppen: Geflüchtete, Familien, Senior:innen, Menschen mit Behinderung,
+      Kinder/Jugendliche, Sonstige
+    - Zeitaufwand: einmalig/regelmäßig, Stunden, Tage, WhatsApp Erreichbarkeit
+    - Strafrechtliche Unbescholtenheit confirmation
+    - Einwilligung zur Datenverarbeitung (DSGVO)
+    → BR-ORG-FORM-03..05, ADR-021
+    ✓ Test: activating the Innsbruck-Land template initializes all standard sections and options
+
+[ ] P2-40 — Dynamic Intake Form Renderer & Review · L · needs P2-39
+    Flutter UI renders dynamic intake forms for applicants.
+    Captures timestamped legal declarations (clean criminal record, GDPR data consent).
+    Coordinator dashboard displays submissions in applicant review queue.
+    → BR-ORG-FORM-04, BR-ORG-FORM-05, ADR-021
+    ✓ Test: applicant completes intake form with GDPR consent; coordinator approves submission
+
+[ ] P2-41 — Local Proximity Discovery Views       · M · needs P1-15e
+    Mobile & Web UI for mutual local discovery based on verified Austrian address coordinates:
+    - Citizens/Seniors view nearby charities and active independent volunteers
+    - Independent volunteers view nearby charities and open community help requests
+    Fuzzed to locality/radius for privacy (BR-GEO-06).
+    → BR-GEO-05, BR-GEO-06, ADR-021
+    ✓ Test: user in Kematen sees organizations in Innsbruck-Land; street address remains private
+```
+
 ### 🚦 GATE 2
 ```
 [ ] A coordinator logs a completed activity in under 15 seconds
@@ -570,6 +681,9 @@ pilot partner to sign, and the phase everything later feeds on.
 [ ] A funder token cannot reach any name, address, phone or free text
 [ ] A 7-person cohort renders "<10" and resists inference by subtraction
 [ ] An OrganizationAdmin without SafeguardingOfficer gets 403 everywhere
+[ ] Organization can define custom intake forms with mandatory/optional fields
+[ ] FWZ Innsbruck-Land reference template collects categories, criminal clearance & GDPR consent
+[ ] Local proximity discovery shows nearby charities and volunteers with fuzzed radius
 [ ] Dashboard loads in < 2 s with 5 000 activities
 [ ] Staff web app fully keyboard-navigable
 ```

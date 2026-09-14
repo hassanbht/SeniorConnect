@@ -510,18 +510,24 @@ Add to the `verifications.type` check constraint:
 Required by BR-TRANSPORT-03 before `transport_mode = VolunteerPrivateVehicle` may
 be used. Like every other verification: the outcome is stored, the document is not.
 
-## 18. Passwordless authentication (Phase 1) — *F3, ADR-016*
+## 18. Multi-Provider Authentication & Verification (Phase 1) — *F3, ADR-016 & ADR-021*
 
-`users.password_hash` becomes **nullable**. A senior or volunteer account has no
-password at all.
+`users.password_hash` is **nullable**. Authentication supports Google OAuth, ID Austria eIDAS, verified Email+Password, and Phone SMS OTP.
 
 ```
+user_external_logins
+  id · user_id · provider (google | id_austria) · provider_key
+  email · display_name · linked_at_utc
+
+email_verification_tokens
+  id · user_id · token_hash · expires_at_utc · used_at_utc · created_at_utc
+
 otp_challenges
   id · user_id (nullable — may precede account creation)
   channel            -- sms | email
   destination_hash   -- hashed phone or email, never plaintext in this table
   code_hash
-  purpose            -- login | phone_change | recovery
+  purpose            -- login | phone_verification | phone_change | recovery
   attempts smallint · max_attempts smallint DEFAULT 5
   created_at_utc · expires_at_utc  DEFAULT now() + interval '5 minutes'
   consumed_at_utc · ip_hash
@@ -530,15 +536,13 @@ CREATE INDEX ix_otp_active ON otp_challenges (destination_hash, created_at_utc D
   WHERE consumed_at_utc IS NULL;
 ```
 
-Also add to `users`:
+Also in `users`:
 
 ```
-primary_auth_method   -- phone_otp | email_magic_link | password
+primary_auth_method   -- google | id_austria | email_password | phone_otp
+phone_verified_at_utc -- set via explicit profile verification action
+email_verified_at_utc -- set via email confirmation link
 ```
-
-and a check constraint that `password_hash IS NOT NULL` only when
-`primary_auth_method = 'password'` — so a senior account cannot accidentally grow
-a password field (BR-AUTH-03).
 
 ## 19. Notification budget (Phase 7) — *F3*
 
@@ -551,3 +555,61 @@ notification_ledger
 
 The ledger is what makes BR-NOTIFY testable: a simulated week of activity is
 replayed and the ledger is asserted against the budget.
+
+---
+
+## 20. Austrian Administrative Hierarchy & Geocoding (Phase 1 & 2) — *ADR-021, BR-GEO*
+
+```
+austrian_administrative_units
+  id · bundesland_code (e.g. '7' for Tirol) · bundesland_name ('Tirol')
+  bezirk_code ('703') · bezirk_name ('Innsbruck-Land')
+  gemeinde_code ('70320') · gemeinde_name ('Kematen in Tirol')
+  postal_code ('6175') · locality_name ('Kematen in Tirol')
+  latitude numeric(9,6) · longitude numeric(9,6)
+  is_active bool DEFAULT true
+
+CREATE INDEX ix_austria_geo_plz ON austrian_administrative_units (postal_code);
+CREATE INDEX ix_austria_geo_gemeinde ON austrian_administrative_units (gemeinde_name);
+CREATE INDEX ix_austria_geo_coords ON austrian_administrative_units (latitude, longitude);
+```
+
+Added to `senior_profiles` and `volunteer_profiles`:
+```
+address_verified bool DEFAULT false
+geocoded_at_utc timestamptz
+austrian_gemeinde_code varchar(10) (FK to austrian_administrative_units)
+```
+
+---
+
+## 21. Dynamic Organization Intake Forms (Phase 2) — *ADR-021, BR-ORG-FORM*
+
+```
+organization_intake_forms
+  id · organization_id · form_type (volunteer | help_seeker)
+  title · description · is_active bool · version int DEFAULT 1
+  created_at_utc · updated_at_utc
+
+intake_form_sections
+  id · form_id · title · description · sort_order int
+
+intake_form_fields
+  id · section_id · field_key · label_key
+  field_type (text | textarea | single_choice | multi_choice | boolean | date | time_slots)
+  is_required bool DEFAULT false   -- coordinator controls mandatory vs optional
+  options_json jsonb               -- e.g. categories, target groups, time slots
+  sort_order int
+
+intake_form_submissions
+  id · form_id · organization_id · user_id
+  status (draft | submitted | approved | declined)
+  submission_data_json jsonb       -- answers structured by field_key
+  criminal_clearance_declared bool -- Strafrechtliche Unbescholtenheit confirmation
+  criminal_clearance_declared_at_utc timestamptz
+  gdpr_consent_accepted bool       -- Einwilligung zur Datenverarbeitung confirmation
+  gdpr_consent_accepted_at_utc timestamptz
+  event_invitation_opt_in bool
+  submitted_at_utc · decided_at_utc · decided_by_user_id · review_notes
+```
+

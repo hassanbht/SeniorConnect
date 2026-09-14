@@ -53,7 +53,11 @@
       "email": "Email address",
       "password": "Password",
       "submit": "Sign in",
-      "forgot": "Forgot your password?"
+      "forgot": "Forgot your password?",
+      "invalid_credentials": "Incorrect email or password.",
+      "email_verification_required": "Please verify your email address before signing in.",
+      "switch_to_register": "Need an account? Register",
+      "switch_to_login": "Already have an account? Sign in"
     },
     "register": {
       "title": "Create account",
@@ -61,7 +65,36 @@
       "i_support_someone": "I want to support someone",
       "i_need_help": "I need support",
       "i_am_new_in_austria": "I am new in Austria",
-      "i_want_to_help": "I want to help / join in"
+      "i_want_to_help": "I want to help / join in",
+      "email": "Email address",
+      "password": "Password",
+      "confirm_password": "Confirm password",
+      "confirm_password_required": "Please confirm your password.",
+      "password_mismatch": "The passwords do not match.",
+      "password_too_short": "The password must be at least 8 characters long.",
+      "submit": "Register",
+      "email_verification_sent": "We have sent a verification email. Please check your inbox.",
+      "email_verification_pending": "Please confirm your email address via the link in the email.",
+      "email_already_registered": "This email is already registered.",
+      "password_required": "Please enter a password.",
+      "email_invalid": "Please enter a valid email address."
+    },
+    "google": {
+      "button": "Sign in with Google",
+      "button_semantic": "Sign in with Google. Opens the Google sign-in window."
+    },
+    "id_austria": {
+      "button": "Sign in with ID Austria",
+      "button_semantic": "Sign in with ID Austria. Opens the ID Austria sign-in window."
+    },
+    "phone_verification": {
+      "title": "Verify phone number",
+      "description": "We will send a 6-digit code by SMS to {phone}.",
+      "button": "Verify phone number",
+      "submit": "Confirm",
+      "resend": "Request new code",
+      "success": "Phone number verified successfully.",
+      "verified": "Verified"
     }
   },
   "home": {
@@ -272,7 +305,28 @@
     "interests": "Interests",
     "interests_coming_soon": "Interests can be added soon.",
     "languages": "Languages",
-    "languages_coming_soon": "Languages can be added soon."
+    "languages_coming_soon": "Languages can be added soon.",
+    "phone": "Phone number",
+    "phone_verified": "Verified",
+    "verify_phone_button": "Verify phone number",
+    "verify_phone_semantic": "Verify phone number via SMS",
+    "address": "Address",
+    "bundesland": "Federal state",
+    "bezirk": "District",
+    "gemeinde": "Municipality",
+    "plz": "Postal code",
+    "street": "Street & house number",
+    "lookup_address": "Look up address on map",
+    "lookup_address_semantic": "Look up address on map and adopt coordinates",
+    "select_bundesland": "Select federal state",
+    "select_bezirk": "Select district",
+    "select_gemeinde": "Select municipality",
+    "map_preview": "Map preview",
+    "confirm_location": "Confirm location",
+    "location_saved": "Location saved",
+    "coordinates": "Coordinates",
+    "latitude": "Latitude",
+    "longitude": "Longitude"
   },
   "empty": {
     "no_activities": "You do not have any appointments yet.",

@@ -22,5 +22,6 @@
     <ProjectReference Include="..\modules\Family\SeniorConnect.Modules.Family.csproj" />
     <ProjectReference Include="..\modules\Notifications\SeniorConnect.Modules.Notifications.csproj" />
     <ProjectReference Include="..\modules\Matching\SeniorConnect.Modules.Matching.csproj" />
+    <ProjectReference Include="..\modules\Geography\SeniorConnect.Modules.Geography.csproj" />
   </ItemGroup>
 </Project>

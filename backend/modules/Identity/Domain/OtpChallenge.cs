@@ -115,5 +115,6 @@ public enum OtpPurpose
     Registration,
     PhoneChange,
     EmailChange,
-    Recovery
+    Recovery,
+    PhoneVerification
 }
