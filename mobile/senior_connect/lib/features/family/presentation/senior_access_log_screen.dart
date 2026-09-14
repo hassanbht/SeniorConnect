@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
-import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
 
 class SeniorAccessLogScreen extends StatefulWidget {

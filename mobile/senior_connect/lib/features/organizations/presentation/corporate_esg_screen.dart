@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:senior_connect/core/design_system/app_tokens.dart';
-import 'package:senior_connect/core/design_system/widgets/app_button.dart';
+import 'package:senior_connect/shared/widgets/app_button.dart';
 
 /// Corporate Volunteering & ESG Impact dashboard screen (P8-07).
 /// Displays employee engagement metrics, total donated volunteer hours,

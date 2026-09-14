@@ -36,8 +36,6 @@ class _DelegationPermissionsDialogState extends State<DelegationPermissionsDialo
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return AlertDialog(
       title: Text('family.permissions_for'.tr(args: [widget.caregiverName])),
       content: SingleChildScrollView(

@@ -24,6 +24,10 @@ import 'package:senior_connect/features/help_requests/presentation/senior_reques
 import 'package:senior_connect/features/help_requests/presentation/volunteer_feed_screen.dart';
 import 'package:senior_connect/features/help_requests/presentation/widgets/first_meeting_protocol_dialog.dart';
 import 'package:senior_connect/features/help_requests/presentation/widgets/safeguarding_concern_dialog.dart';
+import 'package:senior_connect/features/organizations/presentation/coordinator_attention_dashboard_screen.dart';
+import 'package:senior_connect/features/organizations/presentation/coordinator_bulk_entry_screen.dart';
+import 'package:senior_connect/features/organizations/presentation/coordinator_hours_queue_screen.dart';
+import 'package:senior_connect/features/organizations/presentation/coordinator_roster_screen.dart';
 import 'package:senior_connect/features/organizations/presentation/log_activity_screen.dart';
 import 'package:senior_connect/features/organizations/presentation/organization_post_form_screen.dart';
 import 'package:senior_connect/features/organizations/presentation/organization_profile_screen.dart';
@@ -89,7 +93,18 @@ void main() {
       c,
     ) async {
       await tester.pumpWidget(
-        wrapForTest(SeniorRequestFlowScreen(apiClient: testApiClient), c),
+        wrapForTest(
+          SeniorRequestFlowScreen(
+            apiClient: testApiClient,
+            initialCategories: const [
+              {'id': '00000000-0000-0000-0000-000000000001', 'code': 'shopping', 'isBlocked': false},
+              {'id': '00000000-0000-0000-0000-000000000002', 'code': 'doctor', 'isBlocked': false},
+              {'id': '00000000-0000-0000-0000-000000000003', 'code': 'authority', 'isBlocked': false},
+              {'id': '00000000-0000-0000-0000-000000000004', 'code': 'accompaniment', 'isBlocked': false},
+            ],
+          ),
+          c,
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -355,4 +370,97 @@ void main() {
       matrix: smokeMatrix(),
     );
   });
+
+  group('CoordinatorAttentionDashboardScreen (P2-26)', () {
+    testAcrossMatrix(
+      'renders attention dashboard triage metrics without overflow',
+      (tester, c) async {
+        await tester.pumpWidget(
+          wrapForTest(
+            CoordinatorAttentionDashboardScreen(
+              organizationId: 'org-1',
+              apiClient: testApiClient,
+            ),
+            c,
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await expectNoOverflow(tester);
+        expect(find.byType(CoordinatorAttentionDashboardScreen), findsOneWidget);
+      },
+      matrix: smokeMatrix(),
+    );
+  });
+
+  group('CoordinatorRosterScreen (P2-27)', () {
+    testAcrossMatrix(
+      'renders volunteer roster and status chips without overflow',
+      (tester, c) async {
+        await tester.pumpWidget(
+          wrapForTest(
+            CoordinatorRosterScreen(
+              organizationId: 'org-1',
+              apiClient: testApiClient,
+            ),
+            c,
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await expectNoOverflow(tester);
+        expect(find.byType(CoordinatorRosterScreen), findsOneWidget);
+      },
+      matrix: smokeMatrix(),
+    );
+  });
+
+  group('CoordinatorHoursQueueScreen (P2-28)', () {
+    testAcrossMatrix(
+      'renders hours confirmation queue without overflow',
+      (tester, c) async {
+        await tester.pumpWidget(
+          wrapForTest(
+            CoordinatorHoursQueueScreen(
+              organizationId: 'org-1',
+              apiClient: testApiClient,
+            ),
+            c,
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await expectNoOverflow(tester);
+        expect(find.byType(CoordinatorHoursQueueScreen), findsOneWidget);
+      },
+      matrix: smokeMatrix(),
+    );
+  });
+
+  group('CoordinatorBulkEntryScreen (P2-15)', () {
+    testAcrossMatrix(
+      'renders bulk entry form without overflow',
+      (tester, c) async {
+        await tester.pumpWidget(
+          wrapForTest(
+            CoordinatorBulkEntryScreen(
+              organizationId: 'org-1',
+              apiClient: testApiClient,
+            ),
+            c,
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await expectNoOverflow(tester);
+        expect(find.byType(CoordinatorBulkEntryScreen), findsOneWidget);
+      },
+      matrix: smokeMatrix(),
+    );
+  });
 }
+

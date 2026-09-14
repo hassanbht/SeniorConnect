@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
 import '../data/intake_form_repository.dart';
@@ -228,13 +229,51 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     AppButton(
+                      label: 'coordinator.attention_title'.tr(),
+                      icon: Icons.warning_amber_rounded,
+                      variant: AppButtonVariant.primary,
+                      onPressed: () => context.push(
+                        '${AppRoutes.organizations}/${widget.organizationId}/coordinator/attention',
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppButton(
+                      label: 'coordinator.roster_title'.tr(),
+                      icon: Icons.people_outline,
+                      variant: AppButtonVariant.tonal,
+                      onPressed: () => context.push(
+                        '${AppRoutes.organizations}/${widget.organizationId}/coordinator/roster',
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppButton(
+                      label: 'coordinator.hours_queue_title'.tr(),
+                      icon: Icons.pending_actions_outlined,
+                      variant: AppButtonVariant.tonal,
+                      onPressed: () => context.push(
+                        '${AppRoutes.organizations}/${widget.organizationId}/coordinator/hours-queue',
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppButton(
+                      label: 'coordinator.bulk_entry_title'.tr(),
+                      icon: Icons.edit_note_outlined,
+                      variant: AppButtonVariant.tonal,
+                      onPressed: () => context.push(
+                        '${AppRoutes.organizations}/${widget.organizationId}/coordinator/bulk-entry',
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppButton(
                       label: 'organizations.review_volunteer_applications'.tr(),
+                      icon: Icons.how_to_reg_outlined,
                       variant: AppButtonVariant.tonal,
                       onPressed: () => _openSubmissions(IntakeFormType.volunteer),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     AppButton(
                       label: 'organizations.review_help_seeker_applications'.tr(),
+                      icon: Icons.assignment_ind_outlined,
                       variant: AppButtonVariant.tonal,
                       onPressed: () => _openSubmissions(IntakeFormType.helpSeeker),
                     ),

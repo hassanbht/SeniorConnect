@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:senior_connect/core/design_system/app_tokens.dart';
-import 'package:senior_connect/core/design_system/widgets/app_button.dart';
+import 'package:senior_connect/shared/widgets/app_button.dart';
 
 /// Modal dialog allowing seniors to speak their request or type via speech-to-text,
 /// running local emergency triage and auto-populating structured form fields (P8-04, P8-05).
@@ -174,7 +174,7 @@ class _VoiceRequestDialogState extends State<VoiceRequestDialog> {
                         : 'voice_input.start_recording'.tr(),
                     icon: _isListening ? Icons.stop : Icons.mic,
                     variant: _isListening
-                        ? AppButtonVariant.secondary
+                        ? AppButtonVariant.tonal
                         : AppButtonVariant.primary,
                     onPressed: _toggleListening,
                   ),

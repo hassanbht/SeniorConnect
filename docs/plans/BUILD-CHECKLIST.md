@@ -507,7 +507,7 @@ pilot partner to sign, and the phase everything later feeds on.
     → F1. This screen is why the whole phase exists.
     ✓ Test: log an activity in 2 taps from the home screen, timed
 
-[ ] P2-15 — Coordinator bulk entry               · M · needs P2-10
+[x] P2-15 — Coordinator bulk entry               · M · needs P2-10
     For volunteers who report by phone or on paper.
     ✓ Test: log a completed activity in under 15 seconds, timed
 
@@ -570,16 +570,16 @@ pilot partner to sign, and the phase everything later feeds on.
       Coordinator/Admin can; both the mobile and `flutter run -d chrome`
       builds render the org profile screen.
 
-[ ] P2-26 — "Braucht heute Aufmerksamkeit"       · L · needs P2-17, P2-23
+[x] P2-26 — "Braucht heute Aufmerksamkeit"       · L · needs P2-17, P2-23
     FIRST widget, above everything: dormant · unconfirmed hours ·
     waiting applications · expiring verifications · unresolved insurance
     → roadmap.md Phase 2
     ✓ Test: loads in under 2 s with 5 000 seeded activities
 
-[ ] P2-27 — Volunteer list with roster status    · M · needs P2-17
+[x] P2-27 — Volunteer list with roster status    · M · needs P2-17
     ✓ Test: filter by status returns the same set as the hand-checked sample
 
-[ ] P2-28 — Hours confirmation queue             · M · needs P2-12
+[x] P2-28 — Hours confirmation queue             · M · needs P2-12
     ✓ Test: confirm 20 activities in under 2 minutes
 ```
 

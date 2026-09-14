@@ -29,6 +29,10 @@ import '../../features/help_requests/presentation/emergency_screen.dart';
 import '../../features/help_requests/presentation/senior_request_flow_screen.dart';
 import '../../features/help_requests/presentation/volunteer_feed_screen.dart';
 import '../../features/organizations/data/intake_form_repository.dart';
+import '../../features/organizations/presentation/coordinator_attention_dashboard_screen.dart';
+import '../../features/organizations/presentation/coordinator_bulk_entry_screen.dart';
+import '../../features/organizations/presentation/coordinator_hours_queue_screen.dart';
+import '../../features/organizations/presentation/coordinator_roster_screen.dart';
 import '../../features/organizations/presentation/intake_form_screen.dart';
 import '../../features/organizations/presentation/intake_form_submissions_screen.dart';
 import '../../features/organizations/presentation/log_activity_screen.dart';
@@ -203,6 +207,38 @@ GoRouter buildRouter({required ApiClient apiClient}) {
                 builder: (context, state) => IntakeFormSubmissionsScreen(
                   organizationId: state.pathParameters['id']!,
                   formType: _parseFormType(state.pathParameters['formType']!),
+                  apiClient: apiClient,
+                ),
+              ),
+              GoRoute(
+                path: 'coordinator/attention',
+                name: 'coordinator-attention',
+                builder: (context, state) => CoordinatorAttentionDashboardScreen(
+                  organizationId: state.pathParameters['id']!,
+                  apiClient: apiClient,
+                ),
+              ),
+              GoRoute(
+                path: 'coordinator/roster',
+                name: 'coordinator-roster',
+                builder: (context, state) => CoordinatorRosterScreen(
+                  organizationId: state.pathParameters['id']!,
+                  apiClient: apiClient,
+                ),
+              ),
+              GoRoute(
+                path: 'coordinator/hours-queue',
+                name: 'coordinator-hours-queue',
+                builder: (context, state) => CoordinatorHoursQueueScreen(
+                  organizationId: state.pathParameters['id']!,
+                  apiClient: apiClient,
+                ),
+              ),
+              GoRoute(
+                path: 'coordinator/bulk-entry',
+                name: 'coordinator-bulk-entry',
+                builder: (context, state) => CoordinatorBulkEntryScreen(
+                  organizationId: state.pathParameters['id']!,
                   apiClient: apiClient,
                 ),
               ),

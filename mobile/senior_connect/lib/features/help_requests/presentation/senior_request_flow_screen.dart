@@ -47,9 +47,11 @@ class SeniorRequestFlowScreen extends StatefulWidget {
   const SeniorRequestFlowScreen({
     super.key,
     required this.apiClient,
+    this.initialCategories,
   });
 
   final ApiClient apiClient;
+  final List<Map<String, dynamic>>? initialCategories;
 
   @override
   State<SeniorRequestFlowScreen> createState() => _SeniorRequestFlowScreenState();
@@ -77,6 +79,20 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
   }
 
   Future<void> _loadCategories() async {
+    if (widget.initialCategories != null) {
+      _categoryIdsByCode.clear();
+      _categoryBlockedByCode.clear();
+      for (final item in widget.initialCategories!) {
+        final code = item['code'] as String?;
+        final id = item['id'] as String?;
+        if (code == null || id == null) continue;
+        _categoryIdsByCode[code] = id;
+        _categoryBlockedByCode[code] = item['isBlocked'] as bool? ?? false;
+      }
+      setState(() => _currentStep = _RequestStep.selectCategory);
+      return;
+    }
+
     setState(() => _currentStep = _RequestStep.loadingCategories);
 
     try {
