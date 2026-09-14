@@ -262,7 +262,7 @@ public sealed class OrganizationService : IOrganizationService
         return Result<OrganizationIntakeFormDto>.Success(MapIntakeForm(form));
     }
 
-    public async Task<Result<OrganizationIntakeFormDto>> GetIntakeFormAsync(
+    public async Task<Result<OrganizationIntakeFormDetailDto>> GetIntakeFormAsync(
         Guid organizationId,
         FormType formType,
         CancellationToken cancellationToken = default)
@@ -277,7 +277,37 @@ public sealed class OrganizationService : IOrganizationService
             return Error.NotFound("IntakeForm");
         }
 
-        return Result<OrganizationIntakeFormDto>.Success(MapIntakeForm(form));
+        var sections = await _db.IntakeFormSections
+            .Where(s => s.FormId == form.Id)
+            .OrderBy(s => s.SortOrder)
+            .ToListAsync(cancellationToken);
+
+        var sectionIds = sections.Select(s => s.Id).ToList();
+        var fields = await _db.IntakeFormFields
+            .Where(f => sectionIds.Contains(f.SectionId))
+            .OrderBy(f => f.SortOrder)
+            .ToListAsync(cancellationToken);
+
+        var sectionDtos = sections
+            .Select(s => new IntakeFormSectionDetailDto(
+                s.Id,
+                s.FormId,
+                s.Title,
+                s.Description,
+                s.SortOrder,
+                fields.Where(f => f.SectionId == s.Id).Select(MapField).ToList()))
+            .ToList();
+
+        return Result<OrganizationIntakeFormDetailDto>.Success(new OrganizationIntakeFormDetailDto(
+            form.Id,
+            form.OrganizationId,
+            form.FormType,
+            form.Title,
+            form.Description,
+            form.IsActive,
+            form.Version,
+            form.CreatedAtUtc,
+            sectionDtos));
     }
 
     public async Task<Result<OrganizationIntakeFormDto>> UpdateIntakeFormAsync(

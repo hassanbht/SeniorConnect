@@ -167,7 +167,7 @@ public static class OrganizationEndpoints
             return result.ToHttpResult();
         })
         .WithName("GetIntakeForm")
-        .Produces<OrganizationIntakeFormDto>(StatusCodes.Status200OK)
+        .Produces<OrganizationIntakeFormDetailDto>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status404NotFound);
 
         formsGroup.MapPut("/{formId:guid}", async (

@@ -14,6 +14,8 @@ public sealed class IdentityServiceIntegrationTests : IDisposable
     private readonly SeniorConnectDbContext _dbContext;
     private readonly IdentityService _identityService;
     private readonly IdentityHashingService _hashing;
+    private readonly IPasswordHasher _passwordHasher;
+    private readonly string _photoTempDir;
 
     public IdentityServiceIntegrationTests()
     {
@@ -44,6 +46,17 @@ public sealed class IdentityServiceIntegrationTests : IDisposable
         var otpService = new OtpService(_dbContext, _hashing, smsSender, emailSender);
         var trustCalculator = new TrustLevelCalculator();
         var capabilityService = new CapabilityService(_dbContext);
+        var totpService = new TotpService();
+        _passwordHasher = passwordHasher;
+
+        _photoTempDir = Path.Combine(Path.GetTempPath(), "seniorconnect_test_photos_" + Guid.NewGuid());
+        var photoStorageConfig = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Storage:PhotoUploadPath"] = _photoTempDir
+            })
+            .Build();
+        var photoStorage = new LocalDiskPhotoStorage(photoStorageConfig);
 
         _identityService = new IdentityService(
             _dbContext,
@@ -55,7 +68,10 @@ public sealed class IdentityServiceIntegrationTests : IDisposable
             _hashing,
             googleValidator,
             idAustriaClient,
-            emailSender);
+            emailSender,
+            totpService,
+            smsSender,
+            photoStorage);
     }
 
     [Fact]
@@ -152,8 +168,214 @@ public sealed class IdentityServiceIntegrationTests : IDisposable
         Assert.Equal("TOKEN_COMPROMISED", reuseResult.Error!.Code);
     }
 
+    [Fact]
+    public async Task StaffLogin_WithEnrolledAndConfirmedTotp_AndValidCode_Succeeds()
+    {
+        const string email = "staff-totp-ok@seniorconnect.at";
+        const string password = "S3curePassword!";
+
+        var user = User.CreateStaff(email, "Staff Member", _passwordHasher.HashPassword(password));
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+
+        var enrollResult = await _identityService.EnrollTotpAsync(user.Id);
+        Assert.True(enrollResult.IsSuccess);
+        var secret = enrollResult.Value!.Secret;
+
+        var validCode = ComputeTotpCode(secret);
+        var confirmResult = await _identityService.ConfirmTotpEnrollmentAsync(user.Id, new ConfirmTotpRequest(validCode));
+        Assert.True(confirmResult.IsSuccess);
+
+        var loginResult = await _identityService.StaffLoginAsync(
+            new StaffLoginRequest(email, password, ComputeTotpCode(secret)));
+
+        Assert.True(loginResult.IsSuccess);
+        Assert.NotNull(loginResult.Value!.AccessToken);
+    }
+
+    [Fact]
+    public async Task StaffLogin_WithTotpEnabled_RejectsMissingOrWrongCode()
+    {
+        const string email = "staff-totp-reject@seniorconnect.at";
+        const string password = "S3curePassword!";
+
+        var user = User.CreateStaff(email, "Staff Member", _passwordHasher.HashPassword(password));
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+
+        var enrollResult = await _identityService.EnrollTotpAsync(user.Id);
+        var secret = enrollResult.Value!.Secret;
+        await _identityService.ConfirmTotpEnrollmentAsync(user.Id, new ConfirmTotpRequest(ComputeTotpCode(secret)));
+
+        // Missing code
+        var missingCodeResult = await _identityService.StaffLoginAsync(
+            new StaffLoginRequest(email, password, TotpCode: null));
+        Assert.True(missingCodeResult.IsFailure);
+        Assert.Equal("TOTP_CODE_REQUIRED", missingCodeResult.Error!.Code);
+
+        // Wrong code (deliberately flip the first digit of a valid code)
+        var validCode = ComputeTotpCode(secret);
+        var wrongCode = (validCode[0] == '0' ? '1' : '0') + validCode[1..];
+        var wrongCodeResult = await _identityService.StaffLoginAsync(
+            new StaffLoginRequest(email, password, wrongCode));
+        Assert.True(wrongCodeResult.IsFailure);
+        Assert.Equal("TOTP_CODE_INVALID", wrongCodeResult.Error!.Code);
+    }
+
+    [Fact]
+    public async Task StaffLogin_WithoutTotpEnrollment_IsUnaffected()
+    {
+        const string email = "staff-no-totp@seniorconnect.at";
+        const string password = "S3curePassword!";
+
+        var user = User.CreateStaff(email, "Staff Member", _passwordHasher.HashPassword(password));
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+
+        var loginResult = await _identityService.StaffLoginAsync(new StaffLoginRequest(email, password));
+
+        Assert.True(loginResult.IsSuccess);
+        Assert.NotNull(loginResult.Value!.AccessToken);
+    }
+
+    [Fact]
+    public async Task VerifyPhoneChange_RevokesEveryExistingSession_AndUpdatesPhone()
+    {
+        const string oldPhone = "+436601230000";
+        const string newPhone = "+436604560000";
+
+        var user = User.CreateWithPhone(oldPhone, "Change Test");
+        user.VerifyPhone();
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+
+        var tokenService = new JwtTokenService(_dbContext, _hashing,
+            new ConfigurationBuilder().AddInMemoryCollection().Build());
+        var (existingRawToken, existingTokenEntity) =
+            (await tokenService.CreateRefreshTokenAsync(user.Id, "Old Device", true)).Value!;
+
+        var initiateResult = await _identityService.InitiatePhoneChangeAsync(
+            user.Id, new InitiatePhoneChangeRequest(newPhone), ipAddress: "127.0.0.1");
+        Assert.True(initiateResult.IsSuccess);
+
+        var challenge = await _dbContext.OtpChallenges
+            .Where(c => c.Purpose == OtpPurpose.PhoneChange)
+            .OrderByDescending(c => c.CreatedAtUtc)
+            .FirstOrDefaultAsync();
+        Assert.NotNull(challenge);
+
+        string? matchedCode = null;
+        for (var i = 100_000; i < 1_000_000; i++)
+        {
+            var testCode = i.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (_hashing.HashCode(testCode) == challenge.CodeHash)
+            {
+                matchedCode = testCode;
+                break;
+            }
+        }
+        Assert.NotNull(matchedCode);
+
+        var verifyResult = await _identityService.VerifyPhoneChangeAsync(
+            user.Id, new VerifyPhoneChangeRequest(newPhone, matchedCode!));
+        Assert.True(verifyResult.IsSuccess);
+
+        var reloadedUser = await _dbContext.Users.FirstAsync(u => u.Id == user.Id);
+        Assert.Equal(newPhone, reloadedUser.Phone);
+
+        var reloadedToken = await _dbContext.RefreshTokens.FirstAsync(t => t.Id == existingTokenEntity.Id);
+        Assert.NotNull(reloadedToken.RevokedAtUtc);
+
+        // The revoked refresh token must no longer work.
+        var refreshAttempt = await _identityService.RefreshTokenAsync(new RefreshTokenRequest(existingRawToken));
+        Assert.True(refreshAttempt.IsFailure);
+    }
+
+    [Fact]
+    public async Task UploadProfilePhoto_WithValidJpeg_SetsUserPhotoUrl()
+    {
+        const string phone = "+436607778899";
+
+        var user = User.CreateWithPhone(phone, "Photo Test");
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+
+        using var photoStream = new MemoryStream(new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10 });
+
+        var uploadResult = await _identityService.UploadProfilePhotoAsync(user.Id, photoStream, "image/jpeg");
+
+        Assert.True(uploadResult.IsSuccess);
+        Assert.NotNull(uploadResult.Value!.PhotoUrl);
+        Assert.StartsWith("/uploads/photos/", uploadResult.Value!.PhotoUrl);
+
+        var reloadedUser = await _dbContext.Users.FirstAsync(u => u.Id == user.Id);
+        Assert.NotNull(reloadedUser.PhotoUrl);
+    }
+
+    /// <summary>Recomputes the current RFC 6238 code for a Base32 secret, independent of TotpService's internals.</summary>
+    private static string ComputeTotpCode(string secretBase32)
+    {
+        var secretBytes = Base32Decode(secretBase32);
+        var timeStep = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30;
+
+        var counter = BitConverter.GetBytes(timeStep);
+        if (BitConverter.IsLittleEndian)
+        {
+            Array.Reverse(counter);
+        }
+
+#pragma warning disable CA5350 // RFC 6238 requires HMAC-SHA1; mirrors TotpService's own suppression.
+        using var hmac = new System.Security.Cryptography.HMACSHA1(secretBytes);
+#pragma warning restore CA5350
+        var hash = hmac.ComputeHash(counter);
+
+        var offset = hash[^1] & 0x0F;
+        var binaryCode =
+            ((hash[offset] & 0x7F) << 24) |
+            ((hash[offset + 1] & 0xFF) << 16) |
+            ((hash[offset + 2] & 0xFF) << 8) |
+            (hash[offset + 3] & 0xFF);
+
+        var truncated = binaryCode % 1_000_000;
+        return truncated.ToString(System.Globalization.CultureInfo.InvariantCulture).PadLeft(6, '0');
+    }
+
+    private static byte[] Base32Decode(string base32)
+    {
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        var cleaned = base32.Trim().TrimEnd('=').ToUpperInvariant();
+        var bytes = new List<byte>((cleaned.Length * 5) / 8);
+        var bitBuffer = 0;
+        var bitsInBuffer = 0;
+
+        foreach (var c in cleaned)
+        {
+            var index = alphabet.IndexOf(c);
+            if (index < 0)
+            {
+                continue;
+            }
+
+            bitBuffer = (bitBuffer << 5) | index;
+            bitsInBuffer += 5;
+
+            if (bitsInBuffer >= 8)
+            {
+                bitsInBuffer -= 8;
+                bytes.Add((byte)((bitBuffer >> bitsInBuffer) & 0xFF));
+            }
+        }
+
+        return bytes.ToArray();
+    }
+
     public void Dispose()
     {
         _dbContext.Dispose();
+
+        if (Directory.Exists(_photoTempDir))
+        {
+            Directory.Delete(_photoTempDir, recursive: true);
+        }
     }
 }

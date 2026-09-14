@@ -120,6 +120,26 @@ public sealed record IntakeFormFieldDto(
     string? OptionsJson,
     int SortOrder);
 
+// Nested detail shape for rendering/editing a form (BR-ORG-FORM gap fix — GetIntakeFormAsync needs sections+fields)
+public sealed record OrganizationIntakeFormDetailDto(
+    Guid Id,
+    Guid OrganizationId,
+    FormType FormType,
+    string Title,
+    string? Description,
+    bool IsActive,
+    int Version,
+    DateTimeOffset CreatedAtUtc,
+    IReadOnlyList<IntakeFormSectionDetailDto> Sections);
+
+public sealed record IntakeFormSectionDetailDto(
+    Guid Id,
+    Guid FormId,
+    string Title,
+    string? Description,
+    int SortOrder,
+    IReadOnlyList<IntakeFormFieldDto> Fields);
+
 public sealed record CreateIntakeFormFieldRequest(
     string FieldKey,
     string LabelKey,

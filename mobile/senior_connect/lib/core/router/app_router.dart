@@ -12,17 +12,25 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/auth/presentation/device_list_screen.dart';
+import '../../features/auth/presentation/email_link_screen.dart';
 import '../../features/auth/presentation/onboarding_persona_screen.dart';
 import '../../features/auth/presentation/otp_verify_screen.dart';
+import '../../features/auth/presentation/staff_login_screen.dart';
+import '../../features/auth/presentation/totp_enrollment_screen.dart';
 import '../../features/community/presentation/community_feed_screen.dart';
 import '../../features/community/presentation/event_detail_screen.dart';
 import '../../features/community/presentation/my_appointments_screen.dart';
+import '../../features/discovery/presentation/discovery_screen.dart';
 import '../../features/family/presentation/family_dashboard_screen.dart';
 import '../../features/family/presentation/senior_access_log_screen.dart';
 import '../../features/help_requests/presentation/active_assignment_screen.dart';
 import '../../features/help_requests/presentation/emergency_screen.dart';
 import '../../features/help_requests/presentation/senior_request_flow_screen.dart';
 import '../../features/help_requests/presentation/volunteer_feed_screen.dart';
+import '../../features/organizations/data/intake_form_repository.dart';
+import '../../features/organizations/presentation/intake_form_screen.dart';
+import '../../features/organizations/presentation/intake_form_submissions_screen.dart';
 import '../../features/organizations/presentation/log_activity_screen.dart';
 import '../../features/organizations/presentation/organization_profile_screen.dart';
 import '../../features/organizations/presentation/organizations_list_screen.dart';
@@ -37,9 +45,13 @@ abstract final class AppRoutes {
   static const onboarding = '/auth/onboarding';
   static const phoneEntry = '/auth/phone';
   static const otpVerify = '/auth/otp';
+  static const emailLink = '/auth/email-link';
+  static const staffLogin = '/auth/staff-login';
   static const home = '/';
   static const profile = '/profile';
   static const profileEdit = '/profile/edit';
+  static const deviceList = '/profile/devices';
+  static const totpEnrollment = '/profile/totp-enroll';
   static const helpRequestCreate = '/help-requests/create';
   static const volunteerFeed = '/help-requests/feed';
   static const activeAssignment = '/help-requests/active';
@@ -47,11 +59,20 @@ abstract final class AppRoutes {
   static const logActivity = '/activities/log';
   static const community = '/community';
   static const organizations = '/organizations';
+  static const discovery = '/discovery';
   static const myAppointments = '/community/my-appointments';
   static const family = '/family';
   static const familyAccessLog = '/family/access-log';
   static const helpFaq = '/help-faq';
 }
+
+IntakeFormType _parseFormType(String pathSegment) =>
+    pathSegment == 'help_seeker' ? IntakeFormType.helpSeeker : IntakeFormType.volunteer;
+
+/// The `formType` path segment for [IntakeRoutes] — matches the backend's
+/// `GET /forms/{formType}` convention ("volunteer" / "help_seeker").
+String intakeFormTypeSegment(IntakeFormType formType) =>
+    formType == IntakeFormType.helpSeeker ? 'help_seeker' : 'volunteer';
 
 GoRouter buildRouter({required ApiClient apiClient}) {
   return GoRouter(
@@ -82,11 +103,23 @@ GoRouter buildRouter({required ApiClient apiClient}) {
         name: 'otp-verify',
         builder: (context, state) {
           final phone = state.uri.queryParameters['phone'] ?? '';
-          final purpose = state.uri.queryParameters['purpose'] == 'phone_verification'
-              ? OtpPurpose.phoneVerification
-              : OtpPurpose.login;
+          final purpose = switch (state.uri.queryParameters['purpose']) {
+            'phone_verification' => OtpPurpose.phoneVerification,
+            'phone_change' => OtpPurpose.phoneChange,
+            _ => OtpPurpose.login,
+          };
           return OtpVerifyScreen(phone: phone, apiClient: apiClient, purpose: purpose);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.emailLink,
+        name: 'email-link',
+        builder: (context, state) => EmailLinkScreen(apiClient: apiClient),
+      ),
+      GoRoute(
+        path: AppRoutes.staffLogin,
+        name: 'staff-login',
+        builder: (context, state) => StaffLoginScreen(apiClient: apiClient),
       ),
       GoRoute(
         path: AppRoutes.emergency,
@@ -142,12 +175,38 @@ GoRouter buildRouter({required ApiClient apiClient}) {
                 OrganizationsListScreen(apiClient: apiClient),
           ),
           GoRoute(
+            path: AppRoutes.discovery,
+            name: 'discovery',
+            builder: (context, state) =>
+                DiscoveryScreen(apiClient: apiClient),
+          ),
+          GoRoute(
             path: '${AppRoutes.organizations}/:id',
             name: 'organization-profile',
             builder: (context, state) => OrganizationProfileScreen(
               organizationId: state.pathParameters['id']!,
               apiClient: apiClient,
             ),
+            routes: [
+              GoRoute(
+                path: 'forms/:formType',
+                name: 'intake-form',
+                builder: (context, state) => IntakeFormScreen(
+                  organizationId: state.pathParameters['id']!,
+                  formType: _parseFormType(state.pathParameters['formType']!),
+                  apiClient: apiClient,
+                ),
+              ),
+              GoRoute(
+                path: 'forms/:formType/submissions',
+                name: 'intake-form-submissions',
+                builder: (context, state) => IntakeFormSubmissionsScreen(
+                  organizationId: state.pathParameters['id']!,
+                  formType: _parseFormType(state.pathParameters['formType']!),
+                  apiClient: apiClient,
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoutes.myAppointments,
@@ -175,12 +234,22 @@ GoRouter buildRouter({required ApiClient apiClient}) {
           GoRoute(
             path: AppRoutes.profile,
             name: 'profile',
-            builder: (context, state) => const ProfileViewScreen(),
+            builder: (context, state) => ProfileViewScreen(apiClient: apiClient),
             routes: [
               GoRoute(
                 path: 'edit',
                 name: 'profile-edit',
                 builder: (context, state) => ProfileEditScreen(apiClient: apiClient),
+              ),
+              GoRoute(
+                path: 'devices',
+                name: 'device-list',
+                builder: (context, state) => DeviceListScreen(apiClient: apiClient),
+              ),
+              GoRoute(
+                path: 'totp-enroll',
+                name: 'totp-enroll',
+                builder: (context, state) => TotpEnrollmentScreen(apiClient: apiClient),
               ),
             ],
           ),
@@ -230,6 +299,12 @@ class _HomeScreen extends StatelessWidget {
           label: 'organizations.directory_title'.tr(),
           semanticLabel: 'organizations.directory_title'.tr(),
           onTap: () => context.push(AppRoutes.organizations),
+        ),
+        SeniorAction(
+          icon: Icons.near_me_outlined,
+          label: 'discovery.title'.tr(),
+          semanticLabel: 'discovery.title'.tr(),
+          onTap: () => context.push(AppRoutes.discovery),
         ),
         SeniorAction(
           icon: Icons.calendar_month_outlined,

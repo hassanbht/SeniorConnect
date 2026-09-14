@@ -110,4 +110,19 @@ public interface IIdentityService
         Guid userId,
         VerifyProfilePhoneRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<Result<TotpEnrollmentResponse>> EnrollTotpAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> ConfirmTotpEnrollmentAsync(
+        Guid userId,
+        ConfirmTotpRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<UserSummaryDto>> UploadProfilePhotoAsync(
+        Guid userId,
+        Stream content,
+        string contentType,
+        CancellationToken cancellationToken = default);
 }

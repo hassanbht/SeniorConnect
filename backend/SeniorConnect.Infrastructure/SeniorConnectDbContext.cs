@@ -65,6 +65,7 @@ public sealed class SeniorConnectDbContext(
     public DbSet<Interest> Interests => Set<Interest>();
     public DbSet<Language> Languages => Set<Language>();
     public DbSet<UserLanguage> UserLanguages => Set<UserLanguage>();
+    public DbSet<UserInterest> UserInterests => Set<UserInterest>();
     public DbSet<Skill> Skills => Set<Skill>();
     public DbSet<VolunteerSkill> VolunteerSkills => Set<VolunteerSkill>();
     public DbSet<AvailabilitySlot> AvailabilitySlots => Set<AvailabilitySlot>();
@@ -207,20 +208,9 @@ public sealed class SeniorConnectDbContext(
         modelBuilder.Entity<HelpRequest>().Property<uint>("xmin").HasColumnType("xmin").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();
 
         // --- Cross-module relationships --------------------------------------
-        modelBuilder.Entity<User>()
-            .HasMany<Interest>()
-            .WithMany()
-            .UsingEntity<Dictionary<string, object>>(
-                "user_interests",
-                j => j.HasOne<Interest>().WithMany().HasForeignKey("interest_id").OnDelete(DeleteBehavior.Restrict),
-                j => j.HasOne<User>().WithMany().HasForeignKey("user_id").OnDelete(DeleteBehavior.Cascade),
-                j =>
-                {
-                    j.ToTable("user_interests");
-                    j.Property<Guid>("user_id").HasColumnName("user_id");
-                    j.Property<Guid>("interest_id").HasColumnName("interest_id");
-                    j.HasKey("user_id", "interest_id");
-                });
+        // user_interests is now mapped by the typed UserInterest entity
+        // (Profiles module) via UserInterestConfiguration instead of the
+        // shadow many-to-many join that lived here.
 
         // --- Family & Delegation ---------------------------------------------
         modelBuilder.Entity<FamilyRelationship>(b =>

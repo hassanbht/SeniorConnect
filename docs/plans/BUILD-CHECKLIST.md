@@ -264,20 +264,20 @@ languages, in both themes. No business features.
     → BR-AUTH-04, BR-AUTH-07
     ✓ Test: valid credentials return token pair; wrong password/OTP fails with counter
 
-[ ] P1-10 — Refresh, logout, device list         · S · needs P1-09
+[x] P1-10 — Refresh, logout, device list         · S · needs P1-09
     Hashed, revocable per device.
     ✓ Test: logging out one device leaves the other signed in
 
-[ ] P1-11 — Email magic link fallback            · M · needs P1-03
+[x] P1-11 — Email magic link fallback            · M · needs P1-03
     → BR-AUTH-01
     ✓ Test: a user without a phone or password can sign in via emailed one-time link
 
-[ ] P1-12 — Staff TOTP path                      · M · needs P1-03
+[x] P1-12 — Staff TOTP path                      · M · needs P1-03
     Organization staff and platform admins can enable TOTP authenticator.
     → BR-AUTH-02
     ✓ Test: staff account requires TOTP when enabled
 
-[ ] P1-13 — Phone-number change flow             · M · needs P1-09
+[x] P1-13 — Phone-number change flow             · M · needs P1-09
     Invalidates every session, notifies old number and email, audited.
     → BR-AUTH-06 (SIM-swap mitigation)
     ✓ Test: change number → other device is signed out within a minute
@@ -389,7 +389,7 @@ languages, in both themes. No business features.
     ✓ Test: Google tap triggers OAuth; email registration displays email verification prompt;
       password confirmation mismatches are flagged before submission
 
-[ ] P1-28 — Profile & Austrian Address screen    · M · needs P1-27
+[x] P1-28 — Profile & Austrian Address screen    · M · needs P1-27
     First/Last name, profile photo, interests/themen checkboxes.
     Mobile phone field with "Verify Phone Number" button & SMS dialog.
     Austrian address inputs with Bundesland/Gemeinde/PLZ auto-suggest.
@@ -407,7 +407,7 @@ languages, in both themes. No business features.
 [x] Address lookup displays location on map and persists latitude/longitude coordinates
 [x] Local discovery endpoint returns nearby charities and volunteers with fuzzed coordinates
 [ ] Close the app, wait a week, reopen → lands on content, not on a login screen
-[ ] Changing phone number kills all sessions and notifies old number
+[x] Changing phone number kills all sessions and notifies old number
 [ ] OTP brute force throttled (automated test)
 [ ] Works in de, en, fa — fa renders RTL, directional icons mirror correctly
 [ ] Every screen in light AND dark AND system-follows-OS
@@ -625,7 +625,7 @@ pilot partner to sign, and the phase everything later feeds on.
 ## 2.8 Dynamic Organization Intake Forms & Local Proximity Discovery (ADR-021)
 
 ```
-[ ] P2-37 — Organization Intake Form Builder API  · L · needs P2-01
+[x] P2-37 — Organization Intake Form Builder API  · L · needs P2-01
     POST /organizations/{id}/forms
     GET /organizations/{id}/forms/{type} (volunteer | help_seeker)
     PUT /organizations/{id}/forms/{id}/fields
@@ -633,14 +633,14 @@ pilot partner to sign, and the phase everything later feeds on.
     → BR-ORG-FORM-01, ADR-021
     ✓ Test: coordinator adds custom text, dropdown, and checkbox group fields to org form
 
-[ ] P2-38 — Mandatory vs. Optional Field Toggles  · S · needs P2-37
+[x] P2-38 — Mandatory vs. Optional Field Toggles  · S · needs P2-37
     Coordinators can flag each section or individual field as mandatory (Pflichtfeld)
     or optional (Freiwillig). Server validates required fields on submission.
     → BR-ORG-FORM-02, ADR-021
     ✓ Test: submitting without a mandatory field returns 422 ProblemDetails;
       omitting optional fields succeeds
 
-[ ] P2-39 — FWZ Innsbruck-Land Standard Template  · M · needs P2-37
+[x] P2-39 — FWZ Innsbruck-Land Standard Template  · M · needs P2-37
     Pre-seeds the official FWZ intake template:
     - Bereiche: Soziales, Natur, E-Volunteering, Klima/Nachhaltigkeit, Handwerk,
       Kunst/Kultur, Freiwilligenpool, Lernbetreuung
@@ -652,14 +652,14 @@ pilot partner to sign, and the phase everything later feeds on.
     → BR-ORG-FORM-03..05, ADR-021
     ✓ Test: activating the Innsbruck-Land template initializes all standard sections and options
 
-[ ] P2-40 — Dynamic Intake Form Renderer & Review · L · needs P2-39
+[x] P2-40 — Dynamic Intake Form Renderer & Review · L · needs P2-39
     Flutter UI renders dynamic intake forms for applicants.
     Captures timestamped legal declarations (clean criminal record, GDPR data consent).
     Coordinator dashboard displays submissions in applicant review queue.
     → BR-ORG-FORM-04, BR-ORG-FORM-05, ADR-021
     ✓ Test: applicant completes intake form with GDPR consent; coordinator approves submission
 
-[ ] P2-41 — Local Proximity Discovery Views       · M · needs P1-15e
+[x] P2-41 — Local Proximity Discovery Views       · M · needs P1-15e
     Mobile & Web UI for mutual local discovery based on verified Austrian address coordinates:
     - Citizens/Seniors view nearby charities and active independent volunteers
     - Independent volunteers view nearby charities and open community help requests
@@ -681,9 +681,9 @@ pilot partner to sign, and the phase everything later feeds on.
 [ ] A funder token cannot reach any name, address, phone or free text
 [ ] A 7-person cohort renders "<10" and resists inference by subtraction
 [ ] An OrganizationAdmin without SafeguardingOfficer gets 403 everywhere
-[ ] Organization can define custom intake forms with mandatory/optional fields
-[ ] FWZ Innsbruck-Land reference template collects categories, criminal clearance & GDPR consent
-[ ] Local proximity discovery shows nearby charities and volunteers with fuzzed radius
+[x] Organization can define custom intake forms with mandatory/optional fields
+[x] FWZ Innsbruck-Land reference template collects categories, criminal clearance & GDPR consent
+[x] Local proximity discovery shows nearby charities and volunteers with fuzzed radius
 [ ] Dashboard loads in < 2 s with 5 000 activities
 [ ] Staff web app fully keyboard-navigable
 ```

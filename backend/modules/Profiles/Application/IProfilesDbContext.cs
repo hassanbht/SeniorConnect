@@ -10,6 +10,7 @@ public interface IProfilesDbContext
     DbSet<Interest> Interests { get; }
     DbSet<Language> Languages { get; }
     DbSet<UserLanguage> UserLanguages { get; }
+    DbSet<UserInterest> UserInterests { get; }
     DbSet<Skill> Skills { get; }
     DbSet<VolunteerSkill> VolunteerSkills { get; }
     DbSet<AvailabilitySlot> AvailabilitySlots { get; }

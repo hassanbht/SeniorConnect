@@ -95,6 +95,13 @@ public sealed record RecordConsentRequest(
     string DocumentVersion,
     bool Granted);
 
+public sealed record ConfirmTotpRequest(
+    string Code);
+
+public sealed record TotpEnrollmentResponse(
+    string Secret,
+    string ProvisioningUri);
+
 public sealed record AuthResponse(
     string AccessToken,
     string RefreshToken,
@@ -111,7 +118,8 @@ public sealed record UserSummaryDto(
     string PreferredLocale,
     bool SeniorModeDefault,
     string PrimaryAuthMethod,
-    string Status);
+    string Status,
+    string? PhotoUrl);
 
 public sealed record DeviceSessionDto(
     Guid Id,

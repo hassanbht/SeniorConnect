@@ -95,7 +95,59 @@
       "resend": "Request new code",
       "success": "Phone number verified successfully.",
       "verified": "Verified"
+    },
+    "email_link": {
+      "title": "Sign in via email link",
+      "description": "No phone number or password? We will send you a 6-digit sign-in code by email.",
+      "email_label": "Email address",
+      "request": "Send code",
+      "sent": "We sent you a code. Please check your inbox.",
+      "code_label": "Enter the 6-digit code",
+      "link": "Sign in with an emailed code instead"
+    },
+    "staff": {
+      "title": "Staff sign-in",
+      "email_label": "Email address",
+      "password_label": "Password",
+      "totp_label": "Authenticator code (if enabled)",
+      "totp_hint": "Only needed if you have enabled two-factor authentication.",
+      "totp_required": "This account requires an authenticator code.",
+      "submit": "Sign in",
+      "link": "Organization staff? Sign in here"
+    },
+    "phone_change": {
+      "title": "Change phone number",
+      "description": "We will send a 6-digit code to {phone}. Confirming will sign you out of all devices for security — you will need to sign in again with the new number.",
+      "signed_out_notice": "Your phone number was changed. You have been signed out of all devices — please sign in again."
     }
+  },
+  "devices": {
+    "title": "Active devices",
+    "current": "This device",
+    "personal_device": "Personal device",
+    "other_device": "Shared / other device",
+    "revoke": "Sign out",
+    "revoke_semantic": "Sign out this device",
+    "revoke_confirm_title": "Sign out this device?",
+    "revoke_confirm_desc": "This device will need to sign in again.",
+    "revoked": "Device signed out.",
+    "empty": "No active devices.",
+    "issued_on": "Signed in on {date}",
+    "expires_on": "Expires {date}"
+  },
+  "discovery": {
+    "title": "Near me",
+    "tab_organizations": "Organizations",
+    "tab_volunteers": "Volunteers",
+    "tab_requests": "Requests",
+    "location_required": "To see results near you, first set your address in your profile.",
+    "set_location_action": "Set address in profile",
+    "empty_organizations": "No organizations found in this range.",
+    "empty_volunteers": "No volunteers found in this range.",
+    "empty_requests": "No requests found in this range.",
+    "organization_fallback_name": "Organization near you",
+    "volunteer_fallback_name": "Volunteer near you",
+    "request_fallback_name": "Help request near you"
   },
   "home": {
     "greeting": "Hello {name}",
@@ -217,7 +269,43 @@
     "cancel_post": "Cancel",
     "cancel_post_confirm": "Really cancel this post?",
     "saved": "Saved.",
-    "post_cancelled": "Post cancelled."
+    "post_cancelled": "Post cancelled.",
+    "get_involved_title": "Get involved",
+    "apply_volunteer": "Become a volunteer",
+    "apply_help_seeker": "Request help",
+    "coordinator_tools_title": "Coordinator tools",
+    "review_volunteer_applications": "Review volunteer applications",
+    "review_help_seeker_applications": "Review help-seeker applications",
+    "activate_fwz_template": "Activate FWZ template",
+    "activate_fwz_template_confirm": "This replaces the current active form with the standard FWZ Innsbruck-Land template. Continue?",
+    "template_activated": "Template activated."
+  },
+  "intake_form": {
+    "title": "Application form",
+    "submit": "Submit",
+    "declarations_title": "Declarations",
+    "criminal_clearance_label": "I confirm I have no relevant criminal record (Strafregisterbescheinigung).",
+    "criminal_clearance_short": "Clearance",
+    "criminal_clearance_required": "You must confirm the criminal-clearance declaration.",
+    "gdpr_consent_label": "I agree to the processing of my data for this application (GDPR).",
+    "gdpr_consent_short": "GDPR",
+    "gdpr_consent_required": "You must agree to the data-processing consent.",
+    "event_invitation_label": "I would like to be invited to related events (optional).",
+    "validation_summary": "Please complete the following before submitting:",
+    "date_not_set": "Not set",
+    "submissions_title": "Applications",
+    "no_submissions": "No applications yet.",
+    "answers_title": "Answers",
+    "review_notes_label": "Review notes (optional)",
+    "approve": "Approve",
+    "decline": "Decline",
+    "decline_confirm": "Really decline this application?",
+    "status": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "approved": "Approved",
+      "declined": "Declined"
+    }
   },
   "error": {
     "generic": "Something went wrong. Please try again."
@@ -304,11 +392,14 @@
     "name_required": "Please enter your name.",
     "interests": "Interests",
     "interests_coming_soon": "Interests can be added soon.",
+    "settings_and_support": "Settings & support",
     "languages": "Languages",
     "languages_coming_soon": "Languages can be added soon.",
     "phone": "Phone number",
     "phone_verified": "Verified",
     "verify_phone_button": "Verify phone number",
+    "change_phone_button": "Change",
+    "change_phone_semantic": "Change phone number",
     "verify_phone_semantic": "Verify phone number via SMS",
     "address": "Address",
     "bundesland": "Federal state",
@@ -326,7 +417,15 @@
     "location_saved": "Location saved",
     "coordinates": "Coordinates",
     "latitude": "Latitude",
-    "longitude": "Longitude"
+    "longitude": "Longitude",
+    "manage_devices": "Manage devices",
+    "logout": "Log out",
+    "logout_semantic": "Log out of this account",
+    "logout_confirm_title": "Log out?",
+    "logout_confirm_desc": "You will need to sign in again on this device.",
+    "change_photo_semantic": "Change profile photo",
+    "take_photo": "Take photo",
+    "choose_from_gallery": "Choose from gallery"
   },
   "empty": {
     "no_activities": "You do not have any appointments yet.",
@@ -338,7 +437,20 @@
   "interest": {
     "language_exchange": "Language exchange",
     "local_orientation": "Local orientation",
-    "job_search_support": "Job search support"
+    "job_search_support": "Job search support",
+    "walking": "Walking",
+    "gardening": "Gardening",
+    "cooking": "Cooking",
+    "cards_games": "Card games",
+    "chess": "Chess",
+    "reading": "Reading",
+    "music": "Music",
+    "handicraft": "Handicraft",
+    "coffee_talk": "Coffee & conversation",
+    "photography": "Photography",
+    "church": "Church community",
+    "exercise": "Exercise",
+    "animals": "Animals"
   },
   "semantic": {
     "request_help_button": "Request help. Opens the form.",

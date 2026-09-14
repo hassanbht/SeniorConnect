@@ -131,6 +131,38 @@ public static class ProfileEndpoints
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .ProducesProblem(StatusCodes.Status401Unauthorized);
 
+        meGroup.MapGet("/interests", async (
+            ClaimsPrincipal user,
+            IProfileService profileService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await profileService.GetUserInterestsAsync(userId.Value, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("GetMyInterests")
+        .Produces<IReadOnlyList<InterestDto>>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        meGroup.MapPut("/interests", async (
+            UpdateUserInterestsRequest request,
+            ClaimsPrincipal user,
+            IProfileService profileService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await profileService.UpdateUserInterestsAsync(userId.Value, request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("UpdateMyInterests")
+        .Produces<IReadOnlyList<InterestDto>>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
         meGroup.MapGet("/organizations", async (
             ClaimsPrincipal user,
             IOrganizationCoordinatorReader orgReader,

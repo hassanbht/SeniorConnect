@@ -131,6 +131,18 @@ public sealed class UserLanguageConfiguration : IEntityTypeConfiguration<UserLan
     }
 }
 
+public sealed class UserInterestConfiguration : IEntityTypeConfiguration<UserInterest>
+{
+    public void Configure(EntityTypeBuilder<UserInterest> builder)
+    {
+        builder.ToTable("user_interests");
+
+        builder.HasKey(x => new { x.UserId, x.InterestId });
+        builder.Property(x => x.UserId).HasColumnName("user_id");
+        builder.Property(x => x.InterestId).HasColumnName("interest_id");
+    }
+}
+
 public sealed class SkillConfiguration : IEntityTypeConfiguration<Skill>
 {
     public void Configure(EntityTypeBuilder<Skill> builder)

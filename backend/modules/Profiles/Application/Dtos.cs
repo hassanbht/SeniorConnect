@@ -94,6 +94,8 @@ public sealed record InterestDto(
     string? Icon,
     int DisplayOrder);
 
+public sealed record UpdateUserInterestsRequest(IReadOnlyList<Guid> InterestIds);
+
 public sealed record LanguageDto(
     string Code,
     string Name,

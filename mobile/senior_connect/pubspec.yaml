@@ -49,6 +49,9 @@ dependencies:
   get_it: ^8.0.3
   injectable: ^2.5.0
 
+  # P1-28: profile photo picker
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

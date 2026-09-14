@@ -207,6 +207,23 @@ public sealed class JwtTokenService : ITokenService
         return Result.Success();
     }
 
+    public async Task<Result> RevokeAllSessionsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var tokens = await _db.RefreshTokens
+            .Where(r => r.UserId == userId && r.RevokedAtUtc == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var token in tokens)
+        {
+            token.Revoke();
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
     public async Task<IReadOnlyList<DeviceSessionDto>> GetActiveDevicesAsync(
         Guid userId,
         string? currentRawRefreshToken,

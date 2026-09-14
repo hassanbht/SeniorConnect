@@ -75,8 +75,11 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Phone).HasColumnName("phone");
         builder.Property(u => u.PhoneVerifiedAtUtc).HasColumnName("phone_verified_at_utc").HasColumnType("timestamptz");
         builder.Property(u => u.PasswordHash).HasColumnName("password_hash");
+        builder.Property(u => u.TotpSecret).HasColumnName("totp_secret");
+        builder.Property(u => u.TotpEnabledAtUtc).HasColumnName("totp_enabled_at_utc").HasColumnType("timestamptz");
         builder.Property(u => u.PrimaryAuthMethod).HasColumnName("primary_auth_method").HasConversion<string>().HasDefaultValue(AuthMethod.PhoneOtp).IsRequired();
         builder.Property(u => u.DisplayName).HasColumnName("display_name").IsRequired();
+        builder.Property(u => u.PhotoUrl).HasColumnName("photo_url");
         builder.Property(u => u.DateOfBirth).HasColumnName("date_of_birth");
         builder.Property(u => u.PreferredLocale).HasColumnName("preferred_locale").HasDefaultValue("de").IsRequired();
         builder.Property(u => u.SeniorModeDefault).HasColumnName("senior_mode_default").HasDefaultValue(false).IsRequired();

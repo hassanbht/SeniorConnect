@@ -95,7 +95,59 @@
       "resend": "Neuen Code anfordern",
       "success": "Telefonnummer erfolgreich bestätigt.",
       "verified": "Bestätigt"
+    },
+    "email_link": {
+      "title": "Anmeldung per E-Mail-Link",
+      "description": "Keine Telefonnummer oder kein Passwort? Wir senden Ihnen einen 6-stelligen Anmeldecode per E-Mail.",
+      "email_label": "E-Mail-Adresse",
+      "request": "Code senden",
+      "sent": "Wir haben Ihnen einen Code gesendet. Bitte prüfen Sie Ihr Postfach.",
+      "code_label": "Sechsstelligen Code eingeben",
+      "link": "Stattdessen mit E-Mail-Code anmelden"
+    },
+    "staff": {
+      "title": "Anmeldung für Mitarbeitende",
+      "email_label": "E-Mail-Adresse",
+      "password_label": "Passwort",
+      "totp_label": "Authenticator-Code (falls aktiviert)",
+      "totp_hint": "Nur erforderlich, wenn Sie die Zwei-Faktor-Authentifizierung aktiviert haben.",
+      "totp_required": "Für dieses Konto ist ein Authenticator-Code erforderlich.",
+      "submit": "Anmelden",
+      "link": "Mitarbeitende der Organisation? Hier anmelden"
+    },
+    "phone_change": {
+      "title": "Telefonnummer ändern",
+      "description": "Wir senden einen 6-stelligen Code an {phone}. Beim Bestätigen werden Sie aus Sicherheitsgründen auf allen Geräten abgemeldet — Sie müssen sich mit der neuen Nummer erneut anmelden.",
+      "signed_out_notice": "Ihre Telefonnummer wurde geändert. Sie wurden auf allen Geräten abgemeldet — bitte melden Sie sich erneut an."
     }
+  },
+  "devices": {
+    "title": "Aktive Geräte",
+    "current": "Dieses Gerät",
+    "personal_device": "Persönliches Gerät",
+    "other_device": "Geteiltes / anderes Gerät",
+    "revoke": "Abmelden",
+    "revoke_semantic": "Dieses Gerät abmelden",
+    "revoke_confirm_title": "Dieses Gerät abmelden?",
+    "revoke_confirm_desc": "Dieses Gerät muss sich erneut anmelden.",
+    "revoked": "Gerät abgemeldet.",
+    "empty": "Keine aktiven Geräte.",
+    "issued_on": "Angemeldet am {date}",
+    "expires_on": "Läuft ab am {date}"
+  },
+  "discovery": {
+    "title": "In meiner Nähe",
+    "tab_organizations": "Organisationen",
+    "tab_volunteers": "Freiwillige",
+    "tab_requests": "Anfragen",
+    "location_required": "Um Ergebnisse in Ihrer Nähe zu sehen, hinterlegen Sie zuerst Ihre Adresse im Profil.",
+    "set_location_action": "Adresse im Profil festlegen",
+    "empty_organizations": "Keine Organisationen in diesem Umkreis gefunden.",
+    "empty_volunteers": "Keine Freiwilligen in diesem Umkreis gefunden.",
+    "empty_requests": "Keine Anfragen in diesem Umkreis gefunden.",
+    "organization_fallback_name": "Organisation in Ihrer Nähe",
+    "volunteer_fallback_name": "Freiwillige Person in Ihrer Nähe",
+    "request_fallback_name": "Hilfsanfrage in Ihrer Nähe"
   },
   "home": {
     "greeting": "Hallo {name}",
@@ -217,7 +269,43 @@
     "cancel_post": "Absagen",
     "cancel_post_confirm": "Diesen Beitrag wirklich absagen?",
     "saved": "Gespeichert.",
-    "post_cancelled": "Beitrag abgesagt."
+    "post_cancelled": "Beitrag abgesagt.",
+    "get_involved_title": "Engagieren",
+    "apply_volunteer": "Freiwillige:r werden",
+    "apply_help_seeker": "Hilfe anfragen",
+    "coordinator_tools_title": "Koordinator:innen-Werkzeuge",
+    "review_volunteer_applications": "Freiwilligen-Bewerbungen prüfen",
+    "review_help_seeker_applications": "Hilfegesuche prüfen",
+    "activate_fwz_template": "FWZ-Vorlage aktivieren",
+    "activate_fwz_template_confirm": "Dies ersetzt das aktuell aktive Formular durch die Standard-Vorlage FWZ Innsbruck-Land. Fortfahren?",
+    "template_activated": "Vorlage aktiviert."
+  },
+  "intake_form": {
+    "title": "Aufnahmeformular",
+    "submit": "Absenden",
+    "declarations_title": "Erklärungen",
+    "criminal_clearance_label": "Ich bestätige, dass keine einschlägige Vorstrafe vorliegt (Strafregisterbescheinigung).",
+    "criminal_clearance_short": "Unbescholtenheit",
+    "criminal_clearance_required": "Sie müssen die Erklärung zur strafrechtlichen Unbescholtenheit bestätigen.",
+    "gdpr_consent_label": "Ich stimme der Verarbeitung meiner Daten für diese Bewerbung zu (DSGVO).",
+    "gdpr_consent_short": "DSGVO",
+    "gdpr_consent_required": "Sie müssen der Datenschutz-Einwilligung zustimmen.",
+    "event_invitation_label": "Ich möchte zu passenden Veranstaltungen eingeladen werden (optional).",
+    "validation_summary": "Bitte ergänzen Sie Folgendes vor dem Absenden:",
+    "date_not_set": "Nicht angegeben",
+    "submissions_title": "Bewerbungen",
+    "no_submissions": "Noch keine Bewerbungen.",
+    "answers_title": "Antworten",
+    "review_notes_label": "Anmerkungen zur Prüfung (optional)",
+    "approve": "Genehmigen",
+    "decline": "Ablehnen",
+    "decline_confirm": "Diese Bewerbung wirklich ablehnen?",
+    "status": {
+      "draft": "Entwurf",
+      "submitted": "Eingereicht",
+      "approved": "Genehmigt",
+      "declined": "Abgelehnt"
+    }
   },
   "error": {
     "generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
@@ -309,6 +397,8 @@
     "phone": "Telefonnummer",
     "phone_verified": "Bestätigt",
     "verify_phone_button": "Telefonnummer bestätigen",
+    "change_phone_button": "Ändern",
+    "change_phone_semantic": "Telefonnummer ändern",
     "verify_phone_semantic": "Telefonnummer per SMS bestätigen",
     "address": "Adresse",
     "bundesland": "Bundesland",
@@ -324,9 +414,18 @@
     "map_preview": "Karten-Vorschau",
     "confirm_location": "Standort bestätigen",
     "location_saved": "Standort gespeichert",
+    "manage_devices": "Geräte verwalten",
+    "logout": "Abmelden",
+    "logout_semantic": "Von diesem Konto abmelden",
+    "logout_confirm_title": "Abmelden?",
+    "logout_confirm_desc": "Sie müssen sich auf diesem Gerät erneut anmelden.",
+    "settings_and_support": "Einstellungen & Support",
     "coordinates": "Koordinaten",
     "latitude": "Breitengrad",
-    "longitude": "Längengrad"
+    "longitude": "Längengrad",
+    "change_photo_semantic": "Profilfoto ändern",
+    "take_photo": "Foto aufnehmen",
+    "choose_from_gallery": "Aus Galerie wählen"
   },
   "empty": {
     "no_activities": "Sie haben noch keine Termine.",
@@ -338,7 +437,20 @@
   "interest": {
     "language_exchange": "Sprachaustausch",
     "local_orientation": "Lokale Orientierung",
-    "job_search_support": "Unterstützung bei der Arbeitssuche"
+    "job_search_support": "Unterstützung bei der Arbeitssuche",
+    "walking": "Spazierengehen",
+    "gardening": "Gärtnern",
+    "cooking": "Kochen",
+    "cards_games": "Kartenspiele",
+    "chess": "Schach",
+    "reading": "Lesen",
+    "music": "Musik",
+    "handicraft": "Handarbeiten",
+    "coffee_talk": "Kaffee & Gespräche",
+    "photography": "Fotografie",
+    "church": "Kirchengemeinde",
+    "exercise": "Bewegung",
+    "animals": "Tiere"
   },
   "semantic": {
     "request_help_button": "Hilfe anfragen. Öffnet das Formular.",

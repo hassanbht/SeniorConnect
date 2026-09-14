@@ -95,7 +95,59 @@
       "resend": "ارسال مجدد کد",
       "success": "شماره تلفن با موفقیت تأیید شد.",
       "verified": "تأیید شده"
+    },
+    "email_link": {
+      "title": "ورود از طریق لینک ایمیل",
+      "description": "شماره تلفن یا رمز عبور ندارید؟ یک کد ۶ رقمی برای ورود به ایمیل شما ارسال می‌کنیم.",
+      "email_label": "آدرس ایمیل",
+      "request": "ارسال کد",
+      "sent": "کد برای شما ارسال شد. لطفاً صندوق ورودی خود را بررسی کنید.",
+      "code_label": "کد ۶ رقمی را وارد کنید",
+      "link": "در عوض با کد ایمیل وارد شوید"
+    },
+    "staff": {
+      "title": "ورود کارکنان",
+      "email_label": "آدرس ایمیل",
+      "password_label": "رمز عبور",
+      "totp_label": "کد اپلیکیشن احراز هویت (در صورت فعال بودن)",
+      "totp_hint": "فقط در صورتی لازم است که احراز هویت دو مرحله‌ای را فعال کرده باشید.",
+      "totp_required": "این حساب به کد اپلیکیشن احراز هویت نیاز دارد.",
+      "submit": "ورود",
+      "link": "کارکنان سازمان هستید؟ از اینجا وارد شوید"
+    },
+    "phone_change": {
+      "title": "تغییر شماره تلفن",
+      "description": "یک کد ۶ رقمی به {phone} ارسال می‌کنیم. با تأیید، به دلایل امنیتی از تمام دستگاه‌ها خارج می‌شوید و باید با شماره جدید دوباره وارد شوید.",
+      "signed_out_notice": "شماره تلفن شما تغییر کرد. از تمام دستگاه‌ها خارج شدید — لطفاً دوباره وارد شوید."
     }
+  },
+  "devices": {
+    "title": "دستگاه‌های فعال",
+    "current": "این دستگاه",
+    "personal_device": "دستگاه شخصی",
+    "other_device": "دستگاه مشترک / دیگر",
+    "revoke": "خروج",
+    "revoke_semantic": "خروج از این دستگاه",
+    "revoke_confirm_title": "از این دستگاه خارج شوید؟",
+    "revoke_confirm_desc": "این دستگاه باید دوباره وارد شود.",
+    "revoked": "دستگاه خارج شد.",
+    "empty": "هیچ دستگاه فعالی وجود ندارد.",
+    "issued_on": "تاریخ ورود: {date}",
+    "expires_on": "انقضا: {date}"
+  },
+  "discovery": {
+    "title": "در نزدیکی من",
+    "tab_organizations": "سازمان‌ها",
+    "tab_volunteers": "داوطلبان",
+    "tab_requests": "درخواست‌ها",
+    "location_required": "برای دیدن نتایج نزدیک به شما، ابتدا آدرس خود را در پروفایل ثبت کنید.",
+    "set_location_action": "ثبت آدرس در پروفایل",
+    "empty_organizations": "هیچ سازمانی در این محدوده یافت نشد.",
+    "empty_volunteers": "هیچ داوطلبی در این محدوده یافت نشد.",
+    "empty_requests": "هیچ درخواستی در این محدوده یافت نشد.",
+    "organization_fallback_name": "سازمانی در نزدیکی شما",
+    "volunteer_fallback_name": "داوطلبی در نزدیکی شما",
+    "request_fallback_name": "درخواست کمکی در نزدیکی شما"
   },
   "home": {
     "greeting": "سلام {name}",
@@ -217,7 +269,43 @@
     "cancel_post": "لغو",
     "cancel_post_confirm": "این پست واقعاً لغو شود؟",
     "saved": "ذخیره شد.",
-    "post_cancelled": "پست لغو شد."
+    "post_cancelled": "پست لغو شد.",
+    "get_involved_title": "مشارکت کنید",
+    "apply_volunteer": "داوطلب شوید",
+    "apply_help_seeker": "درخواست کمک",
+    "coordinator_tools_title": "ابزارهای هماهنگ‌کننده",
+    "review_volunteer_applications": "بررسی درخواست‌های داوطلبی",
+    "review_help_seeker_applications": "بررسی درخواست‌های کمک",
+    "activate_fwz_template": "فعال‌سازی قالب FWZ",
+    "activate_fwz_template_confirm": "این کار فرم فعال فعلی را با قالب استاندارد FWZ Innsbruck-Land جایگزین می‌کند. ادامه می‌دهید؟",
+    "template_activated": "قالب فعال شد."
+  },
+  "intake_form": {
+    "title": "فرم درخواست",
+    "submit": "ارسال",
+    "declarations_title": "اعلامیه‌ها",
+    "criminal_clearance_label": "تأیید می‌کنم که سوءپیشینه کیفری مرتبط ندارم (گواهی عدم سوءپیشینه).",
+    "criminal_clearance_short": "عدم سوءپیشینه",
+    "criminal_clearance_required": "باید اعلامیه عدم سوءپیشینه را تأیید کنید.",
+    "gdpr_consent_label": "با پردازش اطلاعاتم برای این درخواست موافقم (GDPR).",
+    "gdpr_consent_short": "GDPR",
+    "gdpr_consent_required": "باید با رضایت پردازش داده‌ها موافقت کنید.",
+    "event_invitation_label": "مایلم برای رویدادهای مرتبط دعوت شوم (اختیاری).",
+    "validation_summary": "لطفاً پیش از ارسال موارد زیر را تکمیل کنید:",
+    "date_not_set": "تعیین نشده",
+    "submissions_title": "درخواست‌ها",
+    "no_submissions": "هنوز درخواستی ثبت نشده.",
+    "answers_title": "پاسخ‌ها",
+    "review_notes_label": "یادداشت بررسی (اختیاری)",
+    "approve": "تأیید",
+    "decline": "رد",
+    "decline_confirm": "این درخواست واقعاً رد شود؟",
+    "status": {
+      "draft": "پیش‌نویس",
+      "submitted": "ارسال شده",
+      "approved": "تأیید شده",
+      "declined": "رد شده"
+    }
   },
   "error": {
     "generic": "خطایی رخ داد. لطفاً دوباره تلاش کنید."
@@ -309,6 +397,8 @@
     "phone": "شماره تلفن",
     "phone_verified": "تأیید شده",
     "verify_phone_button": "تأیید شماره تلفن",
+    "change_phone_button": "تغییر",
+    "change_phone_semantic": "تغییر شماره تلفن",
     "verify_phone_semantic": "تأیید شماره تلفن از طریق پیامک",
     "address": "آدرس",
     "bundesland": "استان",
@@ -324,9 +414,18 @@
     "map_preview": "پیش‌نمایش نقشه",
     "confirm_location": "تأیید موقعیت",
     "location_saved": "موقعیت ذخیره شد",
+    "manage_devices": "مدیریت دستگاه‌ها",
+    "logout": "خروج از حساب",
+    "logout_semantic": "خروج از این حساب کاربری",
+    "logout_confirm_title": "خروج از حساب؟",
+    "logout_confirm_desc": "باید دوباره در این دستگاه وارد شوید.",
+    "settings_and_support": "تنظیمات و پشتیبانی",
     "coordinates": "مختصات",
     "latitude": "عرض جغرافیایی",
-    "longitude": "طول جغرافیایی"
+    "longitude": "طول جغرافیایی",
+    "change_photo_semantic": "تغییر عکس پروفایل",
+    "take_photo": "گرفتن عکس",
+    "choose_from_gallery": "انتخاب از گالری"
   },
   "empty": {
     "no_activities": "شما در حال حاضر قراری ندارید.",
@@ -338,7 +437,20 @@
   "interest": {
     "language_exchange": "تبادل زبان",
     "local_orientation": "آشنایی با شهر و محیط",
-    "job_search_support": "راهنمایی شغلی"
+    "job_search_support": "راهنمایی شغلی",
+    "walking": "پیاده‌روی",
+    "gardening": "باغبانی",
+    "cooking": "آشپزی",
+    "cards_games": "بازی با ورق",
+    "chess": "شطرنج",
+    "reading": "کتاب‌خوانی",
+    "music": "موسیقی",
+    "handicraft": "صنایع دستی",
+    "coffee_talk": "قهوه و گفتگو",
+    "photography": "عکاسی",
+    "church": "اجتماع کلیسا",
+    "exercise": "ورزش",
+    "animals": "حیوانات"
   },
   "semantic": {
     "request_help_button": "ثبت درخواست کمک.",

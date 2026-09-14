@@ -18,6 +18,9 @@ public sealed class IdentityService : IIdentityService
     private readonly IGoogleIdTokenValidator _googleValidator;
     private readonly IIdAustriaClient _idAustriaClient;
     private readonly IEmailSender _emailSender;
+    private readonly ITotpService _totpService;
+    private readonly ISmsSender _smsSender;
+    private readonly IPhotoStorage _photoStorage;
 
     public IdentityService(
         IIdentityDbContext db,
@@ -29,7 +32,10 @@ public sealed class IdentityService : IIdentityService
         IIdentityHashingService hashing,
         IGoogleIdTokenValidator googleValidator,
         IIdAustriaClient idAustriaClient,
-        IEmailSender emailSender)
+        IEmailSender emailSender,
+        ITotpService totpService,
+        ISmsSender smsSender,
+        IPhotoStorage photoStorage)
     {
         _db = db;
         _otpService = otpService;
@@ -41,6 +47,9 @@ public sealed class IdentityService : IIdentityService
         _googleValidator = googleValidator;
         _idAustriaClient = idAustriaClient;
         _emailSender = emailSender;
+        _totpService = totpService;
+        _smsSender = smsSender;
+        _photoStorage = photoStorage;
     }
 
     public async Task<Result<string>> RequestPhoneOtpAsync(
@@ -205,10 +214,79 @@ public sealed class IdentityService : IIdentityService
             return new Error("INVALID_CREDENTIALS", "Invalid email or password.", ErrorKind.Unauthenticated);
         }
 
+        if (user.TotpEnabledAtUtc.HasValue)
+        {
+            if (string.IsNullOrWhiteSpace(request.TotpCode))
+            {
+                return new Error("TOTP_CODE_REQUIRED", "A two-factor authentication code is required.", ErrorKind.Unauthenticated);
+            }
+
+            if (!_totpService.ValidateCode(user.TotpSecret!, request.TotpCode))
+            {
+                return new Error("TOTP_CODE_INVALID", "The two-factor authentication code is invalid.", ErrorKind.Unauthenticated);
+            }
+        }
+
         user.RecordLogin();
         await _db.SaveChangesAsync(cancellationToken);
 
         return await BuildAuthResponseAsync(user, request.DeviceLabel, request.IsPersonalDevice, cancellationToken);
+    }
+
+    public async Task<Result<TotpEnrollmentResponse>> EnrollTotpAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
+
+        if (user is null)
+        {
+            return Error.NotFound("User");
+        }
+
+        var secret = _totpService.GenerateSecret();
+        user.EnrollTotp(secret);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var accountLabel = user.Email ?? user.Id.ToString();
+        var provisioningUri = _totpService.BuildProvisioningUri(secret, accountLabel);
+
+        return Result<TotpEnrollmentResponse>.Success(new TotpEnrollmentResponse(secret, provisioningUri));
+    }
+
+    public async Task<Result> ConfirmTotpEnrollmentAsync(
+        Guid userId,
+        ConfirmTotpRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Code))
+        {
+            return Error.Validation("Code is required.");
+        }
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
+
+        if (user is null)
+        {
+            return Error.NotFound("User");
+        }
+
+        if (user.TotpSecret is null)
+        {
+            return new Error("TOTP_NOT_ENROLLED", "No TOTP enrollment is in progress for this account.", ErrorKind.Conflict);
+        }
+
+        if (!_totpService.ValidateCode(user.TotpSecret, request.Code))
+        {
+            return new Error("TOTP_CODE_INVALID", "The two-factor authentication code is invalid.", ErrorKind.Validation);
+        }
+
+        user.ConfirmTotpEnrollment();
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
     }
 
     public async Task<Result<AuthResponse>> RefreshTokenAsync(
@@ -430,8 +508,40 @@ public sealed class IdentityService : IIdentityService
             return validationResult.Error!;
         }
 
+        var oldPhone = user.Phone;
+        var email = user.Email;
+        var locale = user.PreferredLocale;
+
         user.ChangePhone(normalizedNewPhone);
+
+        // BR-AUTH-06 (SIM-swap mitigation): invalidate every session on a
+        // phone-number change, then notify the OLD number and email so the
+        // legitimate owner can react if they didn't request this.
+        await _tokenService.RevokeAllSessionsAsync(user.Id, cancellationToken);
+
         await _db.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(oldPhone))
+        {
+            var smsMessage = locale switch
+            {
+                "fa" => "شماره تلفن حساب میتاناند شما تغییر کرد. اگر این تغییر را شما انجام نداده‌اید، فوراً با پشتیبانی تماس بگیرید.",
+                "en" => "Your SeniorConnect account phone number was changed. If you did not make this change, contact support immediately.",
+                _ => "Die Telefonnummer Ihres SeniorConnect-Kontos wurde geändert. Falls Sie dies nicht veranlasst haben, kontaktieren Sie umgehend den Support."
+            };
+            await _smsSender.SendSmsAsync(oldPhone, smsMessage, cancellationToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var (subject, body) = locale switch
+            {
+                "fa" => ("تغییر شماره تلفن حساب شما", "شماره تلفن حساب میتاناند شما تغییر کرد. اگر این تغییر را شما انجام نداده‌اید، فوراً با پشتیبانی تماس بگیرید."),
+                "en" => ("Your SeniorConnect phone number was changed", "Your account's phone number was changed. If you did not make this change, contact support immediately."),
+                _ => ("Ihre SeniorConnect-Telefonnummer wurde geändert", "Die Telefonnummer Ihres Kontos wurde geändert. Falls Sie dies nicht veranlasst haben, kontaktieren Sie umgehend den Support.")
+            };
+            await _emailSender.SendEmailAsync(email, subject, body, cancellationToken);
+        }
 
         return Result.Success();
     }
@@ -825,6 +935,32 @@ public sealed class IdentityService : IIdentityService
         return Result.Success();
     }
 
+    public async Task<Result<UserSummaryDto>> UploadProfilePhotoAsync(
+        Guid userId,
+        Stream content,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
+
+        if (user is null)
+        {
+            return Error.NotFound("User");
+        }
+
+        var storageResult = await _photoStorage.SaveProfilePhotoAsync(userId, content, contentType, cancellationToken);
+        if (storageResult.IsFailure)
+        {
+            return storageResult.Error!;
+        }
+
+        user.SetPhoto(storageResult.Value);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Result<UserSummaryDto>.Success(MapUserSummary(user));
+    }
+
     private async Task<Result<AuthResponse>> BuildAuthResponseAsync(
         User user,
         string? deviceLabel,
@@ -874,5 +1010,6 @@ public sealed class IdentityService : IIdentityService
         PreferredLocale: user.PreferredLocale,
         SeniorModeDefault: user.SeniorModeDefault,
         PrimaryAuthMethod: user.PrimaryAuthMethod.ToString(),
-        Status: user.Status.ToString());
+        Status: user.Status.ToString(),
+        PhotoUrl: user.PhotoUrl);
 }

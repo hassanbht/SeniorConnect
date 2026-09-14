@@ -35,6 +35,10 @@ class ApiClient {
   final Dio _dio;
   final FlutterSecureStorage _storage;
 
+  /// The API's origin (e.g. `https://api.example.com`) — used to resolve
+  /// server-relative URLs such as an uploaded profile photo's `photoUrl`.
+  String get baseUrl => _dio.options.baseUrl;
+
   // --- Token persistence ---------------------------------------------------
 
   Future<String?> readAccessToken() => _storage.read(key: _kAccessToken);

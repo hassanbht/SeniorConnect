@@ -9,6 +9,7 @@ public static class IdentityModuleExtensions
     {
         services.AddSingleton<IIdentityHashingService, IdentityHashingService>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<ITotpService, TotpService>();
         services.AddScoped<ISmsSender, SmsSender>();
         services.AddScoped<IEmailSender, EmailSender>();
         services.AddScoped<ITokenService, JwtTokenService>();
@@ -16,6 +17,7 @@ public static class IdentityModuleExtensions
         services.AddScoped<ITrustLevelCalculator, TrustLevelCalculator>();
         services.AddScoped<ICapabilityService, CapabilityService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IPhotoStorage, LocalDiskPhotoStorage>();
         services.AddScoped<IPrivacyService, PrivacyService>();
         services.AddScoped<IIdentityVerificationProvider, ManualVerificationProvider>();
         services.AddScoped<IIdentityVerificationProvider, OrganizationVerificationProvider>();

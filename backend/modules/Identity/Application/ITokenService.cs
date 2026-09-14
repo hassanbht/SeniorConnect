@@ -30,6 +30,14 @@ public interface ITokenService
         Guid refreshTokenId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Revokes every active refresh token for the user. Used for SIM-swap
+    /// mitigation on phone-number change (BR-AUTH-06).
+    /// </summary>
+    Task<Result> RevokeAllSessionsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<DeviceSessionDto>> GetActiveDevicesAsync(
         Guid userId,
         string? currentRawRefreshToken,

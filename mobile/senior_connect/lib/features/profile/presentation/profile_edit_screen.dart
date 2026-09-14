@@ -21,11 +21,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
 import '../../auth/data/auth_repository.dart';
+import '../data/geography_repository.dart';
+import '../data/interests_repository.dart';
+import '../data/profile_repository.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key, required this.apiClient});
@@ -38,9 +42,12 @@ class ProfileEditScreen extends StatefulWidget {
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late final AuthRepository _authRepository = AuthRepositoryImpl(widget.apiClient);
+  late final GeographyRepository _geographyRepository = GeographyRepositoryImpl(widget.apiClient);
+  late final ProfileRepository _profileRepository = ProfileRepositoryImpl(widget.apiClient);
+  late final InterestsRepository _interestsRepository = InterestsRepositoryImpl(widget.apiClient);
 
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: 'Maria Muster');
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _streetController = TextEditingController();
@@ -50,18 +57,30 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   String? _selectedBundesland;
   String? _selectedBezirk;
   String? _selectedGemeinde;
-  List<Map<String, dynamic>> _bundeslaender = [];
-  List<Map<String, dynamic>> _bezirke = [];
-  List<Map<String, dynamic>> _gemeinden = [];
+  List<Bundesland> _bundeslaender = [];
+  List<Bezirk> _bezirke = [];
+  List<Gemeinde> _gemeinden = [];
 
+  bool _isLoadingProfile = true;
   bool _isSaving = false;
   bool _isVerifyingPhone = false;
   bool _isGeocoding = false;
+  bool _isUploadingPhoto = false;
   bool _phoneVerified = false;
   String? _errorKey;
   double? _latitude;
   double? _longitude;
-  String? _gemeindeCode;
+  String _preferredLocale = 'de';
+  bool _seniorModeDefault = false;
+  String? _photoUrl;
+  List<InterestOption> _interestCatalog = [];
+  Set<String> _selectedInterestIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
 
   @override
   void dispose() {
@@ -74,22 +93,102 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     super.dispose();
   }
 
-  Future<void> _loadBundeslaender() async {
-    // TODO P1-28: call reference API GET /reference/austria/bundeslaender
-    // For now, mock data for pilot region
+  Future<void> _initialize() async {
+    await Future.wait([_loadCurrentUser(), _loadBundeslaender(), _loadInterests()]);
+    if (mounted) setState(() => _isLoadingProfile = false);
+  }
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      final user = await _profileRepository.getCurrentUser();
+      if (!mounted) return;
+      setState(() {
+        _nameController.text = user.displayName;
+        _emailController.text = user.email ?? '';
+        _phoneController.text = user.phone ?? '';
+        _preferredLocale = user.preferredLocale;
+        _seniorModeDefault = user.seniorModeDefault;
+        _photoUrl = user.photoUrl;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _errorKey = 'errors.generic');
+    }
+  }
+
+  Future<void> _loadInterests() async {
+    try {
+      final results = await Future.wait([
+        _interestsRepository.getCatalog(),
+        _interestsRepository.getSelected(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _interestCatalog = results[0];
+        _selectedInterestIds = results[1].map((i) => i.id).toSet();
+      });
+    } catch (_) {
+      // Best-effort — interests are optional; leave the section empty on failure.
+    }
+  }
+
+  void _toggleInterest(String id, bool selected) {
     setState(() {
-      _bundeslaender = [
-        {'code': '7', 'name': 'Tirol'},
-        {'code': '9', 'name': 'Wien'},
-        {'code': '1', 'name': 'Burgenland'},
-        {'code': '2', 'name': 'Kärnten'},
-        {'code': '3', 'name': 'Niederösterreich'},
-        {'code': '4', 'name': 'Oberösterreich'},
-        {'code': '5', 'name': 'Salzburg'},
-        {'code': '6', 'name': 'Steiermark'},
-        {'code': '8', 'name': 'Vorarlberg'},
-      ];
+      if (selected) {
+        _selectedInterestIds.add(id);
+      } else {
+        _selectedInterestIds.remove(id);
+      }
     });
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: Text('profile.take_photo'.tr()),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text('profile.choose_from_gallery'.tr()),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    if (picked == null || !mounted) return;
+
+    setState(() {
+      _isUploadingPhoto = true;
+      _errorKey = null;
+    });
+
+    try {
+      final user = await _profileRepository.uploadPhoto(picked.path);
+      if (mounted) setState(() => _photoUrl = user.photoUrl);
+    } catch (_) {
+      if (mounted) setState(() => _errorKey = 'errors.generic');
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  Future<void> _loadBundeslaender() async {
+    try {
+      final bundeslaender = await _geographyRepository.getBundeslaender();
+      if (mounted) setState(() => _bundeslaender = bundeslaender);
+    } catch (_) {
+      if (mounted) setState(() => _errorKey = 'errors.generic');
+    }
   }
 
   Future<void> _onBundeslandChanged(String? code) async {
@@ -112,22 +211,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       _gemeinden = [];
     });
 
-    // TODO P1-28: call GET /reference/austria/bezirke?bundeslandCode=$code
-    // Mock for pilot region
-    if (code == '7') {
-      setState(() {
-        _bezirke = [
-          {'code': '701', 'name': 'Innsbruck'},
-          {'code': '703', 'name': 'Innsbruck-Land'},
-          {'code': '704', 'name': 'Imst'},
-          {'code': '705', 'name': 'Kitzbühel'},
-          {'code': '706', 'name': 'Kufstein'},
-          {'code': '707', 'name': 'Landeck'},
-          {'code': '708', 'name': 'Lienz'},
-          {'code': '709', 'name': 'Reutte'},
-          {'code': '710', 'name': 'Schwaz'},
-        ];
-      });
+    try {
+      final bezirke = await _geographyRepository.getBezirke(code);
+      if (mounted) setState(() => _bezirke = bezirke);
+    } catch (_) {
+      if (mounted) setState(() => _errorKey = 'errors.generic');
     }
   }
 
@@ -147,24 +235,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       _gemeinden = [];
     });
 
-    // TODO P1-28: call GET /reference/austria/gemeinden?bezirkCode=$code
-    // Mock for Innsbruck-Land
-    if (code == '703') {
-      setState(() {
-        _gemeinden = [
-          {'code': '70320', 'name': 'Kematen in Tirol', 'plz': '6175', 'lat': 47.2600, 'lon': 11.2433},
-          {'code': '70321', 'name': 'Zirl', 'plz': '6170', 'lat': 47.2719, 'lon': 11.2336},
-          {'code': '70322', 'name': 'Völs', 'plz': '6176', 'lat': 47.2481, 'lon': 11.3092},
-          {'code': '70323', 'name': 'Axams', 'plz': '6094', 'lat': 47.2358, 'lon': 11.2778},
-          {'code': '70324', 'name': 'Götzens', 'plz': '6091', 'lat': 47.2475, 'lon': 11.3475},
-        ];
-      });
-    } else if (code == '701') {
-      setState(() {
-        _gemeinden = [
-          {'code': '70101', 'name': 'Innsbruck', 'plz': '6020', 'lat': 47.2692, 'lon': 11.4041},
-        ];
-      });
+    try {
+      final gemeinden = await _geographyRepository.getGemeinden(code);
+      if (mounted) setState(() => _gemeinden = gemeinden);
+    } catch (_) {
+      if (mounted) setState(() => _errorKey = 'errors.generic');
     }
   }
 
@@ -176,20 +251,33 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         _cityController.clear();
         _latitude = null;
         _longitude = null;
-        _gemeindeCode = null;
       });
       return;
     }
 
-    final gemeinde = _gemeinden.firstWhere((g) => g['code'] == code);
+    final gemeinde = _gemeinden.firstWhere((g) => g.code == code);
     setState(() {
       _selectedGemeinde = code;
-      _plzController.text = gemeinde['plz'] as String;
-      _cityController.text = gemeinde['name'] as String;
-      _latitude = gemeinde['lat'] as double;
-      _longitude = gemeinde['lon'] as double;
-      _gemeindeCode = gemeinde['code'] as String;
+      _plzController.text = gemeinde.postalCode;
+      _cityController.text = gemeinde.name;
+      _latitude = gemeinde.latitude;
+      _longitude = gemeinde.longitude;
     });
+  }
+
+  Future<void> _lookupByPlz(String plz) async {
+    try {
+      final matches = await _geographyRepository.lookupByPlz(plz);
+      if (!mounted || matches.isEmpty) return;
+      final match = matches.first;
+      setState(() {
+        _cityController.text = match.name;
+        _latitude = match.latitude;
+        _longitude = match.longitude;
+      });
+    } catch (_) {
+      // Best-effort convenience lookup — leave the field editable on failure.
+    }
   }
 
   Future<void> _requestPhoneVerification() async {
@@ -216,6 +304,57 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
   }
 
+  Future<void> _changePhoneNumber() async {
+    final newPhoneController = TextEditingController();
+    final newPhone = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('profile.change_phone_semantic'.tr()),
+        content: TextFormField(
+          controller: newPhoneController,
+          autofocus: true,
+          keyboardType: TextInputType.phone,
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[+\d\s\-()]'))],
+          decoration: InputDecoration(
+            labelText: 'profile.phone'.tr(),
+            hintText: '+43 660 1234567',
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text('common.cancel'.tr()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, newPhoneController.text.trim()),
+            child: Text('common.confirm'.tr()),
+          ),
+        ],
+      ),
+    );
+    newPhoneController.dispose();
+
+    if (newPhone == null || newPhone.isEmpty || !mounted) return;
+
+    setState(() {
+      _isVerifyingPhone = true;
+      _errorKey = null;
+    });
+
+    try {
+      await _authRepository.initiatePhoneChange(newPhone);
+      if (!mounted) return;
+      await context.push(
+        '${AppRoutes.otpVerify}?phone=${Uri.encodeComponent(newPhone)}&purpose=phone_change',
+      );
+    } catch (_) {
+      if (mounted) setState(() => _errorKey = 'errors.generic');
+    } finally {
+      if (mounted) setState(() => _isVerifyingPhone = false);
+    }
+  }
+
   Future<void> _geocodeAddress() async {
     if (_streetController.text.trim().isEmpty ||
         _plzController.text.trim().isEmpty ||
@@ -224,19 +363,26 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       return;
     }
 
-    setState(() => _isGeocoding = true);
-    // TODO P1-28: call POST /reference/geocode-address
-    await Future.delayed(const Duration(seconds: 1));
-    
-    // Mock: use existing coordinates if available
-    if (_latitude != null && _longitude != null) {
+    setState(() {
+      _isGeocoding = true;
+      _errorKey = null;
+    });
+
+    final fullAddress =
+        '${_streetController.text.trim()}, ${_plzController.text.trim()} ${_cityController.text.trim()}';
+
+    try {
+      final result = await _geographyRepository.geocodeAddress(fullAddress, persistToProfile: true);
+      if (!mounted) return;
       setState(() {
-        _isGeocoding = false;
-        _errorKey = null;
+        _latitude = result.latitude;
+        _longitude = result.longitude;
       });
-      if (mounted) {
-        _showMapPreview();
-      }
+      _showMapPreview();
+    } catch (_) {
+      if (mounted) setState(() => _errorKey = 'errors.generic');
+    } finally {
+      if (mounted) setState(() => _isGeocoding = false);
     }
   }
 
@@ -266,19 +412,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     });
 
     try {
-      // TODO P1-28: call profileRepository.updateProfile with all fields
+      await Future.wait([
+        _profileRepository.updateProfile(
+          displayName: _nameController.text.trim(),
+          preferredLocale: _preferredLocale,
+          seniorModeDefault: _seniorModeDefault,
+        ),
+        _interestsRepository.updateSelected(_selectedInterestIds.toList()),
+      ]);
       if (mounted) Navigator.of(context).pop();
     } catch (_) {
-      setState(() => _errorKey = 'errors.generic');
+      if (mounted) setState(() => _errorKey = 'errors.generic');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadBundeslaender();
   }
 
   @override
@@ -287,8 +434,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
     final isSeniorMode = MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
-    final minTouchTarget = isSeniorMode ? AppTouch.minSenior : AppTouch.minStandard;
     final buttonHeight = isSeniorMode ? AppTouch.buttonHeightSenior : AppTouch.buttonHeightStandard;
+
+    if (_isLoadingProfile) {
+      return Scaffold(
+        appBar: AppBar(title: Text('profile.edit'.tr())),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -318,6 +471,47 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             vertical: AppSpacing.lg,
           ),
           children: [
+            // Profile photo
+            Center(
+              child: Semantics(
+                button: true,
+                label: 'profile.change_photo_semantic'.tr(),
+                child: GestureDetector(
+                  onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 48,
+                        backgroundColor: colorScheme.primaryContainer,
+                        backgroundImage: _photoUrl != null
+                            ? NetworkImage('${widget.apiClient.baseUrl}$_photoUrl')
+                            : null,
+                        child: _photoUrl == null
+                            ? Icon(Icons.person, size: 48, color: colorScheme.onPrimaryContainer)
+                            : null,
+                      ),
+                      if (_isUploadingPhoto)
+                        const Positioned.fill(
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: CircleAvatar(
+                            radius: 16,
+                            backgroundColor: colorScheme.primary,
+                            child: Icon(Icons.camera_alt, size: 16, color: colorScheme.onPrimary),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
             // Section 1: Basic Info
             _SectionHeader(title: 'profile.basic_info'.tr()),
             const SizedBox(height: 16),
@@ -373,6 +567,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   child: TextFormField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
+                    readOnly: _phoneVerified,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[+\d\s\-()]')),
                     ],
@@ -418,16 +613,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     ),
                   )
                 else
-                  Semantics(
-                    label: 'profile.phone_verified'.tr(),
-                    child: Container(
-                      height: buttonHeight,
-                      alignment: Alignment.center,
-                      child: Chip(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Chip(
                         avatar: Icon(Icons.check_circle, color: colorScheme.primary),
                         label: Text('profile.phone_verified'.tr()),
                       ),
-                    ),
+                      Semantics(
+                        button: true,
+                        label: 'profile.change_phone_semantic'.tr(),
+                        child: TextButton(
+                          onPressed: _isVerifyingPhone ? null : _changePhoneNumber,
+                          child: Text('profile.change_phone_button'.tr()),
+                        ),
+                      ),
+                    ],
                   ),
               ],
             ),
@@ -462,7 +663,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               keyboardType: TextInputType.number,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(5),
+                LengthLimitingTextInputFormatter(4),
               ],
               decoration: InputDecoration(
                 labelText: 'profile.plz'.tr(),
@@ -471,9 +672,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 border: const OutlineInputBorder(),
               ),
               onChanged: (value) {
-                if (value.length == 5) {
-                  // TODO: auto-lookup PLZ
-                }
+                if (value.length == 4) _lookupByPlz(value);
               },
             ),
 
@@ -488,8 +687,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 prefixIcon: const Icon(Icons.map_outlined),
               ),
               items: _bundeslaender.map((b) => DropdownMenuItem(
-                value: b['code'] as String,
-                child: Text(b['name'] as String),
+                value: b.code,
+                child: Text(b.name),
               )).toList(),
               onChanged: _onBundeslandChanged,
               validator: (value) {
@@ -511,8 +710,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 prefixIcon: const Icon(Icons.location_city_outlined),
               ),
               items: _bezirke.map((b) => DropdownMenuItem(
-                value: b['code'] as String,
-                child: Text(b['name'] as String),
+                value: b.code,
+                child: Text(b.name),
               )).toList(),
               onChanged: _bezirke.isNotEmpty ? _onBezirkChanged : null,
               validator: (value) {
@@ -534,8 +733,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 prefixIcon: const Icon(Icons.location_on_outlined),
               ),
               items: _gemeinden.map((g) => DropdownMenuItem(
-                value: g['code'] as String,
-                child: Text('${g['name']} (${g['plz']})'),
+                value: g.code,
+                child: Text('${g.name} (${g.postalCode})'),
               )).toList(),
               onChanged: _gemeinden.isNotEmpty ? _onGemeindeChanged : null,
               validator: (value) {
@@ -612,6 +811,33 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               ),
               const SizedBox(height: 24),
             ],
+
+            // Section 4: Interests
+            _SectionHeader(title: 'profile.interests'.tr()),
+            const SizedBox(height: 8),
+            if (_interestCatalog.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'empty.no_interests'.tr(),
+                  style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: _interestCatalog.map((interest) {
+                  final selected = _selectedInterestIds.contains(interest.id);
+                  return FilterChip(
+                    label: Text(interest.nameKey.tr()),
+                    selected: selected,
+                    onSelected: (value) => _toggleInterest(interest.id, value),
+                  );
+                }).toList(),
+              ),
+
+            const SizedBox(height: 24),
 
             if (_errorKey != null) ...[
               const SizedBox(height: 16),

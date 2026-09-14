@@ -26,6 +26,11 @@ enum OtpPurpose {
   /// In-profile "Verify Phone Number" (P1-13b). On success, pops with `true`
   /// instead of navigating home.
   phoneVerification,
+
+  /// Changing an already-verified phone number (P1-13, BR-AUTH-06). Success
+  /// revokes every session server-side, so the client must clear local
+  /// tokens and return to sign-in rather than navigating home.
+  phoneChange,
 }
 
 class OtpVerifyScreen extends StatefulWidget {
@@ -90,6 +95,17 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
         case OtpPurpose.phoneVerification:
           await _authRepository.verifyProfilePhone(widget.phone, code);
           if (mounted) context.pop(true);
+        case OtpPurpose.phoneChange:
+          await _authRepository.verifyPhoneChange(widget.phone, code);
+          // BR-AUTH-06: the backend just revoked every session, including
+          // this one's refresh token — clear local tokens and sign in fresh.
+          await widget.apiClient.clearTokens();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('auth.phone_change.signed_out_notice'.tr())),
+            );
+            context.go(AppRoutes.phoneEntry);
+          }
       }
     } catch (e) {
       setState(() {
@@ -114,6 +130,8 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
           await _authRepository.requestPhoneOtp(widget.phone);
         case OtpPurpose.phoneVerification:
           await _authRepository.requestProfilePhoneVerification(widget.phone);
+        case OtpPurpose.phoneChange:
+          await _authRepository.initiatePhoneChange(widget.phone);
       }
     } catch (e) {
       if (mounted) {
@@ -144,10 +162,11 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
           child: const BackButton(),
         ),
         title: Text(
-          (widget.purpose == OtpPurpose.phoneVerification
-                  ? 'auth.phone_verification.title'
-                  : 'auth.verify_phone.title')
-              .tr(),
+          switch (widget.purpose) {
+            OtpPurpose.phoneVerification => 'auth.phone_verification.title'.tr(),
+            OtpPurpose.phoneChange => 'auth.phone_change.title'.tr(),
+            OtpPurpose.login => 'auth.verify_phone.title'.tr(),
+          },
         ),
         elevation: 0,
       ),
@@ -162,10 +181,14 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                 children: [
                   // Description
                   Text(
-                    (widget.purpose == OtpPurpose.phoneVerification
-                            ? 'auth.phone_verification.description'
-                            : 'auth.verify_phone.description')
-                        .tr(namedArgs: {'phone': widget.phone}),
+                    switch (widget.purpose) {
+                      OtpPurpose.phoneVerification =>
+                        'auth.phone_verification.description'.tr(namedArgs: {'phone': widget.phone}),
+                      OtpPurpose.phoneChange =>
+                        'auth.phone_change.description'.tr(namedArgs: {'phone': widget.phone}),
+                      OtpPurpose.login =>
+                        'auth.verify_phone.description'.tr(namedArgs: {'phone': widget.phone}),
+                    },
                     style: textTheme.bodyLarge,
                     textAlign: TextAlign.center,
                   ),

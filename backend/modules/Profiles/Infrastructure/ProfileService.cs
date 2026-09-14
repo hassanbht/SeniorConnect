@@ -196,6 +196,55 @@ public sealed class ProfileService : IProfileService
         return await GetAvailabilityAsync(userId, cancellationToken);
     }
 
+    public async Task<Result<IReadOnlyList<InterestDto>>> GetUserInterestsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var dtos = await _db.UserInterests
+            .Where(ui => ui.UserId == userId)
+            .Join(_db.Interests, ui => ui.InterestId, i => i.Id, (ui, i) => new InterestDto(
+                i.Id,
+                i.Code,
+                i.NameKey,
+                null,
+                null,
+                0))
+            .ToListAsync(cancellationToken);
+
+        return Result<IReadOnlyList<InterestDto>>.Success(dtos);
+    }
+
+    public async Task<Result<IReadOnlyList<InterestDto>>> UpdateUserInterestsAsync(
+        Guid userId,
+        UpdateUserInterestsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var validInterestIds = await _db.Interests
+            .Where(i => i.IsActive && request.InterestIds.Contains(i.Id))
+            .Select(i => i.Id)
+            .ToListAsync(cancellationToken);
+
+        if (validInterestIds.Count != request.InterestIds.Distinct().Count())
+        {
+            return Error.Validation("Unknown interest id.");
+        }
+
+        var existing = await _db.UserInterests
+            .Where(ui => ui.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        _db.UserInterests.RemoveRange(existing);
+
+        foreach (var interestId in request.InterestIds)
+        {
+            _db.UserInterests.Add(UserInterest.Create(userId, interestId));
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return await GetUserInterestsAsync(userId, cancellationToken);
+    }
+
     private static SupportProfileDto MapSupport(SupportProfile p) => new(
         UserId: p.UserId,
         LivingSituation: Enum.TryParse<LivingSituation>(p.LivingSituation, out var sit) ? sit : LivingSituation.Alone,

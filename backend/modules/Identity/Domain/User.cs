@@ -29,11 +29,26 @@ public sealed class User : Entity, IAuditable, ISoftDeletable
     [DataClass(DataClass.SensitiveData)]
     public string? PasswordHash { get; private set; }
 
+    /// <summary>
+    /// Shared TOTP secret (Base32, RFC 4648), stored plaintext as a pilot-phase
+    /// tradeoff mirroring PasswordHash storage conventions here. NULLABLE — only
+    /// staff who enrolled in 2FA have this set.
+    /// </summary>
+    [DataClass(DataClass.SensitiveData)]
+    public string? TotpSecret { get; private set; }
+
+    /// <summary>NULL until the staff member confirms enrollment with a valid code.</summary>
+    [DataClass(DataClass.Operational)]
+    public DateTimeOffset? TotpEnabledAtUtc { get; private set; }
+
     [DataClass(DataClass.Operational)]
     public AuthMethod PrimaryAuthMethod { get; private set; }
 
     [DataClass(DataClass.PublicProfile)]
     public string DisplayName { get; private set; } = null!;
+
+    [DataClass(DataClass.PublicProfile)]
+    public string? PhotoUrl { get; private set; }
 
     [DataClass(DataClass.PersonalData)]
     public DateOnly? DateOfBirth { get; private set; }
@@ -237,6 +252,26 @@ public sealed class User : Entity, IAuditable, ISoftDeletable
     public void RecordLogin()
     {
         LastLoginAtUtc = DateTimeOffset.UtcNow;
+    }
+
+    public void SetPhoto(string? url)
+    {
+        PhotoUrl = url;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>Stores a newly generated secret pending confirmation (<see cref="ConfirmTotpEnrollment"/>).</summary>
+    public void EnrollTotp(string secret)
+    {
+        TotpSecret = secret;
+        TotpEnabledAtUtc = null;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
+    public void ConfirmTotpEnrollment()
+    {
+        TotpEnabledAtUtc = DateTimeOffset.UtcNow;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
     }
 
     public void Suspend()

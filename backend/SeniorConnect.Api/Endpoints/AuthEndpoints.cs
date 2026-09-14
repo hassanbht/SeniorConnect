@@ -382,6 +382,72 @@ public static class AuthEndpoints
         .Produces<IReadOnlyList<string>>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status401Unauthorized);
 
+        meGroup.MapPost("/totp/enroll", async (
+            ClaimsPrincipal user,
+            IIdentityService identityService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await identityService.EnrollTotpAsync(userId.Value, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("EnrollTotp")
+        .Produces<TotpEnrollmentResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
+        meGroup.MapPost("/totp/confirm", async (
+            ConfirmTotpRequest request,
+            ClaimsPrincipal user,
+            IIdentityService identityService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await identityService.ConfirmTotpEnrollmentAsync(userId.Value, request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("ConfirmTotpEnrollment")
+        .Produces(StatusCodes.Status204NoContent)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status409Conflict);
+
+        meGroup.MapPost("/photo", async (
+            HttpRequest httpRequest,
+            ClaimsPrincipal user,
+            IIdentityService identityService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            if (!httpRequest.HasFormContentType) return Results.BadRequest();
+            var form = await httpRequest.ReadFormAsync(ct);
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0) return Results.BadRequest();
+
+            await using var stream = file.OpenReadStream();
+            var result = await identityService.UploadProfilePhotoAsync(userId.Value, stream, file.ContentType, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("UploadProfilePhoto")
+        .DisableAntiforgery()
+        .Accepts<IFormFile>("multipart/form-data")
+        .Produces<UserSummaryDto>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
         meGroup.MapPost("/consents", async (
             RecordConsentRequest request,
             ClaimsPrincipal user,

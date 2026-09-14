@@ -12,4 +12,7 @@ public interface IProfileService
 
     Task<Result<IReadOnlyList<AvailabilitySlotDto>>> GetAvailabilityAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Result<IReadOnlyList<AvailabilitySlotDto>>> UpdateAvailabilityAsync(Guid userId, UpdateAvailabilityRequest request, CancellationToken cancellationToken = default);
+
+    Task<Result<IReadOnlyList<InterestDto>>> GetUserInterestsAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<Result<IReadOnlyList<InterestDto>>> UpdateUserInterestsAsync(Guid userId, UpdateUserInterestsRequest request, CancellationToken cancellationToken = default);
 }

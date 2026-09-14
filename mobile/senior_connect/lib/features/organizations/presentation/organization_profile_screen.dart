@@ -4,12 +4,16 @@
 // authenticated user; staff (active Coordinator/Admin) additionally see a
 // "manage" entry point into OrganizationPostFormScreen.
 
+import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
+import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
+import '../data/intake_form_repository.dart';
 import 'organization_post_form_screen.dart';
 
 class OrganizationProfileScreen extends StatefulWidget {
@@ -28,11 +32,15 @@ class OrganizationProfileScreen extends StatefulWidget {
 }
 
 class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
+  late final IntakeFormRepository _intakeFormRepository =
+      IntakeFormRepositoryImpl(widget.apiClient);
+
   bool _isLoading = true;
   Map<String, dynamic>? _organization;
   List<Map<String, dynamic>> _newsItems = [];
   List<Map<String, dynamic>> _events = [];
   bool _canManage = false;
+  bool _isActivatingTemplate = false;
 
   @override
   void initState() {
@@ -81,6 +89,58 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _openIntakeForm(IntakeFormType formType) {
+    context.pushNamed(
+      'intake-form',
+      pathParameters: {
+        'id': widget.organizationId,
+        'formType': _formTypeSegment(formType),
+      },
+    );
+  }
+
+  void _openSubmissions(IntakeFormType formType) {
+    context.pushNamed(
+      'intake-form-submissions',
+      pathParameters: {
+        'id': widget.organizationId,
+        'formType': _formTypeSegment(formType),
+      },
+    );
+  }
+
+  String _formTypeSegment(IntakeFormType formType) =>
+      formType == IntakeFormType.helpSeeker ? 'help_seeker' : 'volunteer';
+
+  Future<void> _activateFwzTemplate() async {
+    setState(() => _isActivatingTemplate = true);
+    try {
+      await _intakeFormRepository.activateFwzTemplate(
+        widget.organizationId,
+        IntakeFormType.volunteer,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('organizations.template_activated'.tr())),
+        );
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mapDioError(e).l10nKey.tr())),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('errors.generic'.tr())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isActivatingTemplate = false);
     }
   }
 
@@ -160,6 +220,49 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                     Text('organizations.no_posts'.tr())
                   else
                     ..._events.map((item) => _PostCard(item: item)),
+                  const SizedBox(height: AppSpacing.xl),
+                  if (_canManage) ...[
+                    Text(
+                      'organizations.coordinator_tools_title'.tr(),
+                      style: theme.textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppButton(
+                      label: 'organizations.review_volunteer_applications'.tr(),
+                      variant: AppButtonVariant.tonal,
+                      onPressed: () => _openSubmissions(IntakeFormType.volunteer),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppButton(
+                      label: 'organizations.review_help_seeker_applications'.tr(),
+                      variant: AppButtonVariant.tonal,
+                      onPressed: () => _openSubmissions(IntakeFormType.helpSeeker),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppButton(
+                      label: 'organizations.activate_fwz_template'.tr(),
+                      variant: AppButtonVariant.destructive,
+                      confirmationText: 'organizations.activate_fwz_template_confirm'.tr(),
+                      isLoading: _isActivatingTemplate,
+                      onPressed: _isActivatingTemplate ? null : _activateFwzTemplate,
+                    ),
+                  ] else ...[
+                    Text(
+                      'organizations.get_involved_title'.tr(),
+                      style: theme.textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppButton(
+                      label: 'organizations.apply_volunteer'.tr(),
+                      onPressed: () => _openIntakeForm(IntakeFormType.volunteer),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppButton(
+                      label: 'organizations.apply_help_seeker'.tr(),
+                      variant: AppButtonVariant.tonal,
+                      onPressed: () => _openIntakeForm(IntakeFormType.helpSeeker),
+                    ),
+                  ],
                 ],
               ),
       ),

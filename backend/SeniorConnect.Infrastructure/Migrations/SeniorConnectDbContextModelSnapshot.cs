@@ -1371,6 +1371,10 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("phone_verified_at_utc");
 
+                    b.Property<string>("PhotoUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("photo_url");
+
                     b.Property<string>("PreferredLocale")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -1397,6 +1401,14 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasDefaultValue("Active")
                         .HasColumnName("status");
+
+                    b.Property<DateTimeOffset?>("TotpEnabledAtUtc")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("totp_enabled_at_utc");
+
+                    b.Property<string>("TotpSecret")
+                        .HasColumnType("text")
+                        .HasColumnName("totp_secret");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .ValueGeneratedOnAdd()
@@ -2522,6 +2534,21 @@ namespace SeniorConnect.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SeniorConnect.Modules.Profiles.Domain.UserInterest", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("InterestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("interest_id");
+
+                    b.HasKey("UserId", "InterestId");
+
+                    b.ToTable("user_interests", "public");
+                });
+
             modelBuilder.Entity("SeniorConnect.Modules.Profiles.Domain.UserLanguage", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -3404,43 +3431,11 @@ namespace SeniorConnect.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("user_interests", b =>
-                {
-                    b.Property<Guid>("user_id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<Guid>("interest_id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("interest_id");
-
-                    b.HasKey("user_id", "interest_id");
-
-                    b.HasIndex("interest_id");
-
-                    b.ToTable("user_interests", "public");
-                });
-
             modelBuilder.Entity("SeniorConnect.Modules.Family.Domain.FamilyPermission", b =>
                 {
                     b.HasOne("SeniorConnect.Modules.Family.Domain.FamilyRelationship", null)
                         .WithMany("Permissions")
                         .HasForeignKey("FamilyRelationshipId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("user_interests", b =>
-                {
-                    b.HasOne("SeniorConnect.Modules.Profiles.Domain.Interest", null)
-                        .WithMany()
-                        .HasForeignKey("interest_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SeniorConnect.Modules.Identity.Domain.User", null)
-                        .WithMany()
-                        .HasForeignKey("user_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

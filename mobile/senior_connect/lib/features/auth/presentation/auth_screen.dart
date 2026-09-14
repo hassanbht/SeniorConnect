@@ -315,6 +315,18 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                     ),
                   ),
 
+                  const SizedBox(height: 8),
+
+                  // Alternative entry points
+                  TextButton(
+                    onPressed: () => context.push(AppRoutes.emailLink),
+                    child: Text('auth.email_link.link'.tr()),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push(AppRoutes.staffLogin),
+                    child: Text('auth.staff.link'.tr()),
+                  ),
+
                   const Spacer(flex: 2),
 
                   // Privacy note

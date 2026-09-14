@@ -4,6 +4,7 @@ using SeniorConnect.Domain;
 using SeniorConnect.Modules.Geography.Application;
 using SeniorConnect.Modules.Profiles.Application;
 using SeniorConnect.Modules.Organizations.Application;
+using SeniorConnect.Modules.HelpRequests.Contracts;
 
 namespace SeniorConnect.Modules.Geography.Infrastructure;
 
@@ -145,15 +146,18 @@ public sealed class ProximityService : IProximityService
     private readonly IGeographyDbContext _geoDb;
     private readonly IProfilesDbContext _profileDb;
     private readonly IOrganizationsDbContext _orgDb;
+    private readonly IHelpRequestDiscoveryReader _helpRequestReader;
 
     public ProximityService(
         IGeographyDbContext geoDb,
         IProfilesDbContext profileDb,
-        IOrganizationsDbContext orgDb)
+        IOrganizationsDbContext orgDb,
+        IHelpRequestDiscoveryReader helpRequestReader)
     {
         _geoDb = geoDb;
         _profileDb = profileDb;
         _orgDb = orgDb;
+        _helpRequestReader = helpRequestReader;
     }
 
     private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
@@ -235,7 +239,30 @@ public sealed class ProximityService : IProximityService
     public async Task<Result<IReadOnlyList<ProximityResult>>> FindNearbyRequestsAsync(
         double latitude, double longitude, double radiusKm, CancellationToken ct = default)
     {
-        return Result<IReadOnlyList<ProximityResult>>.Success([]);
+        var candidates = await _helpRequestReader.FindOpenRequestsWithLocationAsync(ct);
+
+        var results = candidates
+            .Select(r => new
+            {
+                Request = r,
+                DistanceKm = HaversineKm(latitude, longitude, r.Latitude, r.Longitude)
+            })
+            .Where(x => x.DistanceKm <= radiusKm)
+            .OrderBy(x => x.DistanceKm)
+            .Select(x => new ProximityResult(
+                UserId: Guid.Empty,
+                DisplayName: "",
+                DistanceKm: Math.Round(x.DistanceKm, 1),
+                LocalityName: "",
+                PostalCode: "",
+                GemeindeName: "",
+                BezirkName: "",
+                Latitude: x.Request.Latitude,
+                Longitude: x.Request.Longitude,
+                IsFuzzed: true))
+            .ToList();
+
+        return Result<IReadOnlyList<ProximityResult>>.Success(results);
     }
 
     public async Task<Result<IReadOnlyList<NearbyTownDto>>> GetNearestTownsAsync(

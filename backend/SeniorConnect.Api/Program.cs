@@ -210,6 +210,7 @@ app.MapScalarApiReference(options =>
 app.MapGet("/swagger", () => Results.Redirect("/scalar/v1"));
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseCors("FlutterWeb");
 app.UseRateLimiter();
 

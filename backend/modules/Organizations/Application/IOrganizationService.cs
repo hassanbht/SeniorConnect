@@ -22,7 +22,7 @@ public interface IOrganizationService
 
     // Intake Forms (ADR-021, BR-ORG-FORM)
     Task<Result<OrganizationIntakeFormDto>> CreateIntakeFormAsync(Guid organizationId, CreateIntakeFormRequest request, Guid? createdBy, CancellationToken cancellationToken = default);
-    Task<Result<OrganizationIntakeFormDto>> GetIntakeFormAsync(Guid organizationId, FormType formType, CancellationToken cancellationToken = default);
+    Task<Result<OrganizationIntakeFormDetailDto>> GetIntakeFormAsync(Guid organizationId, FormType formType, CancellationToken cancellationToken = default);
     Task<Result<OrganizationIntakeFormDto>> UpdateIntakeFormAsync(Guid organizationId, Guid formId, UpdateIntakeFormRequest request, CancellationToken cancellationToken = default);
 
     Task<Result<IntakeFormSectionDto>> AddSectionAsync(Guid formId, CreateIntakeFormSectionRequest request, Guid? createdBy, CancellationToken cancellationToken = default);
