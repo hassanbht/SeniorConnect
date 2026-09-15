@@ -1,169 +1,81 @@
-import 'package:dio/dio.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+// DO NOT use setState in the screen. See AGENTS.md §State Management.
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/network/api_client.dart';
+part 'coordinator_attention_dashboard_notifier.freezed.dart';
+part 'coordinator_attention_dashboard_notifier.g.dart';
 
-class CoordinatorAttentionState {
-  const CoordinatorAttentionState({
-    this.isLoading = true,
-    this.isSendingReminders = false,
-    this.errorMessage,
-    this.unconfirmedCount = 0,
-    this.disputedCount = 0,
-    this.pendingAppsCount = 0,
-    this.expiringVerifications = const [],
-    this.silentVolunteers = const [],
-  });
-
-  final bool isLoading;
-  final bool isSendingReminders;
-  final String? errorMessage;
-  final int unconfirmedCount;
-  final int disputedCount;
-  final int pendingAppsCount;
-  final List<dynamic> expiringVerifications;
-  final List<dynamic> silentVolunteers;
-
-  CoordinatorAttentionState copyWith({
-    bool? isLoading,
-    bool? isSendingReminders,
+@freezed
+class CoordinatorAttentionDashboardState with _ {
+  const factory CoordinatorAttentionDashboardState({
+    @Default(true) bool isLoading,
+    @Default(false) bool isSendingReminders,
+    @Default(0) int unconfirmedCount,
+    @Default(0) int disputedCount,
+    @Default(0) int pendingAppsCount,
+    @Default([]) List<dynamic> expiringVerifications,
+    @Default([]) List<dynamic> silentVolunteers,
     String? errorMessage,
-    int? unconfirmedCount,
-    int? disputedCount,
-    int? pendingAppsCount,
-    List<dynamic>? expiringVerifications,
-    List<dynamic>? silentVolunteers,
-  }) {
-    return CoordinatorAttentionState(
-      isLoading: isLoading ?? this.isLoading,
-      isSendingReminders: isSendingReminders ?? this.isSendingReminders,
-      errorMessage: errorMessage,
-      unconfirmedCount: unconfirmedCount ?? this.unconfirmedCount,
-      disputedCount: disputedCount ?? this.disputedCount,
-      pendingAppsCount: pendingAppsCount ?? this.pendingAppsCount,
-      expiringVerifications:
-          expiringVerifications ?? this.expiringVerifications,
-      silentVolunteers: silentVolunteers ?? this.silentVolunteers,
-    );
-  }
+  }) = _CoordinatorAttentionDashboardState;
 }
 
-class CoordinatorAttentionNotifier
-    extends StateNotifier<CoordinatorAttentionState> {
-  CoordinatorAttentionNotifier({
-    required this.organizationId,
-    required this.apiClient,
-  }) : super(const CoordinatorAttentionState()) {
-    loadDashboard();
+@riverpod
+class CoordinatorAttentionDashboardNotifier extends _ {
+  @override
+  CoordinatorAttentionDashboardState build(
+    ApiClient apiClient,
+    String organizationId,
+  ) {
+    Future(() => _load(apiClient, organizationId));
+    return const CoordinatorAttentionDashboardState();
   }
 
-  final String organizationId;
-  final ApiClient apiClient;
-
-  Future<void> loadDashboard() async {
+  Future<void> _load(ApiClient apiClient, String orgId) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
-
     try {
-      final triageResp = await apiClient.get<dynamic>(
-        '/api/v1/coordinator/triage?organizationId=$organizationId',
+      final triage = await apiClient.get<dynamic>(
+        '/api/v1/coordinator/triage?organizationId=',
       );
-
-      var unconfirmed = 0;
-      var disputed = 0;
-      var pendingApps = 0;
-
-      if (triageResp is Map<String, dynamic>) {
-        unconfirmed = triageResp['unconfirmedActivitiesCount'] as int? ?? 0;
-        disputed = triageResp['disputedActivitiesCount'] as int? ?? 0;
-        pendingApps = triageResp['pendingApplicationsCount'] as int? ?? 0;
+      int unconf = 0, disp = 0, pend = 0;
+      if (triage is Map<String, dynamic>) {
+        unconf = triage['unconfirmedActivitiesCount'] as int? ?? 0;
+        disp = triage['disputedActivitiesCount'] as int? ?? 0;
+        pend = triage['pendingApplicationsCount'] as int? ?? 0;
       }
-
-      var expiringVerifications = <dynamic>[];
+      List<dynamic> exp = [], silent = [];
       try {
-        final expResp = await apiClient.get<dynamic>(
+        final e = await apiClient.get<dynamic>(
           '/api/v1/coordinator/attention/expiring-verifications',
         );
-        if (expResp is List) {
-          expiringVerifications = expResp;
-        }
+        if (e is List) exp = e;
       } catch (_) {}
-
-      var silentVolunteers = <dynamic>[];
       try {
-        final silentResp = await apiClient.get<dynamic>(
-          '/api/v1/coordinator/attention/silent-volunteers?organizationId=$organizationId',
+        final s = await apiClient.get<dynamic>(
+          '/api/v1/coordinator/attention/silent-volunteers?organizationId=',
         );
-        if (silentResp is List) {
-          silentVolunteers = silentResp;
-        }
+        if (s is List) silent = s;
       } catch (_) {}
-
       state = state.copyWith(
         isLoading: false,
-        unconfirmedCount: unconfirmed,
-        disputedCount: disputed,
-        pendingAppsCount: pendingApps,
-        expiringVerifications: expiringVerifications,
-        silentVolunteers: silentVolunteers,
-      );
-    } on DioException catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: mapDioError(e).l10nKey.tr(),
+        unconfirmedCount: unconf,
+        disputedCount: disp,
+        pendingAppsCount: pend,
+        expiringVerifications: exp,
+        silentVolunteers: silent,
       );
     } catch (_) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'errors.generic'.tr(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: 'errors.generic');
     }
   }
 
-  Future<int?> sendMonthlyReminders() async {
+  Future<void> sendReminders(String orgId, ApiClient apiClient) async {
     state = state.copyWith(isSendingReminders: true);
     try {
-      final resp = await apiClient.post<dynamic>(
-        '/api/v1/coordinator/volunteers/reminders:send-monthly?organizationId=$organizationId',
+      await apiClient.post<dynamic>(
+        '/api/v1/coordinator/volunteers/send-reactivation-reminders',
+        data: {'organizationId': orgId},
       );
-      final dispatched =
-          resp is Map<String, dynamic> ? resp['remindersDispatched'] ?? 0 : 0;
-      state = state.copyWith(isSendingReminders: false);
-      await loadDashboard();
-      return (dispatched as num).toInt();
-    } catch (_) {
-      state = state.copyWith(isSendingReminders: false);
-      return null;
-    }
+    } catch (_) {}
+    state = state.copyWith(isSendingReminders: false);
   }
 }
-
-class CoordinatorAttentionParams {
-  const CoordinatorAttentionParams({
-    required this.organizationId,
-    required this.apiClient,
-  });
-
-  final String organizationId;
-  final ApiClient apiClient;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is CoordinatorAttentionParams &&
-          other.organizationId == organizationId &&
-          identical(other.apiClient, apiClient));
-
-  @override
-  int get hashCode => Object.hash(organizationId, apiClient);
-}
-
-final coordinatorAttentionProvider = StateNotifierProvider.autoDispose.family<
-    CoordinatorAttentionNotifier,
-    CoordinatorAttentionState,
-    CoordinatorAttentionParams>(
-  (ref, params) => CoordinatorAttentionNotifier(
-    organizationId: params.organizationId,
-    apiClient: params.apiClient,
-  ),
-);

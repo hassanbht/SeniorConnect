@@ -1,155 +1,112 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+// lib/features/profile/application/profile_edit_notifier.dart
+//
+// Riverpod Notifier for ProfileEditScreen.
+// All business logic is concentrated here — the widget is stateless.
+// DO NOT use setState in the presentation layer. See AGENTS.md §State Management.
 
-import '../../../core/network/api_client.dart';
-import '../../auth/data/auth_repository.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/geography_repository.dart';
 import '../data/interests_repository.dart';
 import '../data/profile_repository.dart';
 
-class ProfileEditState {
-  const ProfileEditState({
-    this.isLoading = true,
-    this.isSaving = false,
-    this.isVerifyingPhone = false,
-    this.isGeocoding = false,
-    this.isUploadingPhoto = false,
-    this.phoneVerified = false,
-    this.errorKey,
-    this.user,
-    this.bundeslaender = const [],
-    this.bezirke = const [],
-    this.gemeinden = const [],
-    this.interestCatalog = const [],
-    this.selectedInterestIds = const {},
-    this.selectedBundesland,
-    this.selectedBezirk,
-    this.selectedGemeinde,
-    this.latitude,
-    this.longitude,
-    this.preferredLocale = 'de',
-    this.seniorModeDefault = false,
-    this.photoUrl,
-  });
+part 'profile_edit_notifier.freezed.dart';
+part 'profile_edit_notifier.g.dart';
 
-  final bool isLoading;
-  final bool isSaving;
-  final bool isVerifyingPhone;
-  final bool isGeocoding;
-  final bool isUploadingPhoto;
-  final bool phoneVerified;
-  final String? errorKey;
-  final UserSummary? user;
-  final List<Bundesland> bundeslaender;
-  final List<Bezirk> bezirke;
-  final List<Gemeinde> gemeinden;
-  final List<InterestOption> interestCatalog;
-  final Set<String> selectedInterestIds;
-  final String? selectedBundesland;
-  final String? selectedBezirk;
-  final String? selectedGemeinde;
-  final double? latitude;
-  final double? longitude;
-  final String preferredLocale;
-  final bool seniorModeDefault;
-  final String? photoUrl;
-
-  ProfileEditState copyWith({
-    bool? isLoading,
-    bool? isSaving,
-    bool? isVerifyingPhone,
-    bool? isGeocoding,
-    bool? isUploadingPhoto,
-    bool? phoneVerified,
-    Object? errorKey = _sentinel,
-    UserSummary? user,
-    List<Bundesland>? bundeslaender,
-    List<Bezirk>? bezirke,
-    List<Gemeinde>? gemeinden,
-    List<InterestOption>? interestCatalog,
-    Set<String>? selectedInterestIds,
-    Object? selectedBundesland = _sentinel,
-    Object? selectedBezirk = _sentinel,
-    Object? selectedGemeinde = _sentinel,
-    Object? latitude = _sentinel,
-    Object? longitude = _sentinel,
-    String? preferredLocale,
-    bool? seniorModeDefault,
-    Object? photoUrl = _sentinel,
-  }) {
-    return ProfileEditState(
-      isLoading: isLoading ?? this.isLoading,
-      isSaving: isSaving ?? this.isSaving,
-      isVerifyingPhone: isVerifyingPhone ?? this.isVerifyingPhone,
-      isGeocoding: isGeocoding ?? this.isGeocoding,
-      isUploadingPhoto: isUploadingPhoto ?? this.isUploadingPhoto,
-      phoneVerified: phoneVerified ?? this.phoneVerified,
-      errorKey: errorKey == _sentinel ? this.errorKey : errorKey as String?,
-      user: user ?? this.user,
-      bundeslaender: bundeslaender ?? this.bundeslaender,
-      bezirke: bezirke ?? this.bezirke,
-      gemeinden: gemeinden ?? this.gemeinden,
-      interestCatalog: interestCatalog ?? this.interestCatalog,
-      selectedInterestIds: selectedInterestIds ?? this.selectedInterestIds,
-      selectedBundesland: selectedBundesland == _sentinel
-          ? this.selectedBundesland
-          : selectedBundesland as String?,
-      selectedBezirk: selectedBezirk == _sentinel ? this.selectedBezirk : selectedBezirk as String?,
-      selectedGemeinde: selectedGemeinde == _sentinel
-          ? this.selectedGemeinde
-          : selectedGemeinde as String?,
-      latitude: latitude == _sentinel ? this.latitude : latitude as double?,
-      longitude: longitude == _sentinel ? this.longitude : longitude as double?,
-      preferredLocale: preferredLocale ?? this.preferredLocale,
-      seniorModeDefault: seniorModeDefault ?? this.seniorModeDefault,
-      photoUrl: photoUrl == _sentinel ? this.photoUrl : photoUrl as String?,
-    );
-  }
+@freezed
+class ProfileEditState with _$ProfileEditState {
+  const factory ProfileEditState({
+    @Default(true) bool isLoadingProfile,
+    @Default(false) bool isSaving,
+    @Default(false) bool isVerifyingPhone,
+    @Default(false) bool isGeocoding,
+    @Default(false) bool isUploadingPhoto,
+    @Default(false) bool phoneVerified,
+    String? errorKey,
+    double? latitude,
+    double? longitude,
+    @Default('de') String preferredLocale,
+    @Default(false) bool seniorModeDefault,
+    String? photoUrl,
+    @Default([]) List<Bundesland> bundeslaender,
+    @Default([]) List<Bezirk> bezirke,
+    @Default([]) List<Gemeinde> gemeinden,
+    String? selectedBundesland,
+    String? selectedBezirk,
+    String? selectedGemeinde,
+    @Default([]) List<InterestOption> interestCatalog,
+    @Default({}) Set<String> selectedInterestIds,
+    @Default('') String initialName,
+    @Default('') String initialEmail,
+    @Default('') String initialPhone,
+  }) = _ProfileEditState;
 }
 
-const _sentinel = Object();
-
-class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
-  ProfileEditNotifier({
-    required this.profileRepository,
-    required this.authRepository,
-    required this.geographyRepository,
-    required this.interestsRepository,
-  }) : super(const ProfileEditState()) {
-    initialize();
+@riverpod
+class ProfileEditNotifier extends _$ProfileEditNotifier {
+  @override
+  ProfileEditState build(
+    ProfileRepository profileRepo,
+    GeographyRepository geographyRepo,
+    InterestsRepository interestsRepo,
+  ) {
+    Future(() => _initialize(profileRepo, geographyRepo, interestsRepo));
+    return const ProfileEditState();
   }
 
-  final ProfileRepository profileRepository;
-  final AuthRepository authRepository;
-  final GeographyRepository geographyRepository;
-  final InterestsRepository interestsRepository;
+  Future<void> _initialize(
+    ProfileRepository profileRepo,
+    GeographyRepository geographyRepo,
+    InterestsRepository interestsRepo,
+  ) async {
+    await Future.wait([
+      _loadCurrentUser(profileRepo),
+      _loadBundeslaender(geographyRepo),
+      _loadInterests(interestsRepo),
+    ]);
+    state = state.copyWith(isLoadingProfile: false);
+  }
 
-  Future<void> initialize() async {
-    state = state.copyWith(isLoading: true, errorKey: null);
+  Future<void> _loadCurrentUser(ProfileRepository profileRepo) async {
     try {
-      final results = await Future.wait([
-        profileRepository.getCurrentUser(),
-        geographyRepository.getBundeslaender(),
-        interestsRepository.getCatalog(),
-        interestsRepository.getSelected(),
-      ]);
-
-      final user = results[0] as UserSummary;
-      final bundeslaender = results[1] as List<Bundesland>;
-      final catalog = results[2] as List<InterestOption>;
-      final selected = results[3] as List<InterestOption>;
-
+      final user = await profileRepo.getCurrentUser();
       state = state.copyWith(
-        isLoading: false,
-        user: user,
-        bundeslaender: bundeslaender,
-        interestCatalog: catalog,
-        selectedInterestIds: selected.map((i) => i.id).toSet(),
+        initialName: user.displayName,
+        initialEmail: user.email ?? '',
+        initialPhone: user.phone ?? '',
         preferredLocale: user.preferredLocale,
         seniorModeDefault: user.seniorModeDefault,
         photoUrl: user.photoUrl,
       );
     } catch (_) {
-      state = state.copyWith(isLoading: false, errorKey: 'errors.generic');
+      state = state.copyWith(errorKey: 'errors.generic');
+    }
+  }
+
+  Future<void> _loadBundeslaender(GeographyRepository geographyRepo) async {
+    try {
+      final list = await geographyRepo.getBundeslaender();
+      state = state.copyWith(bundeslaender: list);
+    } catch (_) {
+      state = state.copyWith(errorKey: 'errors.generic');
+    }
+  }
+
+  Future<void> _loadInterests(InterestsRepository interestsRepo) async {
+    try {
+      final results = await Future.wait([
+        interestsRepo.getCatalog(),
+        interestsRepo.getSelected(),
+      ]);
+      state = state.copyWith(
+        interestCatalog: results[0] as List<InterestOption>,
+        selectedInterestIds: (results[1] as List<InterestOption>)
+            .map((i) => i.id)
+            .toSet(),
+      );
+    } catch (_) {
+      // Best-effort; leave empty on failure
     }
   }
 
@@ -163,37 +120,28 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
     state = state.copyWith(selectedInterestIds: updated);
   }
 
-  void setPreferredLocale(String locale) {
-    state = state.copyWith(preferredLocale: locale);
-  }
-
-  void setSeniorModeDefault(bool value) {
-    state = state.copyWith(seniorModeDefault: value);
-  }
-
-  void setPhoneVerified(bool verified) {
-    state = state.copyWith(phoneVerified: verified);
-  }
-
-  void setCoordinates(double? lat, double? lon) {
-    state = state.copyWith(latitude: lat, longitude: lon);
-  }
-
-  void setErrorKey(String? key) {
-    state = state.copyWith(errorKey: key);
-  }
-
-  Future<void> uploadPhoto(String filePath) async {
+  Future<void> pickAndUploadPhoto(
+    ImagePicker picker,
+    ImageSource source,
+    ProfileRepository profileRepo,
+  ) async {
     state = state.copyWith(isUploadingPhoto: true, errorKey: null);
     try {
-      final user = await profileRepository.uploadPhoto(filePath);
-      state = state.copyWith(isUploadingPhoto: false, photoUrl: user.photoUrl);
+      final picked = await picker.pickImage(source: source, imageQuality: 85);
+      if (picked == null) return;
+      final user = await profileRepo.uploadPhoto(picked.path);
+      state = state.copyWith(photoUrl: user.photoUrl);
     } catch (_) {
-      state = state.copyWith(isUploadingPhoto: false, errorKey: 'errors.generic');
+      state = state.copyWith(errorKey: 'errors.generic');
+    } finally {
+      state = state.copyWith(isUploadingPhoto: false);
     }
   }
 
-  Future<void> onBundeslandChanged(String? code) async {
+  Future<void> onBundeslandChanged(
+    String? code,
+    GeographyRepository geographyRepo,
+  ) async {
     if (code == null) {
       state = state.copyWith(
         selectedBundesland: null,
@@ -204,7 +152,6 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
       );
       return;
     }
-
     state = state.copyWith(
       selectedBundesland: code,
       selectedBezirk: null,
@@ -212,16 +159,18 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
       bezirke: [],
       gemeinden: [],
     );
-
     try {
-      final bezirke = await geographyRepository.getBezirke(code);
+      final bezirke = await geographyRepo.getBezirke(code);
       state = state.copyWith(bezirke: bezirke);
     } catch (_) {
       state = state.copyWith(errorKey: 'errors.generic');
     }
   }
 
-  Future<void> onBezirkChanged(String? code) async {
+  Future<void> onBezirkChanged(
+    String? code,
+    GeographyRepository geographyRepo,
+  ) async {
     if (code == null) {
       state = state.copyWith(
         selectedBezirk: null,
@@ -230,91 +179,76 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
       );
       return;
     }
-
     state = state.copyWith(
       selectedBezirk: code,
       selectedGemeinde: null,
       gemeinden: [],
     );
-
     try {
-      final gemeinden = await geographyRepository.getGemeinden(code);
+      final gemeinden = await geographyRepo.getGemeinden(code);
       state = state.copyWith(gemeinden: gemeinden);
     } catch (_) {
       state = state.copyWith(errorKey: 'errors.generic');
     }
   }
 
-  Gemeinde? onGemeindeChanged(String? code) {
-    if (code == null) {
-      state = state.copyWith(
-        selectedGemeinde: null,
-        latitude: null,
-        longitude: null,
-      );
-      return null;
-    }
-
-    final matches = state.gemeinden.where((g) => g.code == code);
-    if (matches.isNotEmpty) {
-      final gemeinde = matches.first;
-      state = state.copyWith(
-        selectedGemeinde: code,
-        latitude: gemeinde.latitude,
-        longitude: gemeinde.longitude,
-      );
-      return gemeinde;
-    }
-    return null;
+  void onGemeindeChanged(String? code, double? lat, double? lng) {
+    state = state.copyWith(
+      selectedGemeinde: code,
+      latitude: lat,
+      longitude: lng,
+    );
   }
 
-  Future<GeocodeResult?> geocodeAddress(String fullAddress) async {
+  Future<void> geocodeAddress(
+    String fullAddress,
+    GeographyRepository geographyRepo,
+  ) async {
     state = state.copyWith(isGeocoding: true, errorKey: null);
     try {
-      final result = await geographyRepository.geocodeAddress(
+      final result = await geographyRepo.geocodeAddress(
         fullAddress,
         persistToProfile: true,
       );
       state = state.copyWith(
-        isGeocoding: false,
         latitude: result.latitude,
         longitude: result.longitude,
       );
-      return result;
     } catch (_) {
-      state = state.copyWith(isGeocoding: false, errorKey: 'errors.generic');
-      return null;
+      state = state.copyWith(errorKey: 'errors.generic');
+    } finally {
+      state = state.copyWith(isGeocoding: false);
     }
   }
 
-  Future<bool> save({required String displayName}) async {
+  void setPhoneVerified() => state = state.copyWith(phoneVerified: true);
+  void setVerifyingPhone(bool v) =>
+      state = state.copyWith(isVerifyingPhone: v, errorKey: null);
+  void setError(String key) => state = state.copyWith(errorKey: key);
+  void clearError() => state = state.copyWith(errorKey: null);
+  void setLocale(String locale) =>
+      state = state.copyWith(preferredLocale: locale);
+  void setSeniorMode(bool v) => state = state.copyWith(seniorModeDefault: v);
+
+  Future<void> save(
+    String displayName,
+    ProfileRepository profileRepo,
+    InterestsRepository interestsRepo,
+  ) async {
     state = state.copyWith(isSaving: true, errorKey: null);
     try {
       await Future.wait([
-        profileRepository.updateProfile(
+        profileRepo.updateProfile(
           displayName: displayName,
           preferredLocale: state.preferredLocale,
           seniorModeDefault: state.seniorModeDefault,
         ),
-        interestsRepository.updateSelected(state.selectedInterestIds.toList()),
+        interestsRepo.updateSelected(state.selectedInterestIds.toList()),
       ]);
-      state = state.copyWith(isSaving: false);
-      return true;
     } catch (_) {
-      state = state.copyWith(isSaving: false, errorKey: 'errors.generic');
-      return false;
+      state = state.copyWith(errorKey: 'errors.generic');
+    } finally {
+      state = state.copyWith(isSaving: false);
     }
   }
 }
-
-final profileEditProvider = StateNotifierProvider.autoDispose
-    .family<ProfileEditNotifier, ProfileEditState, ApiClient>(
-  (ref, apiClient) {
-    return ProfileEditNotifier(
-      profileRepository: ProfileRepositoryImpl(apiClient),
-      authRepository: AuthRepositoryImpl(apiClient),
-      geographyRepository: GeographyRepositoryImpl(apiClient),
-      interestsRepository: InterestsRepositoryImpl(apiClient),
-    );
-  },
-);

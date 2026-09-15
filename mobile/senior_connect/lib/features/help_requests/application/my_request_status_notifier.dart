@@ -1,143 +1,82 @@
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+// DO NOT use setState in the screen. See AGENTS.md §State Management.
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/network/api_client.dart';
+part 'my_request_status_notifier.freezed.dart';
+part 'my_request_status_notifier.g.dart';
 
-class RequestStatusDetails {
-  const RequestStatusDetails({
-    required this.status,
-    required this.categoryNameKey,
-    required this.scheduledStartUtc,
-    required this.notes,
-    required this.volunteerDisplayName,
-    required this.volunteerPhone,
-  });
-
-  final String status;
-  final String categoryNameKey;
-  final DateTime? scheduledStartUtc;
-  final String? notes;
-  final String? volunteerDisplayName;
-  final String? volunteerPhone;
+@freezed
+class RequestStatusDetails with _ {
+  const factory RequestStatusDetails({
+    required String status,
+    required String categoryNameKey,
+    DateTime? scheduledStartUtc,
+    String? notes,
+    String? volunteerDisplayName,
+    String? volunteerPhone,
+  }) = _RequestStatusDetails;
 }
 
-class MyRequestStatusState {
-  const MyRequestStatusState({
-    this.isLoading = true,
-    this.loadError,
-    this.details,
-  });
-
-  final bool isLoading;
-  final String? loadError;
-  final RequestStatusDetails? details;
-
-  MyRequestStatusState copyWith({
-    bool? isLoading,
-    Object? loadError = _sentinel,
-    Object? details = _sentinel,
-  }) {
-    return MyRequestStatusState(
-      isLoading: isLoading ?? this.isLoading,
-      loadError:
-          loadError == _sentinel ? this.loadError : loadError as String?,
-      details: details == _sentinel
-          ? this.details
-          : details as RequestStatusDetails?,
-    );
-  }
+@freezed
+class MyRequestStatusState with _ {
+  const factory MyRequestStatusState({
+    @Default(true) bool isLoading,
+    RequestStatusDetails? details,
+    String? loadError,
+  }) = _MyRequestStatusState;
 }
 
-const _sentinel = Object();
-
-class MyRequestStatusNotifier extends StateNotifier<MyRequestStatusState> {
-  MyRequestStatusNotifier({
-    required this.apiClient,
-    this.requestId,
-  }) : super(const MyRequestStatusState()) {
-    loadStatus();
+@riverpod
+class MyRequestStatusNotifier extends _ {
+  @override
+  MyRequestStatusState build(ApiClient apiClient, String? requestId) {
+    Future(() => _load(apiClient, requestId));
+    return const MyRequestStatusState();
   }
 
-  final ApiClient apiClient;
-  final String? requestId;
-
-  Future<void> loadStatus() async {
+  Future<void> _load(ApiClient apiClient, String? requestId) async {
     if (requestId == null) {
-      state = state.copyWith(
+      state = const MyRequestStatusState(
         isLoading: false,
-        loadError: 'errors.generic'.tr(),
+        loadError: 'errors.generic',
       );
       return;
     }
-
-    state = state.copyWith(isLoading: true, loadError: null);
-
+    state = const MyRequestStatusState(isLoading: true);
     try {
-      final requestData = await apiClient.get<dynamic>(
-        '/api/v1/help-requests/$requestId',
+      final m = await apiClient.get<Map<String, dynamic>>(
+        '/api/v1/help-requests/',
       );
-      final categoriesData = await apiClient.get<dynamic>(
+      final cats = await apiClient.get<List<dynamic>>(
         '/api/v1/activities/categories',
       );
-
-      final m = requestData as Map<String, dynamic>;
-      var categoryNameKey = 'help.category.shopping';
-      if (categoriesData is List) {
-        for (final c in categoriesData) {
-          final cm = c as Map<String, dynamic>;
-          if (cm['id'] == m['categoryId']) {
-            categoryNameKey = cm['nameKey'] as String? ?? categoryNameKey;
-            break;
-          }
-        }
+      var catKey = 'help.category.shopping';
+      final catId = m['categoryId'] as String?;
+      if (catId != null) {
+        final match = cats
+            .cast<Map<String, dynamic>>()
+            .where((c) => c['id'] == catId)
+            .firstOrNull;
+        if (match != null) catKey = 'help.category.';
       }
-
-      final details = RequestStatusDetails(
-        status: m['status'] as String? ?? 'Open',
-        categoryNameKey: categoryNameKey,
-        scheduledStartUtc:
-            DateTime.tryParse(m['scheduledStartUtc'] as String? ?? ''),
-        notes: m['notes'] as String?,
-        volunteerDisplayName: m['volunteerDisplayName'] as String?,
-        volunteerPhone: m['volunteerPhone'] as String?,
-      );
-
-      state = state.copyWith(isLoading: false, details: details);
-    } catch (_) {
-      state = state.copyWith(
+      state = MyRequestStatusState(
         isLoading: false,
-        loadError: 'errors.generic'.tr(),
+        details: RequestStatusDetails(
+          status: m['status'] as String? ?? 'Pending',
+          categoryNameKey: catKey,
+          scheduledStartUtc: m['scheduledStartUtc'] != null
+              ? DateTime.tryParse(m['scheduledStartUtc'] as String)
+              : null,
+          notes: m['notes'] as String?,
+          volunteerDisplayName: m['volunteerDisplayName'] as String?,
+          volunteerPhone: m['volunteerPhone'] as String?,
+        ),
+      );
+    } catch (_) {
+      state = const MyRequestStatusState(
+        isLoading: false,
+        loadError: 'errors.generic',
       );
     }
   }
 }
-
-class MyRequestStatusParams {
-  const MyRequestStatusParams({
-    required this.apiClient,
-    this.requestId,
-  });
-
-  final ApiClient apiClient;
-  final String? requestId;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is MyRequestStatusParams &&
-          identical(other.apiClient, apiClient) &&
-          other.requestId == requestId);
-
-  @override
-  int get hashCode => Object.hash(apiClient, requestId);
-}
-
-final myRequestStatusProvider = StateNotifierProvider.autoDispose
-    .family<MyRequestStatusNotifier, MyRequestStatusState, MyRequestStatusParams>(
-  (ref, params) {
-    return MyRequestStatusNotifier(
-      apiClient: params.apiClient,
-      requestId: params.requestId,
-    );
-  },
-);

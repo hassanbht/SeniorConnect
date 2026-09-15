@@ -32,7 +32,7 @@ const _sentinel = Object();
 
 class EmailLinkNotifier extends StateNotifier<EmailLinkState> {
   EmailLinkNotifier({required this.authRepository})
-      : super(const EmailLinkState());
+    : super(const EmailLinkState());
 
   final AuthRepository authRepository;
 
@@ -65,8 +65,6 @@ class EmailLinkNotifier extends StateNotifier<EmailLinkState> {
 }
 
 final emailLinkProvider = StateNotifierProvider.autoDispose
-    .family<EmailLinkNotifier, EmailLinkState, ApiClient>(
-  (ref, apiClient) {
-    return EmailLinkNotifier(authRepository: AuthRepositoryImpl(apiClient));
-  },
-);
+    .family<EmailLinkNotifier, EmailLinkState, ApiClient>((ref, apiClient) {
+      return EmailLinkNotifier(authRepository: AuthRepositoryImpl(apiClient));
+    });

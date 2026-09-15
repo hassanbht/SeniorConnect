@@ -53,11 +53,31 @@ dependencies:
   # P1-28: profile photo picker
   image_picker: ^1.1.2
 
+  # State management — Riverpod 2 (with code generation)
+  # ⚠ RULE: Use @riverpod Notifier/AsyncNotifier + ConsumerWidget everywhere.
+  #   setState is ONLY allowed in app_button.dart (local visual busy flag).
+  #   See AGENTS.md §State Management for the binding rule.
+  #   After adding a new notifier run:
+  #     dart run build_runner build --delete-conflicting-outputs
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Typed state classes (used by AsyncState<T>)
+  freezed_annotation: ^3.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+
+  # Code generation for Riverpod + Freezed
+  # Run: dart run build_runner build --delete-conflicting-outputs
+  riverpod_generator: ^2.6.3
+  build_runner: ^2.4.13
+  freezed: ^3.1.0
+  custom_lint: ^0.7.3
+  riverpod_lint: ^2.6.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

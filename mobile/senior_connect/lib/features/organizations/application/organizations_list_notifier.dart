@@ -1,40 +1,38 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart'
-    hide AsyncLoading, AsyncError;
-
+// DO NOT use setState in the screen. See AGENTS.md §State Management.
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/network/api_client.dart';
-import '../../../shared/riverpod/async_state.dart';
+part 'organizations_list_notifier.freezed.dart';
+part 'organizations_list_notifier.g.dart';
 
-class OrganizationsListNotifier
-    extends StateNotifier<AsyncState<List<Map<String, dynamic>>>> {
-  OrganizationsListNotifier({required this.apiClient})
-      : super(const AsyncLoading()) {
-    load();
+@freezed
+class OrganizationsListState with _ {
+  const factory OrganizationsListState({
+    @Default(true) bool isLoading,
+    @Default([]) List<Map<String, dynamic>> organizations,
+  }) = _OrganizationsListState;
+}
+
+@riverpod
+class OrganizationsListNotifier extends _ {
+  @override
+  OrganizationsListState build(ApiClient apiClient) {
+    Future(() => _load(apiClient));
+    return const OrganizationsListState();
   }
 
-  final ApiClient apiClient;
-
-  Future<void> load() async {
-    state = const AsyncLoading();
+  Future<void> _load(ApiClient apiClient) async {
+    state = const OrganizationsListState(isLoading: true);
     try {
-      final response =
-          await apiClient.get<List<dynamic>>('/api/v1/organizations');
-      final list = response
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-      if (list.isEmpty) {
-        state = const AsyncEmpty();
-      } else {
-        state = AsyncLoaded(list);
-      }
-    } catch (e) {
-      state = AsyncError(e.toString());
+      final resp = await apiClient.get<List<dynamic>>('/api/v1/organizations');
+      state = OrganizationsListState(
+        isLoading: false,
+        organizations: resp
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList(),
+      );
+    } catch (_) {
+      state = const OrganizationsListState(isLoading: false);
     }
   }
 }
-
-final organizationsListProvider = StateNotifierProvider.autoDispose.family<
-    OrganizationsListNotifier,
-    AsyncState<List<Map<String, dynamic>>>,
-    ApiClient>(
-  (ref, apiClient) => OrganizationsListNotifier(apiClient: apiClient),
-);

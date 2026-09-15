@@ -1,67 +1,53 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+// DO NOT use setState in the screen. See AGENTS.md §State Management.
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/network/api_client.dart';
+part 'family_dashboard_notifier.freezed.dart';
+part 'family_dashboard_notifier.g.dart';
 
-class FamilyDashboardState {
-  const FamilyDashboardState({
-    this.isLoading = false,
-    this.error,
-    this.relationships = const [],
-  });
-
-  final bool isLoading;
-  final String? error;
-  final List<Map<String, dynamic>> relationships;
-
-  FamilyDashboardState copyWith({
-    bool? isLoading,
+@freezed
+class FamilyDashboardState with _ {
+  const factory FamilyDashboardState({
+    @Default(false) bool isLoading,
+    @Default([]) List<Map<String, dynamic>> relationships,
     String? error,
-    List<Map<String, dynamic>>? relationships,
-  }) {
-    return FamilyDashboardState(
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-      relationships: relationships ?? this.relationships,
-    );
-  }
+  }) = _FamilyDashboardState;
 }
 
-class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
-  FamilyDashboardNotifier({required this.apiClient})
-      : super(const FamilyDashboardState()) {
-    loadRelationships();
+@riverpod
+class FamilyDashboardNotifier extends _ {
+  @override
+  FamilyDashboardState build(ApiClient apiClient) {
+    Future(() => _load(apiClient));
+    return const FamilyDashboardState();
   }
 
-  final ApiClient apiClient;
-
-  Future<void> loadRelationships() async {
+  Future<void> _load(ApiClient apiClient) async {
     state = state.copyWith(isLoading: true, error: null);
-
     try {
-      final response = await apiClient.get<List<dynamic>>(
+      final resp = await apiClient.get<List<dynamic>>(
         '/api/v1/family/my-seniors',
       );
-
-      final rels =
-          response.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-      state = state.copyWith(relationships: rels, isLoading: false);
+      state = state.copyWith(
+        isLoading: false,
+        relationships: resp
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList(),
+      );
     } catch (_) {
-      final mock = [
-        {
-          'id': 'rel-1',
-          'seniorName': 'Oma Gerda (82)',
-          'relationshipType': 'Child',
-          'canCreateRequests': true,
-          'canViewActivities': true,
-          'canReceiveAlerts': true,
-        },
-      ];
-      state = state.copyWith(relationships: mock, isLoading: false);
+      state = FamilyDashboardState(
+        isLoading: false,
+        relationships: [
+          {
+            'id': 'rel-1',
+            'seniorName': 'Oma Gerda (82)',
+            'relationshipType': 'Child',
+            'canCreateRequests': true,
+            'canViewActivities': true,
+            'canReceiveAlerts': true,
+          },
+        ],
+      );
     }
   }
 }
-
-final familyDashboardProvider = StateNotifierProvider.autoDispose
-    .family<FamilyDashboardNotifier, FamilyDashboardState, ApiClient>(
-  (ref, apiClient) => FamilyDashboardNotifier(apiClient: apiClient),
-);

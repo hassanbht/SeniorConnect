@@ -1,74 +1,39 @@
-import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../../core/network/api_client.dart';
+// DO NOT use setState in the screen. See AGENTS.md §State Management.
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/discovery_repository.dart';
+part 'discovery_notifier.freezed.dart';
+part 'discovery_notifier.g.dart';
 
 enum DiscoveryTab { organizations, volunteers, requests }
 
-class DiscoveryState {
-  const DiscoveryState({
-    this.isLoadingLocation = true,
-    this.myLocation,
-    this.tab = DiscoveryTab.organizations,
-    this.radiusKm = 10.0,
-    this.isLoadingResults = false,
-    this.errorKey,
-    this.results,
-  });
-
-  final bool isLoadingLocation;
-  final MyLocation? myLocation;
-  final DiscoveryTab tab;
-  final double radiusKm;
-  final bool isLoadingResults;
-  final String? errorKey;
-  final List<ProximityResult>? results;
-
-  DiscoveryState copyWith({
-    bool? isLoadingLocation,
+@freezed
+class DiscoveryState with _ {
+  const factory DiscoveryState({
+    @Default(true) bool isLoadingLocation,
     MyLocation? myLocation,
-    DiscoveryTab? tab,
-    double? radiusKm,
-    bool? isLoadingResults,
-    String? errorKey,
+    @Default(DiscoveryTab.organizations) DiscoveryTab tab,
+    @Default(10.0) double radiusKm,
+    @Default(false) bool isLoadingResults,
     List<ProximityResult>? results,
-  }) {
-    return DiscoveryState(
-      isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
-      myLocation: myLocation ?? this.myLocation,
-      tab: tab ?? this.tab,
-      radiusKm: radiusKm ?? this.radiusKm,
-      isLoadingResults: isLoadingResults ?? this.isLoadingResults,
-      errorKey: errorKey,
-      results: results ?? this.results,
-    );
-  }
+    String? errorKey,
+  }) = _DiscoveryState;
 }
 
-class DiscoveryNotifier extends StateNotifier<DiscoveryState> {
-  DiscoveryNotifier({
-    required this.apiClient,
-    DiscoveryRepository? repository,
-  })  : _repository = repository ?? DiscoveryRepositoryImpl(apiClient),
-        super(const DiscoveryState()) {
-    loadLocation();
+@riverpod
+class DiscoveryNotifier extends _ {
+  @override
+  DiscoveryState build(DiscoveryRepository repo) {
+    Future(() => _loadLocation(repo));
+    return const DiscoveryState();
   }
 
-  final ApiClient apiClient;
-  final DiscoveryRepository _repository;
-
-  Future<void> loadLocation() async {
+  Future<void> _loadLocation(DiscoveryRepository repo) async {
     state = state.copyWith(isLoadingLocation: true, errorKey: null);
     try {
-      final location = await _repository.getMyLocation();
-      state = state.copyWith(
-        myLocation: location,
-        isLoadingLocation: false,
-      );
-      if (location != null) {
-        await loadResults();
-      }
+      final location = await repo.getMyLocation();
+      state = state.copyWith(myLocation: location, isLoadingLocation: false);
+      if (location != null) await _loadResults(repo);
     } catch (_) {
       state = state.copyWith(
         isLoadingLocation: false,
@@ -77,27 +42,17 @@ class DiscoveryNotifier extends StateNotifier<DiscoveryState> {
     }
   }
 
-  Future<void> loadResults() async {
+  Future<void> _loadResults(DiscoveryRepository repo) async {
     final location = state.myLocation;
     if (location == null) return;
-
     state = state.copyWith(isLoadingResults: true, errorKey: null);
-
     try {
-      final results = await switch (state.tab) {
-        DiscoveryTab.organizations => _repository.getNearbyOrganizations(
-            location.latitude, location.longitude, state.radiusKm),
-        DiscoveryTab.volunteers => _repository.getNearbyVolunteers(
-            location.latitude, location.longitude, state.radiusKm),
-        DiscoveryTab.requests => _repository.getNearbyRequests(
-            location.latitude, location.longitude, state.radiusKm),
-      };
-      state = state.copyWith(results: results, isLoadingResults: false);
-    } on DioException catch (e) {
-      state = state.copyWith(
-        isLoadingResults: false,
-        errorKey: mapDioError(e).l10nKey,
+      final results = await repo.getProximityResults(
+        tab: state.tab,
+        location: location,
+        radiusKm: state.radiusKm,
       );
+      state = state.copyWith(isLoadingResults: false, results: results);
     } catch (_) {
       state = state.copyWith(
         isLoadingResults: false,
@@ -106,18 +61,13 @@ class DiscoveryNotifier extends StateNotifier<DiscoveryState> {
     }
   }
 
-  void setTab(DiscoveryTab tab) {
-    if (tab == state.tab) return;
+  void setTab(DiscoveryTab tab, DiscoveryRepository repo) {
     state = state.copyWith(tab: tab, results: null);
-    loadResults();
+    _loadResults(repo);
   }
 
-  void setRadius(double radiusKm) {
-    state = state.copyWith(radiusKm: radiusKm);
+  void setRadius(double km, DiscoveryRepository repo) {
+    state = state.copyWith(radiusKm: km, results: null);
+    _loadResults(repo);
   }
 }
-
-final discoveryProvider = StateNotifierProvider.autoDispose
-    .family<DiscoveryNotifier, DiscoveryState, ApiClient>(
-  (ref, apiClient) => DiscoveryNotifier(apiClient: apiClient),
-);

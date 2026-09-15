@@ -22,9 +22,12 @@ class DeviceListState {
   }) {
     return DeviceListState(
       devicesState: devicesState ?? this.devicesState,
-      revokingId: revokingId == _sentinel ? this.revokingId : revokingId as String?,
-      actionErrorKey:
-          actionErrorKey == _sentinel ? this.actionErrorKey : actionErrorKey as String?,
+      revokingId: revokingId == _sentinel
+          ? this.revokingId
+          : revokingId as String?,
+      actionErrorKey: actionErrorKey == _sentinel
+          ? this.actionErrorKey
+          : actionErrorKey as String?,
     );
   }
 }
@@ -33,14 +36,17 @@ const _sentinel = Object();
 
 class DeviceListNotifier extends StateNotifier<DeviceListState> {
   DeviceListNotifier({required this.authRepository})
-      : super(const DeviceListState()) {
+    : super(const DeviceListState()) {
     load();
   }
 
   final AuthRepository authRepository;
 
   Future<void> load() async {
-    state = state.copyWith(devicesState: const AsyncState.loading(), actionErrorKey: null);
+    state = state.copyWith(
+      devicesState: const AsyncState.loading(),
+      actionErrorKey: null,
+    );
     try {
       final devices = await authRepository.getDevices();
       if (devices.isEmpty) {
@@ -63,15 +69,16 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
       await load();
       return true;
     } catch (_) {
-      state = state.copyWith(revokingId: null, actionErrorKey: 'errors.generic');
+      state = state.copyWith(
+        revokingId: null,
+        actionErrorKey: 'errors.generic',
+      );
       return false;
     }
   }
 }
 
 final deviceListProvider = StateNotifierProvider.autoDispose
-    .family<DeviceListNotifier, DeviceListState, ApiClient>(
-  (ref, apiClient) {
-    return DeviceListNotifier(authRepository: AuthRepositoryImpl(apiClient));
-  },
-);
+    .family<DeviceListNotifier, DeviceListState, ApiClient>((ref, apiClient) {
+      return DeviceListNotifier(authRepository: AuthRepositoryImpl(apiClient));
+    });

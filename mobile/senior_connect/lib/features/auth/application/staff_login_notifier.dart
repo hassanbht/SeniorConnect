@@ -1,79 +1,32 @@
-import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+// DO NOT use setState in the screen. See AGENTS.md §State Management.
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+part 'staff_login_notifier.freezed.dart';
+part 'staff_login_notifier.g.dart';
 
-import '../../../core/network/api_client.dart';
-import '../data/auth_repository.dart';
-
-class StaffLoginState {
-  const StaffLoginState({
-    this.isLoading = false,
-    this.totpRequired = false,
-    this.errorKey,
-  });
-
-  final bool isLoading;
-  final bool totpRequired;
-  final String? errorKey;
-
-  StaffLoginState copyWith({
-    bool? isLoading,
-    bool? totpRequired,
-    Object? errorKey = _sentinel,
-  }) {
-    return StaffLoginState(
-      isLoading: isLoading ?? this.isLoading,
-      totpRequired: totpRequired ?? this.totpRequired,
-      errorKey: errorKey == _sentinel ? this.errorKey : errorKey as String?,
-    );
-  }
+@freezed
+class StaffLoginState with _ {
+  const factory StaffLoginState({
+    @Default(true) bool obscurePassword,
+    @Default(false) bool isLoading,
+    @Default(false) bool totpRequired,
+    String? errorKey,
+  }) = _StaffLoginState;
 }
 
-const _sentinel = Object();
-
-class StaffLoginNotifier extends StateNotifier<StaffLoginState> {
-  StaffLoginNotifier({required this.authRepository})
-      : super(const StaffLoginState());
-
-  final AuthRepository authRepository;
-
-  Future<bool> submit({
-    required String email,
-    required String password,
-    String? totpCode,
-  }) async {
-    state = state.copyWith(isLoading: true, errorKey: null);
-    try {
-      await authRepository.staffLogin(
-        email: email,
-        password: password,
-        totpCode: totpCode,
-      );
-      state = state.copyWith(isLoading: false);
-      return true;
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 428) {
-        state = state.copyWith(
-          isLoading: false,
-          totpRequired: true,
-          errorKey: 'auth.staff.totp_required',
-        );
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          errorKey: mapDioError(e).l10nKey,
-        );
-      }
-      return false;
-    } catch (_) {
-      state = state.copyWith(isLoading: false, errorKey: 'errors.generic');
-      return false;
-    }
-  }
+@riverpod
+class StaffLoginNotifier extends _ {
+  @override
+  StaffLoginState build() => const StaffLoginState();
+  void toggleObscurePassword() =>
+      state = state.copyWith(obscurePassword: !state.obscurePassword);
+  void setLoading(bool v) =>
+      state = state.copyWith(isLoading: v, errorKey: null);
+  void setTotpRequired(String? errorKey) => state = state.copyWith(
+    totpRequired: true,
+    errorKey: errorKey,
+    isLoading: false,
+  );
+  void setError(String key) =>
+      state = state.copyWith(errorKey: key, isLoading: false);
 }
-
-final staffLoginProvider = StateNotifierProvider.autoDispose
-    .family<StaffLoginNotifier, StaffLoginState, ApiClient>(
-  (ref, apiClient) {
-    return StaffLoginNotifier(authRepository: AuthRepositoryImpl(apiClient));
-  },
-);

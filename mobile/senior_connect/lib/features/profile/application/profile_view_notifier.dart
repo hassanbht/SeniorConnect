@@ -1,71 +1,49 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+// lib/features/profile/application/profile_view_notifier.dart
+//
+// Riverpod Notifier for ProfileViewScreen.
+// ⚠ DO NOT add setState to the presentation layer. See AGENTS.md §State Management.
 
-import '../../../core/network/api_client.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/riverpod/async_state.dart';
-import '../../auth/data/auth_repository.dart';
 import '../data/interests_repository.dart';
 import '../data/profile_repository.dart';
 
-class ProfileViewData {
-  const ProfileViewData({
-    required this.user,
-    required this.interests,
-  });
+part 'profile_view_notifier.g.dart';
 
+class ProfileViewData {
+  const ProfileViewData({required this.user, required this.interests});
   final UserSummary user;
   final List<InterestOption> interests;
-
-  ProfileViewData copyWith({
-    UserSummary? user,
-    List<InterestOption>? interests,
-  }) {
-    return ProfileViewData(
-      user: user ?? this.user,
-      interests: interests ?? this.interests,
-    );
-  }
 }
 
-class ProfileViewNotifier extends StateNotifier<AsyncState<ProfileViewData>> {
-  ProfileViewNotifier({
-    required this.profileRepository,
-    required this.authRepository,
-    required this.interestsRepository,
-  }) : super(const AsyncState.loading()) {
-    load();
+@riverpod
+class ProfileViewNotifier extends _$ProfileViewNotifier {
+  @override
+  AsyncState<ProfileViewData> build(
+    ProfileRepository profileRepo,
+    InterestsRepository interestsRepo,
+  ) {
+    Future(() => load(profileRepo, interestsRepo));
+    return const AsyncState.loading();
   }
 
-  final ProfileRepository profileRepository;
-  final AuthRepository authRepository;
-  final InterestsRepository interestsRepository;
-
-  Future<void> load() async {
+  Future<void> load(
+    ProfileRepository profileRepo,
+    InterestsRepository interestsRepo,
+  ) async {
     state = const AsyncState.loading();
     try {
       final results = await Future.wait([
-        profileRepository.getCurrentUser(),
-        interestsRepository.getSelected(),
+        profileRepo.getCurrentUser(),
+        interestsRepo.getSelected(),
       ]);
       final user = results[0] as UserSummary;
       final interests = results[1] as List<InterestOption>;
-      state = AsyncState.loaded(ProfileViewData(user: user, interests: interests));
-    } catch (e, st) {
-      state = AsyncState.error('errors.generic', e, st);
+      state = AsyncState.loaded(
+        ProfileViewData(user: user, interests: interests),
+      );
+    } catch (_) {
+      state = const AsyncState.error('errors.generic');
     }
   }
-
-  Future<void> logout() async {
-    await authRepository.logout();
-  }
 }
-
-final profileViewProvider = StateNotifierProvider.autoDispose
-    .family<ProfileViewNotifier, AsyncState<ProfileViewData>, ApiClient>(
-  (ref, apiClient) {
-    return ProfileViewNotifier(
-      profileRepository: ProfileRepositoryImpl(apiClient),
-      authRepository: AuthRepositoryImpl(apiClient),
-      interestsRepository: InterestsRepositoryImpl(apiClient),
-    );
-  },
-);

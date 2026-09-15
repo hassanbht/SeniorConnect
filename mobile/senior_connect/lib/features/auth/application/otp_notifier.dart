@@ -149,14 +149,12 @@ class OtpParams {
   int get hashCode => Object.hash(apiClient, phone, purpose);
 }
 
-final otpProvider =
-    StateNotifierProvider.autoDispose.family<OtpNotifier, OtpState, OtpParams>(
-  (ref, params) {
-    return OtpNotifier(
-      authRepository: AuthRepositoryImpl(params.apiClient),
-      apiClient: params.apiClient,
-      phone: params.phone,
-      purpose: params.purpose,
-    );
-  },
-);
+final otpProvider = StateNotifierProvider.autoDispose
+    .family<OtpNotifier, OtpState, OtpParams>((ref, params) {
+      return OtpNotifier(
+        authRepository: AuthRepositoryImpl(params.apiClient),
+        apiClient: params.apiClient,
+        phone: params.phone,
+        purpose: params.purpose,
+      );
+    });
