@@ -189,4 +189,4 @@ obj/
 
 Document/
 backend/.env.example
-opencode.json
+backend/publish/*

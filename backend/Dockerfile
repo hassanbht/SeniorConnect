@@ -18,6 +18,7 @@ COPY ["modules/Family/SeniorConnect.Modules.Family.csproj", "modules/Family/"]
 COPY ["modules/Notifications/SeniorConnect.Modules.Notifications.csproj", "modules/Notifications/"]
 COPY ["modules/Matching/SeniorConnect.Modules.Matching.csproj", "modules/Matching/"]
 COPY ["modules/Reporting/SeniorConnect.Modules.Reporting.csproj", "modules/Reporting/"]
+COPY ["modules/Geography/SeniorConnect.Modules.Geography.csproj", "modules/Geography/"]
 
 RUN dotnet restore "SeniorConnect.Api/SeniorConnect.Api.csproj"
 

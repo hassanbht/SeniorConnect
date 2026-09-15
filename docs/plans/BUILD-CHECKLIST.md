@@ -1175,6 +1175,36 @@ what the pilot actually shows.
 
 ---
 
+# PHASE 9 — Production Deployment & Field Pilot Readiness ⭐
+
+**Goal:** hardened containerization, deployment configs, multi-platform build readiness, and pilot launch.
+
+```
+[x] P9-01 — Containerization & Multi-Stage Production Docker Build · M
+    chiseled .NET 10 runtime, non-root user, Geography layer caching, PostGIS 16 compose.
+    ✓ Test: docker compose config valid; multi-stage Dockerfile builds clean image
+
+[x] P9-02 — Production Environment Config & Security Hardening    · S
+    appsettings.Production.json with strict CORS, Serilog JSON logging, suppressed SQL telemetry.
+    ✓ Test: health check endpoints responsive at /healthz/live and /healthz/ready
+
+[x] P9-03 — CI/CD Pipeline Hardening & Validation                 · M
+    GitHub Actions pipeline (.github/workflows/ci.yml) testing .NET 10, Flutter matrix,
+    locale consistency (check_locales.py), vulnerability scan, and Docker image build.
+    ✓ Test: all 474 localization keys match across de/en/fa; 0 package vulnerabilities
+
+[x] P9-04 — Multi-Platform Production Build                       · M
+    Flutter Web production bundle (build/web) for staff/coordinator dashboard,
+    standalone backend API publish (backend/publish).
+    ✓ Test: flutter build web completes with exit code 0; dotnet publish succeeds
+
+[x] P9-05 — Documentation Synchronization & Plan Archival         · S
+    BUILD-CHECKLIST.md synchronized across all phases; active plans archived.
+    ✓ Test: 204 backend tests passing, 467 mobile widget tests passing
+```
+
+---
+
 # Per-task Definition of Done
 
 Applies to every task above. A task is not done until:
