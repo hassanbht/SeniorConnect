@@ -1,22 +1,43 @@
-// DO NOT use setState in the screen. See AGENTS.md §State Management.
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-part 'create_help_request_notifier.freezed.dart';
-part 'create_help_request_notifier.g.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-@freezed
-class CreateHelpRequestState with _ {
-  const factory CreateHelpRequestState({
-    @Default('Garten & Pflanzen') String selectedCategory,
-    @Default(false) bool isSubmitting,
-  }) = _CreateHelpRequestState;
+class CreateHelpRequestState {
+  const CreateHelpRequestState({
+    this.selectedCategory = 'Garten & Pflanzen',
+    this.isSubmitting = false,
+  });
+
+  final String selectedCategory;
+  final bool isSubmitting;
+
+  CreateHelpRequestState copyWith({
+    String? selectedCategory,
+    bool? isSubmitting,
+  }) {
+    return CreateHelpRequestState(
+      selectedCategory: selectedCategory ?? this.selectedCategory,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+    );
+  }
 }
 
-@riverpod
-class CreateHelpRequestNotifier extends _ {
-  @override
-  CreateHelpRequestState build() => const CreateHelpRequestState();
-  void selectCategory(String cat) =>
-      state = state.copyWith(selectedCategory: cat);
-  void setSubmitting(bool v) => state = state.copyWith(isSubmitting: v);
+class CreateHelpRequestNotifier
+    extends StateNotifier<CreateHelpRequestState> {
+  CreateHelpRequestNotifier() : super(const CreateHelpRequestState());
+
+  void setCategory(String category) {
+    state = state.copyWith(selectedCategory: category);
+  }
+
+  Future<bool> submit(String title) async {
+    if (title.trim().isEmpty) return false;
+    state = state.copyWith(isSubmitting: true);
+    await Future.delayed(const Duration(milliseconds: 600));
+    state = state.copyWith(isSubmitting: false);
+    return true;
+  }
 }
+
+final createHelpRequestProvider = StateNotifierProvider.autoDispose<
+    CreateHelpRequestNotifier, CreateHelpRequestState>(
+  (ref) => CreateHelpRequestNotifier(),
+);

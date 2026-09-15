@@ -37,12 +37,10 @@ class AuthState {
       isEmailLoading: isEmailLoading ?? this.isEmailLoading,
       isGoogleLoading: isGoogleLoading ?? this.isGoogleLoading,
       isIdAustriaLoading: isIdAustriaLoading ?? this.isIdAustriaLoading,
-      phoneErrorKey: phoneErrorKey == _sentinel
-          ? this.phoneErrorKey
-          : phoneErrorKey as String?,
-      emailErrorKey: emailErrorKey == _sentinel
-          ? this.emailErrorKey
-          : emailErrorKey as String?,
+      phoneErrorKey:
+          phoneErrorKey == _sentinel ? this.phoneErrorKey : phoneErrorKey as String?,
+      emailErrorKey:
+          emailErrorKey == _sentinel ? this.emailErrorKey : emailErrorKey as String?,
       isLoginMode: isLoginMode ?? this.isLoginMode,
     );
   }
@@ -82,10 +80,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isPhoneLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isPhoneLoading: false,
-        phoneErrorKey: errorKeyFor(e),
-      );
+      state = state.copyWith(isPhoneLoading: false, phoneErrorKey: errorKeyFor(e));
       return false;
     }
   }
@@ -105,10 +100,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isEmailLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isEmailLoading: false,
-        emailErrorKey: errorKeyFor(e),
-      );
+      state = state.copyWith(isEmailLoading: false, emailErrorKey: errorKeyFor(e));
       return false;
     }
   }
@@ -119,14 +111,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }) async {
     state = state.copyWith(isEmailLoading: true, emailErrorKey: null);
     try {
-      await authRepository.emailPasswordLogin(email: email, password: password);
+      await authRepository.emailPasswordLogin(
+        email: email,
+        password: password,
+      );
       state = state.copyWith(isEmailLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isEmailLoading: false,
-        emailErrorKey: errorKeyFor(e),
-      );
+      state = state.copyWith(isEmailLoading: false, emailErrorKey: errorKeyFor(e));
       return false;
     }
   }
@@ -138,34 +130,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isGoogleLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isGoogleLoading: false,
-        emailErrorKey: errorKeyFor(e),
-      );
+      state = state.copyWith(isGoogleLoading: false, emailErrorKey: errorKeyFor(e));
       return false;
     }
   }
 
-  Future<bool> submitIdAustriaSignIn({
-    required String code,
-    String? oauthState,
-  }) async {
+  Future<bool> submitIdAustriaSignIn({required String code, String? oauthState}) async {
     state = state.copyWith(isIdAustriaLoading: true, emailErrorKey: null);
     try {
       await authRepository.idAustriaSignIn(code: code, state: oauthState);
       state = state.copyWith(isIdAustriaLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isIdAustriaLoading: false,
-        emailErrorKey: errorKeyFor(e),
-      );
+      state = state.copyWith(isIdAustriaLoading: false, emailErrorKey: errorKeyFor(e));
       return false;
     }
   }
 }
 
 final authProvider = StateNotifierProvider.autoDispose
-    .family<AuthNotifier, AuthState, ApiClient>((ref, apiClient) {
-      return AuthNotifier(authRepository: AuthRepositoryImpl(apiClient));
-    });
+    .family<AuthNotifier, AuthState, ApiClient>(
+  (ref, apiClient) {
+    return AuthNotifier(authRepository: AuthRepositoryImpl(apiClient));
+  },
+);

@@ -35,8 +35,10 @@ class EventDetailState {
 }
 
 class EventDetailNotifier extends StateNotifier<EventDetailState> {
-  EventDetailNotifier({required this.eventId, required this.apiClient})
-    : super(const EventDetailState()) {
+  EventDetailNotifier({
+    required this.eventId,
+    required this.apiClient,
+  }) : super(const EventDetailState()) {
     loadEvent();
   }
 
@@ -47,9 +49,8 @@ class EventDetailNotifier extends StateNotifier<EventDetailState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final data = await apiClient.get<Map<String, dynamic>>(
-        '/api/v1/community/events/$eventId',
-      );
+      final data = await apiClient
+          .get<Map<String, dynamic>>('/api/v1/community/events/$eventId');
       state = state.copyWith(event: data, isLoading: false);
     } catch (_) {
       state = state.copyWith(
@@ -59,9 +60,8 @@ class EventDetailNotifier extends StateNotifier<EventDetailState> {
           'description':
               'Jeden Dienstag spielen wir Schach im Gemeindezentrum. Anfänger und Fortgeschrittene sind herzlich willkommen!',
           'category': 'sports',
-          'startsAtUtc': DateTime.now()
-              .add(const Duration(days: 2))
-              .toIso8601String(),
+          'startsAtUtc':
+              DateTime.now().add(const Duration(days: 2)).toIso8601String(),
           'locationAddress': 'Gemeindezentrum Mitte, Raum 2',
           'locationPostalCode': '1010',
           'capacity': 8,
@@ -82,12 +82,14 @@ class EventDetailNotifier extends StateNotifier<EventDetailState> {
           '/api/v1/community/events/$eventId/register',
           data: {'status': 0},
         );
-        state = state.copyWith(isRegistered: true, isActionInProgress: false);
+        state =
+            state.copyWith(isRegistered: true, isActionInProgress: false);
       } else {
         await apiClient.delete<dynamic>(
           '/api/v1/community/events/$eventId/register',
         );
-        state = state.copyWith(isRegistered: false, isActionInProgress: false);
+        state =
+            state.copyWith(isRegistered: false, isActionInProgress: false);
       }
     } catch (_) {
       state = state.copyWith(
@@ -99,7 +101,10 @@ class EventDetailNotifier extends StateNotifier<EventDetailState> {
 }
 
 class EventDetailParams {
-  const EventDetailParams({required this.eventId, required this.apiClient});
+  const EventDetailParams({
+    required this.eventId,
+    required this.apiClient,
+  });
 
   final String eventId;
   final ApiClient apiClient;
@@ -115,10 +120,10 @@ class EventDetailParams {
   int get hashCode => Object.hash(eventId, apiClient);
 }
 
-final eventDetailProvider = StateNotifierProvider.autoDispose
-    .family<EventDetailNotifier, EventDetailState, EventDetailParams>(
-      (ref, params) => EventDetailNotifier(
-        eventId: params.eventId,
-        apiClient: params.apiClient,
-      ),
-    );
+final eventDetailProvider = StateNotifierProvider.autoDispose.family<
+    EventDetailNotifier, EventDetailState, EventDetailParams>(
+  (ref, params) => EventDetailNotifier(
+    eventId: params.eventId,
+    apiClient: params.apiClient,
+  ),
+);

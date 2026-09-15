@@ -1,47 +1,82 @@
-// DO NOT use setState in the screen. See AGENTS.md §State Management.
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../core/network/api_client.dart';
-part 'safeguarding_concern_notifier.freezed.dart';
-part 'safeguarding_concern_notifier.g.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-@freezed
-class SafeguardingConcernState with _ {
-  const factory SafeguardingConcernState({
-    @Default('general_concern') String selectedCategory,
-    @Default(false) bool isSubmitting,
-    @Default(false) bool submitted,
-    String? errorKey,
-  }) = _SafeguardingConcernState;
+import '../../../core/network/api_client.dart';
+
+class SafeguardingConcernState {
+  const SafeguardingConcernState({
+    this.selectedCategory = 'general_concern',
+    this.isSubmitting = false,
+    this.submitted = false,
+    this.errorMessage,
+  });
+
+  final String selectedCategory;
+  final bool isSubmitting;
+  final bool submitted;
+  final String? errorMessage;
+
+  SafeguardingConcernState copyWith({
+    String? selectedCategory,
+    bool? isSubmitting,
+    bool? submitted,
+    Object? errorMessage = _sentinel,
+  }) {
+    return SafeguardingConcernState(
+      selectedCategory: selectedCategory ?? this.selectedCategory,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      submitted: submitted ?? this.submitted,
+      errorMessage:
+          errorMessage == _sentinel ? this.errorMessage : errorMessage as String?,
+    );
+  }
 }
 
-@riverpod
-class SafeguardingConcernNotifier extends _ {
-  @override
-  SafeguardingConcernState build() => const SafeguardingConcernState();
-  void setCategory(String cat) => state = state.copyWith(selectedCategory: cat);
-  Future<void> submit(
-    String summary,
-    String subjectUserId,
-    ApiClient? apiClient,
-  ) async {
-    if (summary.trim().isEmpty) return;
-    state = state.copyWith(isSubmitting: true, errorKey: null);
+const _sentinel = Object();
+
+class SafeguardingConcernNotifier
+    extends StateNotifier<SafeguardingConcernState> {
+  SafeguardingConcernNotifier({this.apiClient})
+      : super(const SafeguardingConcernState());
+
+  final ApiClient? apiClient;
+
+  void setCategory(String category) {
+    state = state.copyWith(selectedCategory: category);
+  }
+
+  Future<bool> submitConcern({
+    required String subjectUserId,
+    required String details,
+  }) async {
+    if (details.trim().isEmpty) return false;
+    state = state.copyWith(isSubmitting: true, errorMessage: null);
+
     try {
       if (apiClient != null) {
-        await apiClient.post<dynamic>(
+        await apiClient!.post<dynamic>(
           '/api/v1/safeguarding/concerns',
           data: {
             'subjectUserId': subjectUserId,
-            'summary': summary.trim(),
             'category': state.selectedCategory,
-            'severity': 'Medium',
+            'details': details.trim(),
           },
         );
       }
       state = state.copyWith(isSubmitting: false, submitted: true);
+      return true;
     } catch (_) {
-      state = state.copyWith(isSubmitting: false, errorKey: 'errors.generic');
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: 'errors.generic',
+      );
+      return false;
     }
   }
 }
+
+final safeguardingConcernProvider = StateNotifierProvider.autoDispose
+    .family<SafeguardingConcernNotifier, SafeguardingConcernState, ApiClient?>(
+  (ref, apiClient) {
+    return SafeguardingConcernNotifier(apiClient: apiClient);
+  },
+);

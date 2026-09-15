@@ -1,63 +1,78 @@
-// DO NOT use setState in the screen. See AGENTS.md §State Management.
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-part 'voice_request_notifier.freezed.dart';
-part 'voice_request_notifier.g.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-@freezed
-class VoiceRequestState with _ {
-  const factory VoiceRequestState({
-    @Default(false) bool isListening,
-    @Default('') String currentTranscript,
-    @Default(false) bool emergencyDetected,
-    @Default(false) bool nursingDetected,
-  }) = _VoiceRequestState;
+class VoiceRequestState {
+  const VoiceRequestState({
+    this.isListening = false,
+    this.currentTranscript = '',
+    this.emergencyDetected = false,
+    this.nursingDetected = false,
+  });
+
+  final bool isListening;
+  final String currentTranscript;
+  final bool emergencyDetected;
+  final bool nursingDetected;
+
+  VoiceRequestState copyWith({
+    bool? isListening,
+    String? currentTranscript,
+    bool? emergencyDetected,
+    bool? nursingDetected,
+  }) {
+    return VoiceRequestState(
+      isListening: isListening ?? this.isListening,
+      currentTranscript: currentTranscript ?? this.currentTranscript,
+      emergencyDetected: emergencyDetected ?? this.emergencyDetected,
+      nursingDetected: nursingDetected ?? this.nursingDetected,
+    );
+  }
 }
 
-@riverpod
-class VoiceRequestNotifier extends _ {
-  static const _emergency = [
-    'notfall',
-    'schmerz',
-    'herz',
-    'sturz',
-    'blut',
-    'atemnot',
-    '144',
-    '112',
-    'emergency',
+class VoiceRequestNotifier extends StateNotifier<VoiceRequestState> {
+  VoiceRequestNotifier() : super(const VoiceRequestState());
+
+  static const List<String> emergencyKeywords = [
+    'notfall', 'schmerz', 'herz', 'sturz', 'gefallen', 'blut',
+    'atemnot', '144', '112', 'emergency', 'درد', 'سقوط', 'خون'
   ];
-  static const _nursing = [
-    'spritze',
-    'medikament dosieren',
-    'verband wechseln',
-    'infusion',
-    'katheter',
+
+  static const List<String> nursingKeywords = [
+    'spritze', 'medikament dosieren', 'strümpfe anziehen',
+    'verband wechseln', 'infusion', 'katheter', 'تزریق', 'پانسمان'
   ];
-  @override
-  VoiceRequestState build() => const VoiceRequestState();
+
   void toggleListening() {
-    final listening = !state.isListening;
-    if (listening) {
-      const t = 'Ich brauche morgen Hilfe beim Lebensmitteleinkauf beim SPAR.';
-      final lower = t.toLowerCase();
+    final newListening = !state.isListening;
+    if (newListening) {
+      const simulated =
+          'Ich brauche morgen Hilfe beim Lebensmitteleinkauf beim SPAR.';
+      final lower = simulated.toLowerCase();
+      final emerg = emergencyKeywords.any((k) => lower.contains(k));
+      final nurs = nursingKeywords.any((k) => lower.contains(k));
       state = state.copyWith(
         isListening: true,
-        currentTranscript: t,
-        emergencyDetected: _emergency.any(lower.contains),
-        nursingDetected: _nursing.any(lower.contains),
+        currentTranscript: simulated,
+        emergencyDetected: emerg,
+        nursingDetected: nurs,
       );
     } else {
       state = state.copyWith(isListening: false);
     }
   }
 
-  void setTranscript(String text) {
+  void updateTranscript(String text) {
     final lower = text.toLowerCase();
+    final emerg = emergencyKeywords.any((k) => lower.contains(k));
+    final nurs = nursingKeywords.any((k) => lower.contains(k));
     state = state.copyWith(
       currentTranscript: text,
-      emergencyDetected: _emergency.any(lower.contains),
-      nursingDetected: _nursing.any(lower.contains),
+      emergencyDetected: emerg,
+      nursingDetected: nurs,
     );
   }
 }
+
+final voiceRequestProvider =
+    StateNotifierProvider.autoDispose<VoiceRequestNotifier, VoiceRequestState>(
+  (ref) => VoiceRequestNotifier(),
+);

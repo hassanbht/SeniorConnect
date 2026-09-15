@@ -1,78 +1,144 @@
-// lib/features/help_requests/application/volunteer_feed_notifier.dart
-// DO NOT use setState in the screen. See AGENTS.md §State Management.
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/network/api_client.dart';
 
-part 'volunteer_feed_notifier.freezed.dart';
-part 'volunteer_feed_notifier.g.dart';
+class HelpRequestFeedItem {
+  const HelpRequestFeedItem({
+    required this.id,
+    required this.title,
+    required this.categoryName,
+    required this.distanceKm,
+    required this.scheduledTime,
+    required this.durationMinutes,
+    required this.rowVersion,
+    this.isEligible = true,
+    this.ineligibleReason,
+  });
 
-@freezed
-class VolunteerFeedItem with _$VolunteerFeedItem {
-  const factory VolunteerFeedItem({
-    required String id,
-    required String title,
-    required String categoryName,
-    required double distanceKm,
-    required String scheduledTime,
-    required int durationMinutes,
-    required int rowVersion,
-    @Default(true) bool isEligible,
-    String? ineligibleReason,
-  }) = _VolunteerFeedItem;
+  final String id;
+  final String title;
+  final String categoryName;
+  final double distanceKm;
+  final String scheduledTime;
+  final int durationMinutes;
+  final int rowVersion;
+  final bool isEligible;
+  final String? ineligibleReason;
 }
 
-@freezed
-class VolunteerFeedState with _$VolunteerFeedState {
-  const factory VolunteerFeedState({
-    @Default(true) bool isLoading,
-    @Default([]) List<VolunteerFeedItem> requests,
-    @Default(10.0) double maxDistance,
-    String? acceptingId,
-    String? errorMessage,
-  }) = _VolunteerFeedState;
+class VolunteerFeedState {
+  const VolunteerFeedState({
+    this.isLoading = true,
+    this.errorMessage,
+    this.requests = const [],
+    this.maxDistance = 10.0,
+    this.acceptingId,
+  });
+
+  final bool isLoading;
+  final String? errorMessage;
+  final List<HelpRequestFeedItem> requests;
+  final double maxDistance;
+  final String? acceptingId;
+
+  VolunteerFeedState copyWith({
+    bool? isLoading,
+    Object? errorMessage = _sentinel,
+    List<HelpRequestFeedItem>? requests,
+    double? maxDistance,
+    Object? acceptingId = _sentinel,
+  }) {
+    return VolunteerFeedState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage:
+          errorMessage == _sentinel ? this.errorMessage : errorMessage as String?,
+      requests: requests ?? this.requests,
+      maxDistance: maxDistance ?? this.maxDistance,
+      acceptingId:
+          acceptingId == _sentinel ? this.acceptingId : acceptingId as String?,
+    );
+  }
 }
 
-@riverpod
-class VolunteerFeedNotifier extends _$VolunteerFeedNotifier {
-  @override
-  VolunteerFeedState build(ApiClient apiClient) {
-    Future(() => loadFeed(apiClient));
-    return const VolunteerFeedState();
+const _sentinel = Object();
+
+class VolunteerFeedNotifier extends StateNotifier<VolunteerFeedState> {
+  VolunteerFeedNotifier({required this.apiClient})
+      : super(const VolunteerFeedState()) {
+    loadFeed();
   }
 
-  Future<void> loadFeed(ApiClient apiClient) async {
+  final ApiClient apiClient;
+
+  Future<void> setMaxDistance(double distance) async {
+    state = state.copyWith(maxDistance: distance);
+    await loadFeed();
+  }
+
+  Future<void> loadFeed() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
+
     try {
-      final resp = await apiClient.get<List<dynamic>>(
-        '/api/v1/volunteer/feed',
-        queryParameters: {'maxDistanceKm': state.maxDistance},
+      final data = await apiClient.get<dynamic>(
+        '/api/v1/matching/feed',
+        queryParameters: {'radiusKm': state.maxDistance},
       );
-      final items = resp.map((e) {
-        final m = Map<String, dynamic>.from(e as Map);
-        return VolunteerFeedItem(
-          id: m['id'] as String,
-          title: m['title'] as String? ?? '',
-          categoryName: m['categoryName'] as String? ?? '',
+
+      if (data is! List) {
+        throw const FormatException('Unexpected feed response shape');
+      }
+
+      final items = data.map((item) {
+        final m = item as Map<String, dynamic>;
+        final startUtc = DateTime.tryParse(
+          m['scheduledStartUtc'] as String? ?? '',
+        )?.toLocal();
+
+        return HelpRequestFeedItem(
+          id: m['helpRequestId'] as String? ?? '',
+          title: (m['categoryNameKey'] as String? ?? 'help.category.shopping').tr(),
+          categoryName:
+              (m['categoryNameKey'] as String? ?? 'help.category.shopping').tr(),
           distanceKm: (m['distanceKm'] as num?)?.toDouble() ?? 0,
-          scheduledTime: m['scheduledTime'] as String? ?? '',
-          durationMinutes: m['durationMinutes'] as int? ?? 60,
-          rowVersion: m['rowVersion'] as int? ?? 0,
-          isEligible: m['isEligible'] as bool? ?? true,
-          ineligibleReason: m['ineligibleReason'] as String?,
+          scheduledTime: startUtc == null
+              ? ''
+              : '${startUtc.day}.${startUtc.month}., ${startUtc.hour.toString().padLeft(2, '0')}:${startUtc.minute.toString().padLeft(2, '0')}',
+          durationMinutes: (m['durationMinutes'] as num?)?.toInt() ?? 60,
+          rowVersion: (m['rowVersion'] as num?)?.toInt() ?? 0,
+          isEligible: m['isEligible'] as bool? ?? false,
+          ineligibleReason: m['ineligibilityReason'] as String?,
         );
       }).toList();
-      state = state.copyWith(requests: items, isLoading: false);
+
+      state = state.copyWith(isLoading: false, requests: items);
     } catch (_) {
-      state = state.copyWith(isLoading: false, errorMessage: 'errors.generic');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'errors.generic'.tr(),
+      );
     }
   }
 
-  void setMaxDistance(double km, ApiClient apiClient) {
-    state = state.copyWith(maxDistance: km);
-    loadFeed(apiClient);
+  Future<bool> acceptRequest(HelpRequestFeedItem item) async {
+    state = state.copyWith(acceptingId: item.id);
+    try {
+      await apiClient.post<dynamic>(
+        '/api/v1/help-requests/${item.id}:accept',
+        data: {'expectedRowVersion': item.rowVersion},
+      );
+      state = state.copyWith(acceptingId: null);
+      return true;
+    } catch (_) {
+      state = state.copyWith(acceptingId: null);
+      return false;
+    }
   }
-
-  void setAccepting(String? id) => state = state.copyWith(acceptingId: id);
 }
+
+final volunteerFeedProvider = StateNotifierProvider.autoDispose
+    .family<VolunteerFeedNotifier, VolunteerFeedState, ApiClient>(
+  (ref, apiClient) {
+    return VolunteerFeedNotifier(apiClient: apiClient);
+  },
+);

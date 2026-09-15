@@ -1,48 +1,79 @@
-// DO NOT use setState in the screen. See AGENTS.md §State Management.
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../data/auth_repository.dart';
-part 'totp_enrollment_notifier.freezed.dart';
-part 'totp_enrollment_notifier.g.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-@freezed
-class TotpEnrollmentState with _ {
-  const factory TotpEnrollmentState({
-    @Default(true) bool isLoading,
-    @Default(false) bool isConfirming,
-    @Default(false) bool confirmed,
+import '../../../core/network/api_client.dart';
+import '../data/auth_repository.dart';
+
+class TotpEnrollmentState {
+  const TotpEnrollmentState({
+    this.enrollment,
+    this.isLoading = true,
+    this.isConfirming = false,
+    this.confirmed = false,
+    this.errorKey,
+  });
+
+  final TotpEnrollment? enrollment;
+  final bool isLoading;
+  final bool isConfirming;
+  final bool confirmed;
+  final String? errorKey;
+
+  TotpEnrollmentState copyWith({
     TotpEnrollment? enrollment,
-    String? errorKey,
-  }) = _TotpEnrollmentState;
+    bool? isLoading,
+    bool? isConfirming,
+    bool? confirmed,
+    Object? errorKey = _sentinel,
+  }) {
+    return TotpEnrollmentState(
+      enrollment: enrollment ?? this.enrollment,
+      isLoading: isLoading ?? this.isLoading,
+      isConfirming: isConfirming ?? this.isConfirming,
+      confirmed: confirmed ?? this.confirmed,
+      errorKey: errorKey == _sentinel ? this.errorKey : errorKey as String?,
+    );
+  }
 }
 
-@riverpod
-class TotpEnrollmentNotifier extends _ {
-  @override
-  TotpEnrollmentState build(AuthRepository repo) {
-    Future(() => _start(repo));
-    return const TotpEnrollmentState();
+const _sentinel = Object();
+
+class TotpEnrollmentNotifier extends StateNotifier<TotpEnrollmentState> {
+  TotpEnrollmentNotifier({required this.authRepository})
+      : super(const TotpEnrollmentState()) {
+    startEnrollment();
   }
 
-  Future<void> _start(AuthRepository repo) async {
+  final AuthRepository authRepository;
+
+  Future<void> startEnrollment() async {
     state = state.copyWith(isLoading: true, errorKey: null);
     try {
-      final e = await repo.enrollTotp();
-      state = state.copyWith(enrollment: e, isLoading: false);
+      final enrollment = await authRepository.enrollTotp();
+      state = state.copyWith(isLoading: false, enrollment: enrollment);
     } catch (_) {
-      state = state.copyWith(errorKey: 'errors.generic', isLoading: false);
+      state = state.copyWith(isLoading: false, errorKey: 'errors.generic');
     }
   }
 
-  Future<void> confirm(String code, AuthRepository repo) async {
+  Future<bool> confirm(String code) async {
     state = state.copyWith(isConfirming: true, errorKey: null);
     try {
-      await repo.confirmTotpEnrollment(code);
-      state = state.copyWith(confirmed: true);
+      await authRepository.confirmTotpEnrollment(code);
+      state = state.copyWith(isConfirming: false, confirmed: true);
+      return true;
     } catch (_) {
-      state = state.copyWith(errorKey: 'errors.generic');
-    } finally {
-      state = state.copyWith(isConfirming: false);
+      state = state.copyWith(
+        isConfirming: false,
+        errorKey: 'auth.totp.invalid_code',
+      );
+      return false;
     }
   }
 }
+
+final totpEnrollmentProvider = StateNotifierProvider.autoDispose
+    .family<TotpEnrollmentNotifier, TotpEnrollmentState, ApiClient>(
+  (ref, apiClient) {
+    return TotpEnrollmentNotifier(authRepository: AuthRepositoryImpl(apiClient));
+  },
+);
