@@ -15,6 +15,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/design_system/app_theme.dart';
 import 'core/design_system/app_tokens.dart';
@@ -36,12 +37,18 @@ Future<void> main() async {
   final apiClient = ApiClient(baseUrl: baseUrl);
 
   runApp(
-    EasyLocalization(
-      supportedLocales: const [Locale('de'), Locale('en'), Locale('fa')],
-      path: 'assets/translations',
-      fallbackLocale: const Locale('de'), // German is the source of truth
-      useOnlyLangCode: true,
-      child: SeniorConnectApp(settings: settings, apiClient: apiClient),
+    // ProviderScope is required by Riverpod — must be the outermost widget.
+    // All screens use ConsumerWidget / ConsumerStatefulWidget instead of setState.
+    // The ONLY permitted use of setState in this codebase is app_button.dart
+    // (local visual busy flag with zero business logic).
+    ProviderScope(
+      child: EasyLocalization(
+        supportedLocales: const [Locale('de'), Locale('en'), Locale('fa')],
+        path: 'assets/translations',
+        fallbackLocale: const Locale('de'), // German is the source of truth
+        useOnlyLangCode: true,
+        child: SeniorConnectApp(settings: settings, apiClient: apiClient),
+      ),
     ),
   );
 }
