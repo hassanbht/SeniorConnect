@@ -34,8 +34,11 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateMixin {
-  late final AuthRepository _authRepository = AuthRepositoryImpl(widget.apiClient);
+class _AuthScreenState extends State<AuthScreen>
+    with SingleTickerProviderStateMixin {
+  late final AuthRepository _authRepository = AuthRepositoryImpl(
+    widget.apiClient,
+  );
 
   late TabController _tabController;
   final _phoneController = TextEditingController();
@@ -75,7 +78,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   void _checkPasswordMatch() {
     setState(() {
-      _passwordsMatch = _passwordController.text == _confirmPasswordController.text &&
+      _passwordsMatch =
+          _passwordController.text == _confirmPasswordController.text &&
           _passwordController.text.isNotEmpty &&
           _confirmPasswordController.text.isNotEmpty;
     });
@@ -141,7 +145,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
     try {
       if (_isLoginMode) {
-        await _authRepository.emailPasswordLogin(email: email, password: password);
+        await _authRepository.emailPasswordLogin(
+          email: email,
+          password: password,
+        );
         if (mounted) context.go(AppRoutes.home);
       } else {
         await _authRepository.registerEmailPassword(
@@ -151,7 +158,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('auth.register.email_verification_sent'.tr())),
+            SnackBar(
+              content: Text('auth.register.email_verification_sent'.tr()),
+            ),
           );
           setState(() {
             _isLoginMode = true;
@@ -178,9 +187,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       if (mounted) context.go(AppRoutes.home);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorKeyFor(e).tr())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_errorKeyFor(e).tr())));
       }
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
@@ -197,9 +206,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       if (mounted) context.go(AppRoutes.home);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorKeyFor(e).tr())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_errorKeyFor(e).tr())));
       }
     } finally {
       if (mounted) setState(() => _isIdAustriaLoading = false);
@@ -211,7 +220,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
-    final isSeniorMode = MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+    final isSeniorMode =
+        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
 
     return Scaffold(
       body: SafeArea(
@@ -300,8 +310,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                           errorKey: _emailErrorKey,
                           isLoginMode: _isLoginMode,
                           onToggleMode: _toggleEmailMode,
-                          onTogglePasswordVisibility: () => setState(() => _obscurePassword = !_obscurePassword),
-                          onToggleConfirmPasswordVisibility: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                          onTogglePasswordVisibility: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
+                          onToggleConfirmPasswordVisibility: () => setState(
+                            () => _obscureConfirmPassword =
+                                !_obscureConfirmPassword,
+                          ),
                           onSubmit: _submitEmail,
                         ),
                         // Google / ID Austria tab
@@ -367,7 +382,8 @@ class _PhoneTab extends StatelessWidget {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
-    final isSeniorMode = MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+    final isSeniorMode =
+        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
 
     return SingleChildScrollView(
       child: Form(
@@ -433,7 +449,9 @@ class _PhoneTab extends StatelessWidget {
                           height: isSeniorMode ? 24 : 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onPrimary,
+                            ),
                           ),
                         )
                       : const Icon(Icons.arrow_forward),
@@ -492,7 +510,8 @@ class _EmailTab extends StatelessWidget {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
-    final isSeniorMode = MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+    final isSeniorMode =
+        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
 
     return SingleChildScrollView(
       child: Form(
@@ -520,7 +539,9 @@ class _EmailTab extends StatelessWidget {
                   if (value == null || value.trim().isEmpty) {
                     return 'auth.register.email'.tr();
                   }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                  if (!RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  ).hasMatch(value.trim())) {
                     return 'auth.register.email_invalid'.tr();
                   }
                   return null;
@@ -542,9 +563,13 @@ class _EmailTab extends StatelessWidget {
                   hintText: '••••••••',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(
+                      obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
                     onPressed: onTogglePasswordVisibility,
-                    tooltip: obscurePassword ? 'Show password' : 'Hide password',
+                    tooltip: obscurePassword
+                        ? 'Show password'
+                        : 'Hide password',
                   ),
                   border: const OutlineInputBorder(),
                 ),
@@ -576,12 +601,20 @@ class _EmailTab extends StatelessWidget {
                     hintText: '••••••••',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(
+                        obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
                       onPressed: onToggleConfirmPasswordVisibility,
-                      tooltip: obscureConfirmPassword ? 'Show password' : 'Hide password',
+                      tooltip: obscureConfirmPassword
+                          ? 'Show password'
+                          : 'Hide password',
                     ),
                     border: const OutlineInputBorder(),
-                    errorText: !passwordsMatch && confirmPasswordController.text.isNotEmpty
+                    errorText:
+                        !passwordsMatch &&
+                            confirmPasswordController.text.isNotEmpty
                         ? 'auth.register.password_mismatch'.tr()
                         : null,
                   ),
@@ -614,7 +647,9 @@ class _EmailTab extends StatelessWidget {
             // Submit button
             Semantics(
               button: true,
-              label: (isLoginMode ? 'auth.login.submit' : 'auth.register.submit').tr(),
+              label:
+                  (isLoginMode ? 'auth.login.submit' : 'auth.register.submit')
+                      .tr(),
               child: SizedBox(
                 height: isSeniorMode ? 72 : 64,
                 child: FilledButton.icon(
@@ -625,12 +660,17 @@ class _EmailTab extends StatelessWidget {
                           height: isSeniorMode ? 24 : 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onPrimary,
+                            ),
                           ),
                         )
-                      : Icon(isLoginMode ? Icons.login : Icons.person_add_alt_1),
+                      : Icon(
+                          isLoginMode ? Icons.login : Icons.person_add_alt_1,
+                        ),
                   label: Text(
-                    (isLoginMode ? 'auth.login.submit' : 'auth.register.submit').tr(),
+                    (isLoginMode ? 'auth.login.submit' : 'auth.register.submit')
+                        .tr(),
                     style: textTheme.titleMedium?.copyWith(
                       color: colorScheme.onPrimary,
                       fontSize: isSeniorMode ? 18 : null,
@@ -646,7 +686,10 @@ class _EmailTab extends StatelessWidget {
             TextButton(
               onPressed: onToggleMode,
               child: Text(
-                (isLoginMode ? 'auth.login.switch_to_register' : 'auth.login.switch_to_login').tr(),
+                (isLoginMode
+                        ? 'auth.login.switch_to_register'
+                        : 'auth.login.switch_to_login')
+                    .tr(),
               ),
             ),
 
@@ -685,7 +728,8 @@ class _IdAustriaTab extends StatelessWidget {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
-    final isSeniorMode = MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+    final isSeniorMode =
+        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
 
     return SingleChildScrollView(
       child: Column(
@@ -711,7 +755,8 @@ class _IdAustriaTab extends StatelessWidget {
                         'assets/images/google_logo.png',
                         width: 24,
                         height: 24,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 24),
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.g_mobiledata, size: 24),
                       ),
                 label: Text(
                   'auth.google.button'.tr(),

@@ -16,3 +16,20 @@
     <ProjectReference Include="..\HelpRequests\SeniorConnect.Modules.HelpRequests.csproj" />
   </ItemGroup>
 </Project>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <NoWarn>$(NoWarn);CA1848;CA1873;CA1305</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0-*" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SeniorConnect.Domain\SeniorConnect.Domain.csproj" />
+    <ProjectReference Include="..\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+    <ProjectReference Include="..\Organizations\SeniorConnect.Modules.Organizations.csproj" />
+  </ItemGroup>
+</Project>

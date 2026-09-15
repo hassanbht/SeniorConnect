@@ -41,10 +41,18 @@ class ProfileEditScreen extends StatefulWidget {
 }
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
-  late final AuthRepository _authRepository = AuthRepositoryImpl(widget.apiClient);
-  late final GeographyRepository _geographyRepository = GeographyRepositoryImpl(widget.apiClient);
-  late final ProfileRepository _profileRepository = ProfileRepositoryImpl(widget.apiClient);
-  late final InterestsRepository _interestsRepository = InterestsRepositoryImpl(widget.apiClient);
+  late final AuthRepository _authRepository = AuthRepositoryImpl(
+    widget.apiClient,
+  );
+  late final GeographyRepository _geographyRepository = GeographyRepositoryImpl(
+    widget.apiClient,
+  );
+  late final ProfileRepository _profileRepository = ProfileRepositoryImpl(
+    widget.apiClient,
+  );
+  late final InterestsRepository _interestsRepository = InterestsRepositoryImpl(
+    widget.apiClient,
+  );
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -94,7 +102,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _initialize() async {
-    await Future.wait([_loadCurrentUser(), _loadBundeslaender(), _loadInterests()]);
+    await Future.wait([
+      _loadCurrentUser(),
+      _loadBundeslaender(),
+      _loadInterests(),
+    ]);
     if (mounted) setState(() => _isLoadingProfile = false);
   }
 
@@ -164,7 +176,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
     if (source == null || !mounted) return;
 
-    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 85,
+    );
     if (picked == null || !mounted) return;
 
     setState(() {
@@ -314,7 +329,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           controller: newPhoneController,
           autofocus: true,
           keyboardType: TextInputType.phone,
-          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[+\d\s\-()]'))],
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[+\d\s\-()]')),
+          ],
           decoration: InputDecoration(
             labelText: 'profile.phone'.tr(),
             hintText: '+43 660 1234567',
@@ -327,7 +344,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             child: Text('common.cancel'.tr()),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, newPhoneController.text.trim()),
+            onPressed: () =>
+                Navigator.pop(dialogContext, newPhoneController.text.trim()),
             child: Text('common.confirm'.tr()),
           ),
         ],
@@ -372,7 +390,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         '${_streetController.text.trim()}, ${_plzController.text.trim()} ${_cityController.text.trim()}';
 
     try {
-      final result = await _geographyRepository.geocodeAddress(fullAddress, persistToProfile: true);
+      final result = await _geographyRepository.geocodeAddress(
+        fullAddress,
+        persistToProfile: true,
+      );
       if (!mounted) return;
       setState(() {
         _latitude = result.latitude;
@@ -393,7 +414,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       builder: (context) => _MapPreviewSheet(
         latitude: _latitude!,
         longitude: _longitude!,
-        address: '${_streetController.text}, ${_plzController.text} ${_cityController.text}',
+        address:
+            '${_streetController.text}, ${_plzController.text} ${_cityController.text}',
         onConfirm: () {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -429,12 +451,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadBundeslaender();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
-    final isSeniorMode = MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
-    final buttonHeight = isSeniorMode ? AppTouch.buttonHeightSenior : AppTouch.buttonHeightStandard;
+    final isSeniorMode =
+        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+    final buttonHeight = isSeniorMode
+        ? AppTouch.buttonHeightSenior
+        : AppTouch.buttonHeightStandard;
 
     if (_isLoadingProfile) {
       return Scaffold(
@@ -467,7 +498,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         key: _formKey,
         child: ListView(
           padding: EdgeInsets.symmetric(
-            horizontal: isSeniorMode ? AppSpacing.pageHSenior : AppSpacing.pageH,
+            horizontal: isSeniorMode
+                ? AppSpacing.pageHSenior
+                : AppSpacing.pageH,
             vertical: AppSpacing.lg,
           ),
           children: [
@@ -484,10 +517,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         radius: 48,
                         backgroundColor: colorScheme.primaryContainer,
                         backgroundImage: _photoUrl != null
-                            ? NetworkImage('${widget.apiClient.baseUrl}$_photoUrl')
+                            ? NetworkImage(
+                                '${widget.apiClient.baseUrl}$_photoUrl',
+                              )
                             : null,
                         child: _photoUrl == null
-                            ? Icon(Icons.person, size: 48, color: colorScheme.onPrimaryContainer)
+                            ? Icon(
+                                Icons.person,
+                                size: 48,
+                                color: colorScheme.onPrimaryContainer,
+                              )
                             : null,
                       ),
                       if (_isUploadingPhoto)
@@ -501,7 +540,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           child: CircleAvatar(
                             radius: 16,
                             backgroundColor: colorScheme.primary,
-                            child: Icon(Icons.camera_alt, size: 16, color: colorScheme.onPrimary),
+                            child: Icon(
+                              Icons.camera_alt,
+                              size: 16,
+                              color: colorScheme.onPrimary,
+                            ),
                           ),
                         ),
                     ],
@@ -600,12 +643,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     child: SizedBox(
                       height: buttonHeight,
                       child: OutlinedButton.icon(
-                        onPressed: _isVerifyingPhone ? null : _requestPhoneVerification,
+                        onPressed: _isVerifyingPhone
+                            ? null
+                            : _requestPhoneVerification,
                         icon: _isVerifyingPhone
                             ? SizedBox(
                                 width: isSeniorMode ? 24 : 20,
                                 height: isSeniorMode ? 24 : 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.verified_user_outlined),
                         label: Text('profile.verify_phone_button'.tr()),
@@ -617,14 +664,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Chip(
-                        avatar: Icon(Icons.check_circle, color: colorScheme.primary),
+                        avatar: Icon(
+                          Icons.check_circle,
+                          color: colorScheme.primary,
+                        ),
                         label: Text('profile.phone_verified'.tr()),
                       ),
                       Semantics(
                         button: true,
                         label: 'profile.change_phone_semantic'.tr(),
                         child: TextButton(
-                          onPressed: _isVerifyingPhone ? null : _changePhoneNumber,
+                          onPressed: _isVerifyingPhone
+                              ? null
+                              : _changePhoneNumber,
                           child: Text('profile.change_phone_button'.tr()),
                         ),
                       ),
@@ -686,10 +738,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.map_outlined),
               ),
-              items: _bundeslaender.map((b) => DropdownMenuItem(
-                value: b.code,
-                child: Text(b.name),
-              )).toList(),
+              items: _bundeslaender
+                  .map(
+                    (b) => DropdownMenuItem(value: b.code, child: Text(b.name)),
+                  )
+                  .toList(),
               onChanged: _onBundeslandChanged,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -709,10 +762,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.location_city_outlined),
               ),
-              items: _bezirke.map((b) => DropdownMenuItem(
-                value: b.code,
-                child: Text(b.name),
-              )).toList(),
+              items: _bezirke
+                  .map(
+                    (b) => DropdownMenuItem(value: b.code, child: Text(b.name)),
+                  )
+                  .toList(),
               onChanged: _bezirke.isNotEmpty ? _onBezirkChanged : null,
               validator: (value) {
                 if (_bezirke.isNotEmpty && (value == null || value.isEmpty)) {
@@ -732,10 +786,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.location_on_outlined),
               ),
-              items: _gemeinden.map((g) => DropdownMenuItem(
-                value: g.code,
-                child: Text('${g.name} (${g.postalCode})'),
-              )).toList(),
+              items: _gemeinden
+                  .map(
+                    (g) => DropdownMenuItem(
+                      value: g.code,
+                      child: Text('${g.name} (${g.postalCode})'),
+                    ),
+                  )
+                  .toList(),
               onChanged: _gemeinden.isNotEmpty ? _onGemeindeChanged : null,
               validator: (value) {
                 if (_gemeinden.isNotEmpty && (value == null || value.isEmpty)) {
@@ -820,7 +878,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
                   'empty.no_interests'.tr(),
-                  style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               )
             else
@@ -864,7 +924,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           height: isSeniorMode ? 24 : 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onPrimary,
+                            ),
                           ),
                         )
                       : Text(
@@ -894,9 +956,7 @@ class _SectionHeader extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return Text(
       title,
-      style: textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
+      style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
     );
   }
 }
@@ -928,17 +988,18 @@ class _CoordinateCard extends StatelessWidget {
               children: [
                 Icon(icon, size: 20, color: colorScheme.primary),
                 const SizedBox(width: 8),
-                Text(label, style: textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                )),
+                Text(
+                  label,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
             SelectableText(
               value,
-              style: textTheme.titleMedium?.copyWith(
-                fontFamily: 'monospace',
-              ),
+              style: textTheme.titleMedium?.copyWith(fontFamily: 'monospace'),
             ),
           ],
         ),
@@ -965,8 +1026,11 @@ class _MapPreviewSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
-    final isSeniorMode = MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
-    final buttonHeight = isSeniorMode ? AppTouch.buttonHeightSenior : AppTouch.buttonHeightStandard;
+    final isSeniorMode =
+        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+    final buttonHeight = isSeniorMode
+        ? AppTouch.buttonHeightSenior
+        : AppTouch.buttonHeightStandard;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
@@ -1009,7 +1073,11 @@ class _MapPreviewSheet extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.map_outlined, size: 64, color: colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.map_outlined,
+                          size: 64,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Interactive map preview\n(Lat: ${latitude.toStringAsFixed(4)}, Lng: ${longitude.toStringAsFixed(4)})',
