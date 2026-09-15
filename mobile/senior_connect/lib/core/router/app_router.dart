@@ -19,7 +19,6 @@ import '../../features/auth/presentation/otp_verify_screen.dart';
 import '../../features/auth/presentation/staff_login_screen.dart';
 import '../../features/auth/presentation/totp_enrollment_screen.dart';
 import '../../features/community/presentation/community_feed_screen.dart';
-import '../../features/community/presentation/event_detail_screen.dart';
 import '../../features/community/presentation/my_appointments_screen.dart';
 import '../../features/discovery/presentation/discovery_screen.dart';
 import '../../features/family/presentation/family_dashboard_screen.dart';

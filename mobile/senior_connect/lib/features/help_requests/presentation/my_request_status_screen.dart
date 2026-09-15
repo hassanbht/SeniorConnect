@@ -12,33 +12,17 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/app_states.dart';
+import '../application/my_request_status_notifier.dart';
 import 'widgets/first_meeting_protocol_dialog.dart';
 import 'widgets/safeguarding_concern_dialog.dart';
 
-class _RequestStatusDetails {
-  const _RequestStatusDetails({
-    required this.status,
-    required this.categoryNameKey,
-    required this.scheduledStartUtc,
-    required this.notes,
-    required this.volunteerDisplayName,
-    required this.volunteerPhone,
-  });
-
-  final String status;
-  final String categoryNameKey;
-  final DateTime? scheduledStartUtc;
-  final String? notes;
-  final String? volunteerDisplayName;
-  final String? volunteerPhone;
-}
-
-class MyRequestStatusScreen extends StatefulWidget {
+class MyRequestStatusScreen extends ConsumerWidget {
   const MyRequestStatusScreen({
     super.key,
     required this.apiClient,
@@ -48,81 +32,6 @@ class MyRequestStatusScreen extends StatefulWidget {
   final ApiClient apiClient;
   final String? requestId;
 
-  @override
-  State<MyRequestStatusScreen> createState() => _MyRequestStatusScreenState();
-}
-
-class _MyRequestStatusScreenState extends State<MyRequestStatusScreen> {
-  bool _isLoading = true;
-  String? _loadError;
-  _RequestStatusDetails? _details;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadStatus();
-  }
-
-  Future<void> _loadStatus() async {
-    final id = widget.requestId;
-    if (id == null) {
-      setState(() {
-        _isLoading = false;
-        _loadError = 'errors.generic'.tr();
-      });
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _loadError = null;
-    });
-
-    try {
-      final requestData = await widget.apiClient.get<dynamic>(
-        '/api/v1/help-requests/$id',
-      );
-      final categoriesData = await widget.apiClient.get<dynamic>(
-        '/api/v1/activities/categories',
-      );
-
-      final m = requestData as Map<String, dynamic>;
-      var categoryNameKey = 'help.category.shopping';
-      if (categoriesData is List) {
-        for (final c in categoriesData) {
-          final cm = c as Map<String, dynamic>;
-          if (cm['id'] == m['categoryId']) {
-            categoryNameKey = cm['nameKey'] as String? ?? categoryNameKey;
-            break;
-          }
-        }
-      }
-
-      final details = _RequestStatusDetails(
-        status: m['status'] as String? ?? 'Open',
-        categoryNameKey: categoryNameKey,
-        scheduledStartUtc: DateTime.tryParse(m['scheduledStartUtc'] as String? ?? ''),
-        notes: m['notes'] as String?,
-        volunteerDisplayName: m['volunteerDisplayName'] as String?,
-        volunteerPhone: m['volunteerPhone'] as String?,
-      );
-
-      if (mounted) {
-        setState(() {
-          _details = details;
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _loadError = 'errors.generic'.tr();
-        });
-      }
-    }
-  }
-
   Future<void> _makeCall(String phoneNumber) async {
     final uri = Uri(scheme: 'tel', path: phoneNumber);
     if (await canLaunchUrl(uri)) {
@@ -130,37 +39,39 @@ class _MyRequestStatusScreenState extends State<MyRequestStatusScreen> {
     }
   }
 
-  void _reportSafeguardingConcern() {
+  void _reportSafeguardingConcern(BuildContext context) {
     SafeguardingConcernDialog.show(
       context,
-      subjectUserId: widget.requestId ?? 'unknown',
-      apiClient: widget.apiClient,
+      subjectUserId: requestId ?? 'unknown',
+      apiClient: apiClient,
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final params = MyRequestStatusParams(apiClient: apiClient, requestId: requestId);
+    final state = ref.watch(myRequestStatusProvider(params));
 
-    if (_isLoading) {
+    if (state.isLoading) {
       return Scaffold(
         body: SafeArea(child: AppLoading(message: 'common.loading'.tr())),
       );
     }
 
-    if (_loadError != null || _details == null) {
+    if (state.loadError != null || state.details == null) {
       return Scaffold(
         body: SafeArea(
           child: AppErrorView(
-            message: _loadError ?? 'errors.generic'.tr(),
+            message: state.loadError ?? 'errors.generic'.tr(),
             retryLabel: 'common.retry'.tr(),
-            onRetry: _loadStatus,
+            onRetry: () => ref.read(myRequestStatusProvider(params).notifier).loadStatus(),
           ),
         ),
       );
     }
 
-    final details = _details!;
+    final details = state.details!;
     final hasVolunteer = details.volunteerDisplayName != null;
 
     return Scaffold(
@@ -315,7 +226,7 @@ class _MyRequestStatusScreenState extends State<MyRequestStatusScreen> {
                       'safeguarding.report'.tr(),
                       style: TextStyle(color: theme.colorScheme.error),
                     ),
-                    onPressed: _reportSafeguardingConcern,
+                    onPressed: () => _reportSafeguardingConcern(context),
                   ),
                 ],
               ),

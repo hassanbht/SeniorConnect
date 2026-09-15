@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../application/create_help_request_notifier.dart';
 
-class CreateHelpRequestScreen extends StatefulWidget {
+class CreateHelpRequestScreen extends ConsumerStatefulWidget {
   final VoidCallback? onCreated;
 
   const CreateHelpRequestScreen({super.key, this.onCreated});
 
   @override
-  State<CreateHelpRequestScreen> createState() => _CreateHelpRequestScreenState();
+  ConsumerState<CreateHelpRequestScreen> createState() =>
+      _CreateHelpRequestScreenState();
 }
 
-class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
+class _CreateHelpRequestScreenState
+    extends ConsumerState<CreateHelpRequestScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  String _selectedCategory = 'Garten & Pflanzen';
-  bool _isSubmitting = false;
 
   final List<String> _categories = [
     'Garten & Pflanzen',
@@ -33,27 +35,25 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_titleController.text.trim().isEmpty) return;
-
-    setState(() => _isSubmitting = true);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        widget.onCreated?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Hilfeanfrage erfolgreich veröffentlicht!'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
-      }
-    });
+  Future<void> _submit() async {
+    final title = _titleController.text;
+    final success =
+        await ref.read(createHelpRequestProvider.notifier).submit(title);
+    if (success && mounted) {
+      widget.onCreated?.call();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Hilfeanfrage erfolgreich veröffentlicht!'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final state = ref.watch(createHelpRequestProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -86,12 +86,16 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
               children: _categories.map((cat) {
-                final isSelected = _selectedCategory == cat;
+                final isSelected = state.selectedCategory == cat;
                 return ChoiceChip(
                   label: Text(cat),
                   selected: isSelected,
                   onSelected: (selected) {
-                    if (selected) setState(() => _selectedCategory = cat);
+                    if (selected) {
+                      ref
+                          .read(createHelpRequestProvider.notifier)
+                          .setCategory(cat);
+                    }
                   },
                 );
               }).toList(),
@@ -114,7 +118,7 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
             AppButton(
               label: 'Anfrage veröffentlichen',
               icon: Icons.send,
-              isLoading: _isSubmitting,
+              isLoading: state.isSubmitting,
               onPressed: _submit,
             ),
           ],

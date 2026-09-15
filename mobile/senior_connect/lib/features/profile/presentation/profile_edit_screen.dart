@@ -20,40 +20,25 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
-import '../../auth/data/auth_repository.dart';
-import '../data/geography_repository.dart';
-import '../data/interests_repository.dart';
-import '../data/profile_repository.dart';
+import '../application/profile_edit_notifier.dart';
 
-class ProfileEditScreen extends StatefulWidget {
+class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key, required this.apiClient});
 
   final ApiClient apiClient;
 
   @override
-  State<ProfileEditScreen> createState() => _ProfileEditScreenState();
+  ConsumerState<ProfileEditScreen> createState() => _ProfileEditScreenState();
 }
 
-class _ProfileEditScreenState extends State<ProfileEditScreen> {
-  late final AuthRepository _authRepository = AuthRepositoryImpl(
-    widget.apiClient,
-  );
-  late final GeographyRepository _geographyRepository = GeographyRepositoryImpl(
-    widget.apiClient,
-  );
-  late final ProfileRepository _profileRepository = ProfileRepositoryImpl(
-    widget.apiClient,
-  );
-  late final InterestsRepository _interestsRepository = InterestsRepositoryImpl(
-    widget.apiClient,
-  );
-
+class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -62,33 +47,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _plzController = TextEditingController();
   final _cityController = TextEditingController();
 
-  String? _selectedBundesland;
-  String? _selectedBezirk;
-  String? _selectedGemeinde;
-  List<Bundesland> _bundeslaender = [];
-  List<Bezirk> _bezirke = [];
-  List<Gemeinde> _gemeinden = [];
-
-  bool _isLoadingProfile = true;
-  bool _isSaving = false;
-  bool _isVerifyingPhone = false;
-  bool _isGeocoding = false;
-  bool _isUploadingPhoto = false;
-  bool _phoneVerified = false;
-  String? _errorKey;
-  double? _latitude;
-  double? _longitude;
-  String _preferredLocale = 'de';
-  bool _seniorModeDefault = false;
-  String? _photoUrl;
-  List<InterestOption> _interestCatalog = [];
-  Set<String> _selectedInterestIds = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _initialize();
-  }
+  bool _initialized = false;
 
   @override
   void dispose() {
@@ -101,56 +60,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     super.dispose();
   }
 
-  Future<void> _initialize() async {
-    await Future.wait([
-      _loadCurrentUser(),
-      _loadBundeslaender(),
-      _loadInterests(),
-    ]);
-    if (mounted) setState(() => _isLoadingProfile = false);
-  }
-
-  Future<void> _loadCurrentUser() async {
-    try {
-      final user = await _profileRepository.getCurrentUser();
-      if (!mounted) return;
-      setState(() {
-        _nameController.text = user.displayName;
-        _emailController.text = user.email ?? '';
-        _phoneController.text = user.phone ?? '';
-        _preferredLocale = user.preferredLocale;
-        _seniorModeDefault = user.seniorModeDefault;
-        _photoUrl = user.photoUrl;
-      });
-    } catch (_) {
-      if (mounted) setState(() => _errorKey = 'errors.generic');
+  void _syncUserToControllers(ProfileEditState state) {
+    if (!_initialized && state.user != null) {
+      _nameController.text = state.user!.displayName;
+      _emailController.text = state.user!.email ?? '';
+      _phoneController.text = state.user!.phone ?? '';
+      _initialized = true;
     }
-  }
-
-  Future<void> _loadInterests() async {
-    try {
-      final results = await Future.wait([
-        _interestsRepository.getCatalog(),
-        _interestsRepository.getSelected(),
-      ]);
-      if (!mounted) return;
-      setState(() {
-        _interestCatalog = results[0];
-        _selectedInterestIds = results[1].map((i) => i.id).toSet();
-      });
-    } catch (_) {
-      // Best-effort — interests are optional; leave the section empty on failure.
-    }
-  }
-
-  void _toggleInterest(String id, bool selected) {
-    setState(() {
-      if (selected) {
-        _selectedInterestIds.add(id);
-      } else {
-        _selectedInterestIds.remove(id);
-      }
-    });
   }
 
   Future<void> _pickAndUploadPhoto() async {
@@ -182,140 +98,51 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
     if (picked == null || !mounted) return;
 
-    setState(() {
-      _isUploadingPhoto = true;
-      _errorKey = null;
-    });
-
-    try {
-      final user = await _profileRepository.uploadPhoto(picked.path);
-      if (mounted) setState(() => _photoUrl = user.photoUrl);
-    } catch (_) {
-      if (mounted) setState(() => _errorKey = 'errors.generic');
-    } finally {
-      if (mounted) setState(() => _isUploadingPhoto = false);
-    }
-  }
-
-  Future<void> _loadBundeslaender() async {
-    try {
-      final bundeslaender = await _geographyRepository.getBundeslaender();
-      if (mounted) setState(() => _bundeslaender = bundeslaender);
-    } catch (_) {
-      if (mounted) setState(() => _errorKey = 'errors.generic');
-    }
-  }
-
-  Future<void> _onBundeslandChanged(String? code) async {
-    if (code == null) {
-      setState(() {
-        _selectedBundesland = null;
-        _selectedBezirk = null;
-        _selectedGemeinde = null;
-        _bezirke = [];
-        _gemeinden = [];
-      });
-      return;
-    }
-
-    setState(() {
-      _selectedBundesland = code;
-      _selectedBezirk = null;
-      _selectedGemeinde = null;
-      _bezirke = [];
-      _gemeinden = [];
-    });
-
-    try {
-      final bezirke = await _geographyRepository.getBezirke(code);
-      if (mounted) setState(() => _bezirke = bezirke);
-    } catch (_) {
-      if (mounted) setState(() => _errorKey = 'errors.generic');
-    }
-  }
-
-  Future<void> _onBezirkChanged(String? code) async {
-    if (code == null) {
-      setState(() {
-        _selectedBezirk = null;
-        _selectedGemeinde = null;
-        _gemeinden = [];
-      });
-      return;
-    }
-
-    setState(() {
-      _selectedBezirk = code;
-      _selectedGemeinde = null;
-      _gemeinden = [];
-    });
-
-    try {
-      final gemeinden = await _geographyRepository.getGemeinden(code);
-      if (mounted) setState(() => _gemeinden = gemeinden);
-    } catch (_) {
-      if (mounted) setState(() => _errorKey = 'errors.generic');
-    }
+    await ref
+        .read(profileEditProvider(widget.apiClient).notifier)
+        .uploadPhoto(picked.path);
   }
 
   void _onGemeindeChanged(String? code) {
-    if (code == null) {
-      setState(() {
-        _selectedGemeinde = null;
-        _plzController.clear();
-        _cityController.clear();
-        _latitude = null;
-        _longitude = null;
-      });
-      return;
-    }
-
-    final gemeinde = _gemeinden.firstWhere((g) => g.code == code);
-    setState(() {
-      _selectedGemeinde = code;
+    final notifier = ref.read(profileEditProvider(widget.apiClient).notifier);
+    final gemeinde = notifier.onGemeindeChanged(code);
+    if (gemeinde == null) {
+      _plzController.clear();
+      _cityController.clear();
+    } else {
       _plzController.text = gemeinde.postalCode;
       _cityController.text = gemeinde.name;
-      _latitude = gemeinde.latitude;
-      _longitude = gemeinde.longitude;
-    });
+    }
   }
 
   Future<void> _lookupByPlz(String plz) async {
+    final notifier = ref.read(profileEditProvider(widget.apiClient).notifier);
     try {
-      final matches = await _geographyRepository.lookupByPlz(plz);
+      final matches = await notifier.geographyRepository.lookupByPlz(plz);
       if (!mounted || matches.isEmpty) return;
       final match = matches.first;
-      setState(() {
-        _cityController.text = match.name;
-        _latitude = match.latitude;
-        _longitude = match.longitude;
-      });
+      _cityController.text = match.name;
+      notifier.setCoordinates(match.latitude, match.longitude);
     } catch (_) {
-      // Best-effort convenience lookup — leave the field editable on failure.
+      // Best-effort convenience lookup
     }
   }
 
   Future<void> _requestPhoneVerification() async {
     final phone = _phoneController.text.trim();
-    setState(() {
-      _isVerifyingPhone = true;
-      _errorKey = null;
-    });
-
+    final notifier = ref.read(profileEditProvider(widget.apiClient).notifier);
     try {
-      await _authRepository.requestProfilePhoneVerification(phone);
+      await notifier.authRepository.requestProfilePhoneVerification(phone);
       if (!mounted) return;
 
       final verified = await context.push<bool>(
         '${AppRoutes.otpVerify}?phone=${Uri.encodeComponent(phone)}&purpose=phone_verification',
       );
       if (mounted && verified == true) {
-        setState(() => _phoneVerified = true);
+        notifier.setPhoneVerified(true);
       }
     } catch (_) {
-      if (mounted) setState(() => _errorKey = 'errors.generic');
-    } finally {
-      if (mounted) setState(() => _isVerifyingPhone = false);
+      notifier.setErrorKey('errors.generic');
     }
   }
 
@@ -355,65 +182,42 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     if (newPhone == null || newPhone.isEmpty || !mounted) return;
 
-    setState(() {
-      _isVerifyingPhone = true;
-      _errorKey = null;
-    });
-
+    final notifier = ref.read(profileEditProvider(widget.apiClient).notifier);
     try {
-      await _authRepository.initiatePhoneChange(newPhone);
+      await notifier.authRepository.initiatePhoneChange(newPhone);
       if (!mounted) return;
       await context.push(
         '${AppRoutes.otpVerify}?phone=${Uri.encodeComponent(newPhone)}&purpose=phone_change',
       );
     } catch (_) {
-      if (mounted) setState(() => _errorKey = 'errors.generic');
-    } finally {
-      if (mounted) setState(() => _isVerifyingPhone = false);
+      notifier.setErrorKey('errors.generic');
     }
   }
 
   Future<void> _geocodeAddress() async {
+    final notifier = ref.read(profileEditProvider(widget.apiClient).notifier);
     if (_streetController.text.trim().isEmpty ||
         _plzController.text.trim().isEmpty ||
         _cityController.text.trim().isEmpty) {
-      setState(() => _errorKey = 'profile.address_incomplete');
+      notifier.setErrorKey('profile.address_incomplete');
       return;
     }
-
-    setState(() {
-      _isGeocoding = true;
-      _errorKey = null;
-    });
 
     final fullAddress =
         '${_streetController.text.trim()}, ${_plzController.text.trim()} ${_cityController.text.trim()}';
 
-    try {
-      final result = await _geographyRepository.geocodeAddress(
-        fullAddress,
-        persistToProfile: true,
-      );
-      if (!mounted) return;
-      setState(() {
-        _latitude = result.latitude;
-        _longitude = result.longitude;
-      });
-      _showMapPreview();
-    } catch (_) {
-      if (mounted) setState(() => _errorKey = 'errors.generic');
-    } finally {
-      if (mounted) setState(() => _isGeocoding = false);
-    }
+    final result = await notifier.geocodeAddress(fullAddress);
+    if (!mounted || result == null) return;
+    _showMapPreview(result.latitude, result.longitude);
   }
 
-  void _showMapPreview() {
+  void _showMapPreview(double lat, double lon) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) => _MapPreviewSheet(
-        latitude: _latitude!,
-        longitude: _longitude!,
+        latitude: lat,
+        longitude: lon,
         address:
             '${_streetController.text}, ${_plzController.text} ${_cityController.text}',
         onConfirm: () {
@@ -428,32 +232,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _isSaving = true;
-      _errorKey = null;
-    });
-
-    try {
-      await Future.wait([
-        _profileRepository.updateProfile(
-          displayName: _nameController.text.trim(),
-          preferredLocale: _preferredLocale,
-          seniorModeDefault: _seniorModeDefault,
-        ),
-        _interestsRepository.updateSelected(_selectedInterestIds.toList()),
-      ]);
-      if (mounted) Navigator.of(context).pop();
-    } catch (_) {
-      if (mounted) setState(() => _errorKey = 'errors.generic');
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+    final notifier = ref.read(profileEditProvider(widget.apiClient).notifier);
+    final success = await notifier.save(displayName: _nameController.text.trim());
+    if (success && mounted) {
+      Navigator.of(context).pop();
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadBundeslaender();
   }
 
   @override
@@ -467,7 +250,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ? AppTouch.buttonHeightSenior
         : AppTouch.buttonHeightStandard;
 
-    if (_isLoadingProfile) {
+    final state = ref.watch(profileEditProvider(widget.apiClient));
+    final notifier = ref.read(profileEditProvider(widget.apiClient).notifier);
+    _syncUserToControllers(state);
+
+    if (state.isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text('profile.edit'.tr())),
         body: const Center(child: CircularProgressIndicator()),
@@ -482,12 +269,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             button: true,
             label: 'common.save'.tr(),
             child: TextButton(
-              onPressed: _isSaving ? null : _save,
-              child: _isSaving
+              onPressed: state.isSaving ? null : _save,
+              child: state.isSaving
                   ? SizedBox(
                       width: isSeniorMode ? 24 : 20,
                       height: isSeniorMode ? 24 : 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: const CircularProgressIndicator(strokeWidth: 2),
                     )
                   : Text('common.save'.tr()),
             ),
@@ -510,18 +297,18 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 button: true,
                 label: 'profile.change_photo_semantic'.tr(),
                 child: GestureDetector(
-                  onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
+                  onTap: state.isUploadingPhoto ? null : _pickAndUploadPhoto,
                   child: Stack(
                     children: [
                       CircleAvatar(
                         radius: 48,
                         backgroundColor: colorScheme.primaryContainer,
-                        backgroundImage: _photoUrl != null
+                        backgroundImage: state.photoUrl != null
                             ? NetworkImage(
-                                '${widget.apiClient.baseUrl}$_photoUrl',
+                                '${widget.apiClient.baseUrl}${state.photoUrl}',
                               )
                             : null,
-                        child: _photoUrl == null
+                        child: state.photoUrl == null
                             ? Icon(
                                 Icons.person,
                                 size: 48,
@@ -529,7 +316,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               )
                             : null,
                       ),
-                      if (_isUploadingPhoto)
+                      if (state.isUploadingPhoto)
                         const Positioned.fill(
                           child: Center(child: CircularProgressIndicator()),
                         )
@@ -610,7 +397,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   child: TextFormField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
-                    readOnly: _phoneVerified,
+                    readOnly: state.phoneVerified,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[+\d\s\-()]')),
                     ],
@@ -619,7 +406,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       hintText: '+43 660 1234567',
                       prefixIcon: const Icon(Icons.phone_outlined),
                       border: const OutlineInputBorder(),
-                      suffixIcon: _phoneVerified
+                      suffixIcon: state.phoneVerified
                           ? Icon(Icons.verified, color: colorScheme.primary)
                           : null,
                     ),
@@ -636,21 +423,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                if (!_phoneVerified)
+                if (!state.phoneVerified)
                   Semantics(
                     button: true,
                     label: 'profile.verify_phone_semantic'.tr(),
                     child: SizedBox(
                       height: buttonHeight,
                       child: OutlinedButton.icon(
-                        onPressed: _isVerifyingPhone
+                        onPressed: state.isVerifyingPhone
                             ? null
                             : _requestPhoneVerification,
-                        icon: _isVerifyingPhone
+                        icon: state.isVerifyingPhone
                             ? SizedBox(
                                 width: isSeniorMode ? 24 : 20,
                                 height: isSeniorMode ? 24 : 20,
-                                child: CircularProgressIndicator(
+                                child: const CircularProgressIndicator(
                                   strokeWidth: 2,
                                 ),
                               )
@@ -674,7 +461,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         button: true,
                         label: 'profile.change_phone_semantic'.tr(),
                         child: TextButton(
-                          onPressed: _isVerifyingPhone
+                          onPressed: state.isVerifyingPhone
                               ? null
                               : _changePhoneNumber,
                           child: Text('profile.change_phone_button'.tr()),
@@ -732,18 +519,18 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
             // Bundesland dropdown
             DropdownButtonFormField<String>(
-              value: _selectedBundesland,
+              value: state.selectedBundesland,
               decoration: InputDecoration(
                 labelText: 'profile.bundesland'.tr(),
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.map_outlined),
               ),
-              items: _bundeslaender
+              items: state.bundeslaender
                   .map(
                     (b) => DropdownMenuItem(value: b.code, child: Text(b.name)),
                   )
                   .toList(),
-              onChanged: _onBundeslandChanged,
+              onChanged: notifier.onBundeslandChanged,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'profile.bundesland_required'.tr();
@@ -756,20 +543,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
             // Bezirk dropdown
             DropdownButtonFormField<String>(
-              value: _selectedBezirk,
+              value: state.selectedBezirk,
               decoration: InputDecoration(
                 labelText: 'profile.bezirk'.tr(),
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.location_city_outlined),
               ),
-              items: _bezirke
+              items: state.bezirke
                   .map(
                     (b) => DropdownMenuItem(value: b.code, child: Text(b.name)),
                   )
                   .toList(),
-              onChanged: _bezirke.isNotEmpty ? _onBezirkChanged : null,
+              onChanged: state.bezirke.isNotEmpty ? notifier.onBezirkChanged : null,
               validator: (value) {
-                if (_bezirke.isNotEmpty && (value == null || value.isEmpty)) {
+                if (state.bezirke.isNotEmpty && (value == null || value.isEmpty)) {
                   return 'profile.bezirk_required'.tr();
                 }
                 return null;
@@ -780,13 +567,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
             // Gemeinde dropdown
             DropdownButtonFormField<String>(
-              value: _selectedGemeinde,
+              value: state.selectedGemeinde,
               decoration: InputDecoration(
                 labelText: 'profile.gemeinde'.tr(),
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.location_on_outlined),
               ),
-              items: _gemeinden
+              items: state.gemeinden
                   .map(
                     (g) => DropdownMenuItem(
                       value: g.code,
@@ -794,9 +581,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: _gemeinden.isNotEmpty ? _onGemeindeChanged : null,
+              onChanged: state.gemeinden.isNotEmpty ? _onGemeindeChanged : null,
               validator: (value) {
-                if (_gemeinden.isNotEmpty && (value == null || value.isEmpty)) {
+                if (state.gemeinden.isNotEmpty && (value == null || value.isEmpty)) {
                   return 'profile.gemeinde_required'.tr();
                 }
                 return null;
@@ -824,12 +611,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               child: SizedBox(
                 height: buttonHeight,
                 child: OutlinedButton.icon(
-                  onPressed: _isGeocoding ? null : _geocodeAddress,
-                  icon: _isGeocoding
+                  onPressed: state.isGeocoding ? null : _geocodeAddress,
+                  icon: state.isGeocoding
                       ? SizedBox(
                           width: isSeniorMode ? 24 : 20,
                           height: isSeniorMode ? 24 : 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: const CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.map_outlined),
                   label: Text(
@@ -845,7 +632,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             const SizedBox(height: 24),
 
             // Coordinates display (read-only)
-            if (_latitude != null && _longitude != null) ...[
+            if (state.latitude != null && state.longitude != null) ...[
               _SectionHeader(title: 'profile.coordinates'.tr()),
               const SizedBox(height: 16),
               Row(
@@ -853,7 +640,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   Expanded(
                     child: _CoordinateCard(
                       label: 'profile.latitude'.tr(),
-                      value: _latitude!.toStringAsFixed(6),
+                      value: state.latitude!.toStringAsFixed(6),
                       icon: Icons.north,
                     ),
                   ),
@@ -861,7 +648,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   Expanded(
                     child: _CoordinateCard(
                       label: 'profile.longitude'.tr(),
-                      value: _longitude!.toStringAsFixed(6),
+                      value: state.longitude!.toStringAsFixed(6),
                       icon: Icons.east,
                     ),
                   ),
@@ -873,7 +660,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             // Section 4: Interests
             _SectionHeader(title: 'profile.interests'.tr()),
             const SizedBox(height: 8),
-            if (_interestCatalog.isEmpty)
+            if (state.interestCatalog.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
@@ -887,22 +674,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 4,
-                children: _interestCatalog.map((interest) {
-                  final selected = _selectedInterestIds.contains(interest.id);
+                children: state.interestCatalog.map((interest) {
+                  final selected = state.selectedInterestIds.contains(interest.id);
                   return FilterChip(
                     label: Text(interest.nameKey.tr()),
                     selected: selected,
-                    onSelected: (value) => _toggleInterest(interest.id, value),
+                    onSelected: (value) => notifier.toggleInterest(interest.id, value),
                   );
                 }).toList(),
               ),
 
             const SizedBox(height: 24),
 
-            if (_errorKey != null) ...[
+            if (state.errorKey != null) ...[
               const SizedBox(height: 16),
               Text(
-                _errorKey!.tr(),
+                state.errorKey!.tr(),
                 style: TextStyle(color: colorScheme.error),
                 textAlign: TextAlign.center,
               ),
@@ -917,8 +704,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               child: SizedBox(
                 height: buttonHeight,
                 child: FilledButton(
-                  onPressed: _isSaving ? null : _save,
-                  child: _isSaving
+                  onPressed: state.isSaving ? null : _save,
+                  child: state.isSaving
                       ? SizedBox(
                           width: isSeniorMode ? 24 : 20,
                           height: isSeniorMode ? 24 : 20,
@@ -1054,55 +841,67 @@ class _MapPreviewSheet extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              Text(address, style: textTheme.bodyMedium),
-              const SizedBox(height: 16),
-              // Map placeholder - in real implementation use flutter_map or google_maps_flutter
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: colorScheme.outline),
-                    borderRadius: AppRadius.card,
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.map_outlined,
-                          size: 64,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Interactive map preview\n(Lat: ${latitude.toStringAsFixed(4)}, Lng: ${longitude.toStringAsFixed(4)})',
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Icon(
+                        Icons.map,
+                        size: 96,
+                        color: colorScheme.outline.withAlpha(50),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.location_pin,
+                            size: 48,
+                            color: colorScheme.error,
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(height: 8),
+                          Text(
+                            address,
+                            style: textTheme.bodyMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.outline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Semantics(
                 button: true,
-                label: 'profile.confirm_location'.tr(),
+                label: 'common.confirm'.tr(),
                 child: SizedBox(
-                  width: double.infinity,
+                  height: buttonHeight,
                   child: FilledButton(
                     onPressed: onConfirm,
-                    style: FilledButton.styleFrom(
-                      minimumSize: Size.fromHeight(buttonHeight),
+                    child: Text(
+                      'common.confirm'.tr(),
+                      style: textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onPrimary,
+                      ),
                     ),
-                    child: Text('profile.confirm_location'.tr()),
                   ),
                 ),
               ),

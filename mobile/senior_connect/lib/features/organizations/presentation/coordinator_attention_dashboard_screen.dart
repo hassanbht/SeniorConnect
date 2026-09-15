@@ -4,9 +4,9 @@
 // Displays unconfirmed hours, expiring verifications, silent volunteers, and
 // pending applicant forms at the very top for staff.
 
-import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design_system/app_tokens.dart';
@@ -14,8 +14,9 @@ import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
+import '../application/coordinator_attention_dashboard_notifier.dart';
 
-class CoordinatorAttentionDashboardScreen extends StatefulWidget {
+class CoordinatorAttentionDashboardScreen extends ConsumerWidget {
   const CoordinatorAttentionDashboardScreen({
     super.key,
     required this.organizationId,
@@ -25,122 +26,38 @@ class CoordinatorAttentionDashboardScreen extends StatefulWidget {
   final String organizationId;
   final ApiClient apiClient;
 
-  @override
-  State<CoordinatorAttentionDashboardScreen> createState() =>
-      _CoordinatorAttentionDashboardScreenState();
-}
+  Future<void> _sendMonthlyReminders(
+    BuildContext context,
+    WidgetRef ref,
+    CoordinatorAttentionParams params,
+  ) async {
+    final dispatched = await ref
+        .read(coordinatorAttentionProvider(params).notifier)
+        .sendMonthlyReminders();
+    if (!context.mounted) return;
 
-class _CoordinatorAttentionDashboardScreenState
-    extends State<CoordinatorAttentionDashboardScreen> {
-  bool _isLoading = true;
-  bool _isSendingReminders = false;
-  String? _errorMessage;
-
-  int _unconfirmedCount = 0;
-  int _disputedCount = 0;
-  int _pendingAppsCount = 0;
-  List<dynamic> _expiringVerifications = [];
-  List<dynamic> _silentVolunteers = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDashboard();
-  }
-
-  Future<void> _loadDashboard() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final triageResp = await widget.apiClient.get<dynamic>(
-        '/api/v1/coordinator/triage?organizationId=${widget.organizationId}',
+    if (dispatched != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('coordinator.reminders_sent'.tr(args: ['$dispatched'])),
+        ),
       );
-
-      if (triageResp is Map<String, dynamic>) {
-        _unconfirmedCount = triageResp['unconfirmedActivitiesCount'] as int? ?? 0;
-        _disputedCount = triageResp['disputedActivitiesCount'] as int? ?? 0;
-        _pendingAppsCount = triageResp['pendingApplicationsCount'] as int? ?? 0;
-      }
-
-      // Fetch expiring verifications
-      try {
-        final expResp = await widget.apiClient.get<dynamic>(
-          '/api/v1/coordinator/attention/expiring-verifications',
-        );
-        if (expResp is List) {
-          _expiringVerifications = expResp;
-        }
-      } catch (_) {}
-
-      // Fetch silent volunteers
-      try {
-        final silentResp = await widget.apiClient.get<dynamic>(
-          '/api/v1/coordinator/attention/silent-volunteers?organizationId=${widget.organizationId}',
-        );
-        if (silentResp is List) {
-          _silentVolunteers = silentResp;
-        }
-      } catch (_) {}
-
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    } on DioException catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = mapDioError(e).l10nKey.tr();
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'errors.generic'.tr();
-        });
-      }
-    }
-  }
-
-  Future<void> _sendMonthlyReminders() async {
-    setState(() => _isSendingReminders = true);
-    try {
-      final resp = await widget.apiClient.post<dynamic>(
-        '/api/v1/coordinator/volunteers/reminders:send-monthly?organizationId=${widget.organizationId}',
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('errors.generic'.tr())),
       );
-      final dispatched = resp is Map<String, dynamic> ? resp['remindersDispatched'] ?? 0 : 0;
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('coordinator.reminders_sent'.tr(args: ['$dispatched'])),
-          ),
-        );
-        _loadDashboard();
-      }
-    } on DioException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mapDioError(e).l10nKey.tr())),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('errors.generic'.tr())),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSendingReminders = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final params = CoordinatorAttentionParams(
+      organizationId: organizationId,
+      apiClient: apiClient,
+    );
+    final state = ref.watch(coordinatorAttentionProvider(params));
+    final notifier = ref.read(coordinatorAttentionProvider(params).notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -149,29 +66,35 @@ class _CoordinatorAttentionDashboardScreenState
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'common.retry'.tr(),
-            onPressed: _loadDashboard,
+            onPressed: () => notifier.loadDashboard(),
           ),
         ],
       ),
       body: SafeArea(
-        child: _isLoading
+        child: state.isLoading
             ? AppLoading(message: 'common.loading'.tr())
-            : _errorMessage != null
+            : state.errorMessage != null
                 ? AppErrorView(
-                    message: _errorMessage!,
+                    message: state.errorMessage!,
                     retryLabel: 'common.retry'.tr(),
-                    onRetry: _loadDashboard,
+                    onRetry: () => notifier.loadDashboard(),
                   )
                 : RefreshIndicator(
-                    onRefresh: _loadDashboard,
+                    onRefresh: () => notifier.loadDashboard(),
                     child: ListView(
                       padding: const EdgeInsetsDirectional.all(AppSpacing.md),
                       children: [
-                        _buildQuickActionCards(theme),
+                        _buildQuickActionCards(context, theme, state),
                         const SizedBox(height: AppSpacing.lg),
-                        _buildExpiringSection(theme),
+                        _buildExpiringSection(theme, state),
                         const SizedBox(height: AppSpacing.lg),
-                        _buildSilentVolunteersSection(theme),
+                        _buildSilentVolunteersSection(
+                          context,
+                          theme,
+                          state,
+                          ref,
+                          params,
+                        ),
                       ],
                     ),
                   ),
@@ -179,13 +102,19 @@ class _CoordinatorAttentionDashboardScreenState
     );
   }
 
-  Widget _buildQuickActionCards(ThemeData theme) {
+  Widget _buildQuickActionCards(
+    BuildContext context,
+    ThemeData theme,
+    CoordinatorAttentionState state,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'coordinator.overview_subtitle'.tr(),
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         Row(
@@ -194,10 +123,10 @@ class _CoordinatorAttentionDashboardScreenState
               child: _MetricCard(
                 icon: Icons.pending_actions_outlined,
                 color: theme.colorScheme.primary,
-                count: _unconfirmedCount,
+                count: state.unconfirmedCount,
                 label: 'coordinator.unconfirmed_hours'.tr(),
                 onTap: () => context.push(
-                  '${AppRoutes.organizations}/${widget.organizationId}/coordinator/hours-queue',
+                  '${AppRoutes.organizations}/$organizationId/coordinator/hours-queue',
                 ),
               ),
             ),
@@ -206,10 +135,10 @@ class _CoordinatorAttentionDashboardScreenState
               child: _MetricCard(
                 icon: Icons.how_to_reg_outlined,
                 color: theme.colorScheme.secondary,
-                count: _pendingAppsCount,
+                count: state.pendingAppsCount,
                 label: 'coordinator.pending_applications'.tr(),
                 onTap: () => context.push(
-                  '${AppRoutes.organizations}/${widget.organizationId}/forms/volunteer/submissions',
+                  '${AppRoutes.organizations}/$organizationId/forms/volunteer/submissions',
                 ),
               ),
             ),
@@ -222,10 +151,10 @@ class _CoordinatorAttentionDashboardScreenState
               child: _MetricCard(
                 icon: Icons.warning_amber_outlined,
                 color: theme.colorScheme.error,
-                count: _disputedCount,
+                count: state.disputedCount,
                 label: 'coordinator.disputed_hours'.tr(),
                 onTap: () => context.push(
-                  '${AppRoutes.organizations}/${widget.organizationId}/coordinator/hours-queue',
+                  '${AppRoutes.organizations}/$organizationId/coordinator/hours-queue',
                 ),
               ),
             ),
@@ -234,10 +163,10 @@ class _CoordinatorAttentionDashboardScreenState
               child: _MetricCard(
                 icon: Icons.people_outline,
                 color: theme.colorScheme.tertiary,
-                count: _silentVolunteers.length,
+                count: state.silentVolunteers.length,
                 label: 'coordinator.silent_volunteers'.tr(),
                 onTap: () => context.push(
-                  '${AppRoutes.organizations}/${widget.organizationId}/coordinator/roster',
+                  '${AppRoutes.organizations}/$organizationId/coordinator/roster',
                 ),
               ),
             ),
@@ -247,7 +176,10 @@ class _CoordinatorAttentionDashboardScreenState
     );
   }
 
-  Widget _buildExpiringSection(ThemeData theme) {
+  Widget _buildExpiringSection(
+    ThemeData theme,
+    CoordinatorAttentionState state,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsetsDirectional.all(AppSpacing.md),
@@ -261,11 +193,13 @@ class _CoordinatorAttentionDashboardScreenState
                 Expanded(
                   child: Text(
                     'coordinator.expiring_verifications'.tr(),
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 Text(
-                  '${_expiringVerifications.length}',
+                  '${state.expiringVerifications.length}',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.error,
@@ -274,7 +208,7 @@ class _CoordinatorAttentionDashboardScreenState
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
-            if (_expiringVerifications.isEmpty)
+            if (state.expiringVerifications.isEmpty)
               Text(
                 'coordinator.no_expiring_verifications'.tr(),
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -282,7 +216,7 @@ class _CoordinatorAttentionDashboardScreenState
                 ),
               )
             else
-              ..._expiringVerifications.take(5).map((item) {
+              ...state.expiringVerifications.take(5).map((item) {
                 final m = item as Map<String, dynamic>;
                 final type = m['type'] as String? ?? '';
                 final days = m['daysRemaining'] as int? ?? 0;
@@ -291,12 +225,16 @@ class _CoordinatorAttentionDashboardScreenState
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.badge_outlined),
                   title: Text(type),
-                  subtitle: Text('coordinator.days_remaining'.tr(args: ['$days'])),
+                  subtitle: Text(
+                    'coordinator.days_remaining'.tr(args: ['$days']),
+                  ),
                   trailing: days <= 7
                       ? Chip(
                           label: Text('coordinator.urgent'.tr()),
                           backgroundColor: theme.colorScheme.errorContainer,
-                          labelStyle: TextStyle(color: theme.colorScheme.onErrorContainer),
+                          labelStyle: TextStyle(
+                            color: theme.colorScheme.onErrorContainer,
+                          ),
                         )
                       : null,
                 );
@@ -307,7 +245,13 @@ class _CoordinatorAttentionDashboardScreenState
     );
   }
 
-  Widget _buildSilentVolunteersSection(ThemeData theme) {
+  Widget _buildSilentVolunteersSection(
+    BuildContext context,
+    ThemeData theme,
+    CoordinatorAttentionState state,
+    WidgetRef ref,
+    CoordinatorAttentionParams params,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsetsDirectional.all(AppSpacing.md),
@@ -321,7 +265,9 @@ class _CoordinatorAttentionDashboardScreenState
                 Expanded(
                   child: Text(
                     'coordinator.silent_volunteers'.tr(),
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -336,10 +282,11 @@ class _CoordinatorAttentionDashboardScreenState
               label: 'coordinator.send_monthly_reminder_action'.tr(),
               icon: Icons.send_outlined,
               variant: AppButtonVariant.tonal,
-              isLoading: _isSendingReminders,
-              onPressed: _silentVolunteers.isEmpty || _isSendingReminders
-                  ? null
-                  : _sendMonthlyReminders,
+              isLoading: state.isSendingReminders,
+              onPressed:
+                  state.silentVolunteers.isEmpty || state.isSendingReminders
+                      ? null
+                      : () => _sendMonthlyReminders(context, ref, params),
             ),
           ],
         ),
@@ -396,7 +343,9 @@ class _MetricCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               label,
-              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),

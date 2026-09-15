@@ -10,7 +10,7 @@ Feature-first. Each feature contains:
 features/<name>/
   data/          dtos, remote data source, repository implementation
   domain/        entities, repository interfaces
-  application/   cubit + freezed state
+  application/   Riverpod StateNotifier/Notifier + sealed AsyncState (ADR-022)
   presentation/  pages, widgets
 ```
 

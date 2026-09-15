@@ -10,13 +10,14 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../application/log_activity_notifier.dart';
 
-class LogActivityScreen extends StatefulWidget {
+class LogActivityScreen extends ConsumerStatefulWidget {
   const LogActivityScreen({
     super.key,
     required this.apiClient,
@@ -27,46 +28,11 @@ class LogActivityScreen extends StatefulWidget {
   final VoidCallback? onLogged;
 
   @override
-  State<LogActivityScreen> createState() => _LogActivityScreenState();
+  ConsumerState<LogActivityScreen> createState() => _LogActivityScreenState();
 }
 
-class _LogActivityScreenState extends State<LogActivityScreen> {
-  int _durationMinutes = 60;
-  String _selectedCategoryKey = 'help.category.shopping';
-  int _insuranceContext = 1; // OrganizationPolicy
-  int _transportMode = 0; // None
+class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
   final _notesController = TextEditingController();
-  bool _isSubmitting = false;
-  String? _errorMessage;
-
-  static const List<String> _categoryKeys = [
-    'help.category.shopping',
-    'help.category.doctor',
-    'help.category.authority',
-    'help.category.accompaniment',
-    'help.category.home_small',
-    'help.category.language_practice',
-    'help.category.newcomer_orientation',
-    'help.category.mentoring',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadLastEntryPrefill();
-  }
-
-  Future<void> _loadLastEntryPrefill() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastCat = prefs.getString('last_log_category');
-    final lastDuration = prefs.getInt('last_log_duration');
-    if (lastCat != null && _categoryKeys.contains(lastCat)) {
-      setState(() {
-        _selectedCategoryKey = lastCat;
-        if (lastDuration != null) _durationMinutes = lastDuration;
-      });
-    }
-  }
 
   @override
   void dispose() {
@@ -75,59 +41,27 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
   }
 
   Future<void> _submit() async {
-    setState(() {
-      _isSubmitting = true;
-      _errorMessage = null;
-    });
+    final success = await ref
+        .read(logActivityProvider(widget.apiClient).notifier)
+        .submit(notes: _notesController.text);
 
-    try {
-      final now = DateTime.now();
-      final dateOnly = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-
-      final payload = {
-        'categoryId': '00000000-0000-0000-0000-000000000001',
-        'occurredOn': dateOnly,
-        'durationMinutes': _durationMinutes,
-        'locationType': 0,
-        'notes': _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-        'insuranceContext': _insuranceContext,
-        'transportMode': _transportMode,
-      };
-
-      await widget.apiClient.post<dynamic>(
-        '/api/v1/activities',
-        data: payload,
+    if (success && mounted) {
+      widget.onLogged?.call();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${'help.status.completed'.tr()} ✓'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
       );
-
-      // Save prefill preferences for next 2-tap log
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_log_category', _selectedCategoryKey);
-      await prefs.setInt('last_log_duration', _durationMinutes);
-
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        widget.onLogged?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('help.status.completed'.tr() + ' ✓'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
-        Navigator.of(context).maybePop();
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-          _errorMessage = 'errors.generic'.tr();
-        });
-      }
+      Navigator.of(context).maybePop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final state = ref.watch(logActivityProvider(widget.apiClient));
+    final notifier = ref.read(logActivityProvider(widget.apiClient).notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -144,19 +78,21 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
                 children: [
                   Text(
                     'help.create.what'.tr(),
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
                     runSpacing: AppSpacing.sm,
-                    children: _categoryKeys.map((catKey) {
-                      final isSelected = _selectedCategoryKey == catKey;
+                    children: LogActivityNotifier.categoryKeys.map((catKey) {
+                      final isSelected = state.selectedCategoryKey == catKey;
                       return ChoiceChip(
                         label: Text(catKey.tr()),
                         selected: isSelected,
                         onSelected: (selected) {
-                          if (selected) setState(() => _selectedCategoryKey = catKey);
+                          if (selected) notifier.setCategory(catKey);
                         },
                       );
                     }).toList(),
@@ -164,20 +100,22 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   Text(
-                    'help.create.when'.tr() + ' (Dauer)',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    '${'help.create.when'.tr()} (Dauer)',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
                     runSpacing: AppSpacing.sm,
                     children: [30, 60, 90, 120].map((mins) {
-                      final isSelected = _durationMinutes == mins;
+                      final isSelected = state.durationMinutes == mins;
                       return ChoiceChip(
                         label: Text('$mins Min'),
                         selected: isSelected,
                         onSelected: (selected) {
-                          if (selected) setState(() => _durationMinutes = mins);
+                          if (selected) notifier.setDuration(mins);
                         },
                       );
                     }).toList(),
@@ -186,7 +124,9 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
 
                   Text(
                     'help.create.details'.tr(),
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   TextField(
@@ -199,9 +139,9 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
                   ),
                   const SizedBox(height: AppSpacing.xl),
 
-                  if (_errorMessage != null) ...[
+                  if (state.errorMessage != null) ...[
                     Text(
-                      _errorMessage!,
+                      state.errorMessage!,
                       style: TextStyle(color: theme.colorScheme.error),
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -210,7 +150,7 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
                   AppButton(
                     label: 'common.save'.tr(),
                     icon: Icons.check,
-                    isLoading: _isSubmitting,
+                    isLoading: state.isSubmitting,
                     onPressed: _submit,
                   ),
                 ],

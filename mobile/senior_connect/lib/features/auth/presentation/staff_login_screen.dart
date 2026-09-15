@@ -3,81 +3,60 @@
 // P1-12: Organization staff / platform admin login — password + optional
 // TOTP authenticator code. NOT the senior/volunteer-facing flow (BR-AUTH-02).
 
-import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
-import '../data/auth_repository.dart';
+import '../application/staff_login_notifier.dart';
 
-class StaffLoginScreen extends StatefulWidget {
+class StaffLoginScreen extends ConsumerStatefulWidget {
   const StaffLoginScreen({super.key, required this.apiClient});
 
   final ApiClient apiClient;
 
   @override
-  State<StaffLoginScreen> createState() => _StaffLoginScreenState();
+  ConsumerState<StaffLoginScreen> createState() => _StaffLoginScreenState();
 }
 
-class _StaffLoginScreenState extends State<StaffLoginScreen> {
-  late final AuthRepository _authRepository = AuthRepositoryImpl(widget.apiClient);
-
+class _StaffLoginScreenState extends ConsumerState<StaffLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _totpController = TextEditingController();
-
-  bool _obscurePassword = true;
-  bool _isLoading = false;
-  bool _totpRequired = false;
-  String? _errorKey;
+  final _obscurePassword = ValueNotifier<bool>(true);
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _totpController.dispose();
+    _obscurePassword.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _isLoading = true;
-      _errorKey = null;
-    });
-
-    try {
-      await _authRepository.staffLogin(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        totpCode: _totpController.text.trim().isEmpty ? null : _totpController.text.trim(),
-      );
-      if (mounted) context.go(AppRoutes.home);
-    } on DioException catch (e) {
-      final code = (e.response?.data is Map) ? (e.response?.data['code'] as String?) : null;
-      if (code == 'TOTP_CODE_REQUIRED') {
-        setState(() {
-          _totpRequired = true;
-          _errorKey = 'auth.staff.totp_required';
-        });
-      } else {
-        setState(() => _errorKey = mapDioError(e).l10nKey);
-      }
-    } catch (_) {
-      setState(() => _errorKey = 'errors.generic');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    final notifier = ref.read(staffLoginProvider(widget.apiClient).notifier);
+    final success = await notifier.submit(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      totpCode: _totpController.text.trim().isEmpty
+          ? null
+          : _totpController.text.trim(),
+    );
+    if (success && mounted) {
+      context.go(AppRoutes.home);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final staffState = ref.watch(staffLoginProvider(widget.apiClient));
 
     return Scaffold(
       appBar: AppBar(
@@ -114,26 +93,38 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                           : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction:
-                          _totpRequired ? TextInputAction.next : TextInputAction.done,
-                      decoration: InputDecoration(
-                        labelText: 'auth.staff.password_label'.tr(),
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                        ),
-                        border: const OutlineInputBorder(),
-                      ),
-                      validator: (value) => (value == null || value.isEmpty)
-                          ? 'auth.register.password_required'.tr()
-                          : null,
-                      onFieldSubmitted: _totpRequired ? null : (_) => _submit(),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _obscurePassword,
+                      builder: (context, obscure, _) {
+                        return TextFormField(
+                          controller: _passwordController,
+                          obscureText: obscure,
+                          textInputAction: staffState.totpRequired
+                              ? TextInputAction.next
+                              : TextInputAction.done,
+                          decoration: InputDecoration(
+                            labelText: 'auth.staff.password_label'.tr(),
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(obscure
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              onPressed: () =>
+                                  _obscurePassword.value = !_obscurePassword.value,
+                            ),
+                            border: const OutlineInputBorder(),
+                          ),
+                          validator: (value) =>
+                              (value == null || value.isEmpty)
+                                  ? 'auth.register.password_required'.tr()
+                                  : null,
+                          onFieldSubmitted: staffState.totpRequired
+                              ? null
+                              : (_) => _submit(),
+                        );
+                      },
                     ),
-                    if (_totpRequired) ...[
+                    if (staffState.totpRequired) ...[
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _totpController,
@@ -150,10 +141,10 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                         onFieldSubmitted: (_) => _submit(),
                       ),
                     ],
-                    if (_errorKey != null) ...[
+                    if (staffState.errorKey != null) ...[
                       const SizedBox(height: 12),
                       Text(
-                        _errorKey!.tr(),
+                        staffState.errorKey!.tr(),
                         style: TextStyle(color: colorScheme.error),
                         textAlign: TextAlign.center,
                       ),
@@ -162,8 +153,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                     SizedBox(
                       height: 64,
                       child: FilledButton(
-                        onPressed: _isLoading ? null : _submit,
-                        child: _isLoading
+                        onPressed: staffState.isLoading ? null : _submit,
+                        child: staffState.isLoading
                             ? const CircularProgressIndicator()
                             : Text('auth.staff.submit'.tr()),
                       ),

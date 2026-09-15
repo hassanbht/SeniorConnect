@@ -8,82 +8,48 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
-import '../../auth/data/auth_repository.dart';
+import '../application/profile_view_notifier.dart';
 import '../data/interests_repository.dart';
-import '../data/profile_repository.dart';
 
-class ProfileViewScreen extends StatefulWidget {
+class ProfileViewScreen extends ConsumerWidget {
   const ProfileViewScreen({super.key, required this.apiClient});
 
   final ApiClient apiClient;
 
-  @override
-  State<ProfileViewScreen> createState() => _ProfileViewScreenState();
-}
-
-class _ProfileViewScreenState extends State<ProfileViewScreen> {
-  late final ProfileRepository _profileRepository = ProfileRepositoryImpl(widget.apiClient);
-  late final AuthRepository _authRepository = AuthRepositoryImpl(widget.apiClient);
-  late final InterestsRepository _interestsRepository = InterestsRepositoryImpl(widget.apiClient);
-
-  bool _isLoading = true;
-  String? _errorKey;
-  UserSummary? _user;
-  List<InterestOption> _interests = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _errorKey = null;
-    });
-    try {
-      final results = await Future.wait([
-        _profileRepository.getCurrentUser(),
-        _interestsRepository.getSelected(),
-      ]);
-      if (mounted) {
-        setState(() {
-          _user = results[0] as UserSummary;
-          _interests = results[1] as List<InterestOption>;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _errorKey = 'errors.generic');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _logout() async {
+  Future<void> _logout(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('profile.logout_confirm_title'.tr()),
         content: Text('profile.logout_confirm_desc'.tr()),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('common.cancel'.tr())),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text('profile.logout'.tr())),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('common.cancel'.tr()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('profile.logout'.tr()),
+          ),
         ],
       ),
     );
     if (confirmed != true) return;
 
-    await _authRepository.logout();
-    if (mounted) context.go(AppRoutes.phoneEntry);
+    await ref.read(profileViewProvider(apiClient).notifier).logout();
+    if (context.mounted) context.go(AppRoutes.phoneEntry);
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profileState = ref.watch(profileViewProvider(apiClient));
+    final notifier = ref.read(profileViewProvider(apiClient).notifier);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('profile.title'.tr()),
@@ -95,29 +61,34 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
               icon: const Icon(Icons.edit_outlined),
               onPressed: () async {
                 await context.push(AppRoutes.profileEdit);
-                _load();
+                notifier.load();
               },
               tooltip: 'profile.edit'.tr(),
             ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorKey != null
-              ? _ErrorView(
-                  message: _errorKey!.tr(),
-                  onRetry: _load,
-                )
-              : _ProfileContent(
-                  name: _user?.displayName ?? '',
-                  phone: _user?.phone ?? '',
-                  photoUrl: _user?.photoUrl,
-                  baseUrl: widget.apiClient.baseUrl,
-                  interests: _interests,
-                  isStaff: _user?.primaryAuthMethod == 'Password',
-                  onLogout: _logout,
-                ),
+      body: profileState.when(
+        initial: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (message, _) => _ErrorView(
+          message: message.tr(),
+          onRetry: notifier.load,
+        ),
+        empty: (message) => _ErrorView(
+          message: (message ?? 'errors.generic').tr(),
+          onRetry: notifier.load,
+        ),
+        loaded: (data) => _ProfileContent(
+          name: data.user.displayName,
+          phone: data.user.phone ?? '',
+          photoUrl: data.user.photoUrl,
+          baseUrl: apiClient.baseUrl,
+          interests: data.interests,
+          isStaff: data.user.primaryAuthMethod == 'Password',
+          onLogout: () => _logout(context, ref),
+        ),
+      ),
     );
   }
 }
@@ -178,11 +149,8 @@ class _ProfileContent extends StatelessWidget {
         // Contact section
         _SectionHeader('profile.contact'.tr()),
         _InfoRow(Icons.phone_outlined, 'auth.phone'.tr(), phone),
-        // Email shown when available from API (P1-26 wiring)
 
         const SizedBox(height: 24),
-
-        // Trust badges will be shown when loaded from /me/trust (P1-26 wiring)
 
         _SectionHeader('profile.interests'.tr()),
         if (interests.isEmpty)
@@ -248,7 +216,8 @@ class _ProfileContent extends StatelessWidget {
           child: ListTile(
             contentPadding: EdgeInsets.zero,
             leading: Icon(Icons.logout, color: colorScheme.error),
-            title: Text('profile.logout'.tr(), style: textTheme.titleMedium?.copyWith(color: colorScheme.error)),
+            title: Text('profile.logout'.tr(),
+                style: textTheme.titleMedium?.copyWith(color: colorScheme.error)),
             onTap: onLogout,
           ),
         ),
@@ -301,27 +270,6 @@ class _InfoRow extends StatelessWidget {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ignore: unused_element — will be used when /me/trust API is wired (P1-26)
-class _TrustBadge extends StatelessWidget {
-  const _TrustBadge({required this.label});
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(Icons.verified_outlined, size: 18, color: colorScheme.tertiary),
-          const SizedBox(width: 8),
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     );

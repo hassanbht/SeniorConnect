@@ -5,12 +5,14 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/design_system/app_tokens.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../application/safeguarding_concern_notifier.dart';
 
-class SafeguardingConcernDialog extends StatefulWidget {
+class SafeguardingConcernDialog extends ConsumerStatefulWidget {
   const SafeguardingConcernDialog({
     super.key,
     required this.subjectUserId,
@@ -20,7 +22,11 @@ class SafeguardingConcernDialog extends StatefulWidget {
   final String subjectUserId;
   final ApiClient? apiClient;
 
-  static Future<void> show(BuildContext context, {required String subjectUserId, ApiClient? apiClient}) {
+  static Future<void> show(
+    BuildContext context, {
+    required String subjectUserId,
+    ApiClient? apiClient,
+  }) {
     return showDialog<void>(
       context: context,
       builder: (ctx) => SafeguardingConcernDialog(
@@ -31,16 +37,15 @@ class SafeguardingConcernDialog extends StatefulWidget {
   }
 
   @override
-  State<SafeguardingConcernDialog> createState() => _SafeguardingConcernDialogState();
+  ConsumerState<SafeguardingConcernDialog> createState() =>
+      _SafeguardingConcernDialogState();
 }
 
-class _SafeguardingConcernDialogState extends State<SafeguardingConcernDialog> {
+class _SafeguardingConcernDialogState
+    extends ConsumerState<SafeguardingConcernDialog> {
   final _textController = TextEditingController();
-  String _selectedCategory = 'general_concern';
-  bool _isSubmitting = false;
-  bool _submitted = false;
 
-  final _categories = [
+  static const _categories = [
     'general_concern',
     'vulnerability_welfare',
     'safety_risk',
@@ -54,43 +59,25 @@ class _SafeguardingConcernDialogState extends State<SafeguardingConcernDialog> {
   }
 
   Future<void> _submitConcern() async {
-    if (_textController.text.trim().isEmpty) return;
+    final text = _textController.text.trim();
+    if (text.isEmpty) return;
 
-    setState(() => _isSubmitting = true);
-
-    try {
-      if (widget.apiClient != null) {
-        await widget.apiClient!.post<dynamic>(
-          '/api/v1/safeguarding/concerns',
-          data: {
-            'subjectUserId': widget.subjectUserId,
-            'summary': _textController.text.trim(),
-            'category': _selectedCategory,
-            'severity': 'Medium',
-          },
-        );
-      }
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-          _submitted = true;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-          _submitted = true; // Still show confirmation to avoid alarming the user
-        });
-      }
-    }
+    final notifier =
+        ref.read(safeguardingConcernProvider(widget.apiClient).notifier);
+    await notifier.submitConcern(
+      subjectUserId: widget.subjectUserId,
+      details: text,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final state = ref.watch(safeguardingConcernProvider(widget.apiClient));
+    final notifier =
+        ref.read(safeguardingConcernProvider(widget.apiClient).notifier);
 
-    if (_submitted) {
+    if (state.submitted) {
       return AlertDialog(
         title: Row(
           children: [
@@ -117,7 +104,9 @@ class _SafeguardingConcernDialogState extends State<SafeguardingConcernDialog> {
           Expanded(
             child: Text(
               'safeguarding.report'.tr(),
-              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -135,7 +124,7 @@ class _SafeguardingConcernDialogState extends State<SafeguardingConcernDialog> {
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                value: state.selectedCategory,
                 isExpanded: true,
                 decoration: InputDecoration(
                   labelText: 'safeguarding.category'.tr(),
@@ -151,7 +140,7 @@ class _SafeguardingConcernDialogState extends State<SafeguardingConcernDialog> {
                   );
                 }).toList(),
                 onChanged: (val) {
-                  if (val != null) setState(() => _selectedCategory = val);
+                  if (val != null) notifier.setCategory(val);
                 },
               ),
               const SizedBox(height: AppSpacing.md),
@@ -175,7 +164,7 @@ class _SafeguardingConcernDialogState extends State<SafeguardingConcernDialog> {
         AppButton(
           label: 'common.save'.tr(),
           variant: AppButtonVariant.primary,
-          isLoading: _isSubmitting,
+          isLoading: state.isSubmitting,
           onPressed: _submitConcern,
         ),
       ],

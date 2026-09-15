@@ -43,7 +43,7 @@ an ADR.
 ```
 Backend    ASP.NET Core 10 · C# · EF Core 10 · PostgreSQL 16 · Hangfire
 Architecture  Modular monolith, domain-oriented modules, explicit boundaries
-Mobile     Flutter · feature-first · Cubit + Freezed · go_router · get_it/injectable
+Mobile     Flutter · feature-first · Riverpod 2 (Notifier / AsyncState, ADR-022) · go_router · get_it/injectable
            easy_localization (de source of truth) · Drift (from Phase 7)
 Web        Blazor or React staff dashboard (Phase 6)
 ```

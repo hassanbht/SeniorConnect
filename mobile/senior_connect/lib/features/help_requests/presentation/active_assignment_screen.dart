@@ -10,6 +10,7 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -18,27 +19,10 @@ import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
+import '../application/active_assignment_notifier.dart';
 import 'widgets/safeguarding_concern_dialog.dart';
 
-class _AssignmentDetails {
-  const _AssignmentDetails({
-    required this.categoryNameKey,
-    required this.address,
-    required this.notes,
-    required this.seniorDisplayName,
-    required this.seniorPhone,
-    required this.rowVersion,
-  });
-
-  final String categoryNameKey;
-  final String? address;
-  final String? notes;
-  final String? seniorDisplayName;
-  final String? seniorPhone;
-  final int rowVersion;
-}
-
-class ActiveAssignmentScreen extends StatefulWidget {
+class ActiveAssignmentScreen extends ConsumerWidget {
   const ActiveAssignmentScreen({
     super.key,
     required this.apiClient,
@@ -48,89 +32,6 @@ class ActiveAssignmentScreen extends StatefulWidget {
   final ApiClient apiClient;
   final String? assignmentId;
 
-  @override
-  State<ActiveAssignmentScreen> createState() => _ActiveAssignmentScreenState();
-}
-
-class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
-  bool _isLoading = true;
-  bool _isCheckedIn = false;
-  bool _isCompleted = false;
-  bool _isActionInProgress = false;
-  String? _loadError;
-  String? _actionError;
-  _AssignmentDetails? _details;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAssignment();
-  }
-
-  Future<void> _loadAssignment() async {
-    final id = widget.assignmentId;
-    if (id == null) {
-      setState(() {
-        _isLoading = false;
-        _loadError = 'errors.generic'.tr();
-      });
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _loadError = null;
-    });
-
-    try {
-      final requestData = await widget.apiClient.get<dynamic>(
-        '/api/v1/help-requests/$id',
-      );
-      final categoriesData = await widget.apiClient.get<dynamic>(
-        '/api/v1/activities/categories',
-      );
-
-      final m = requestData as Map<String, dynamic>;
-      var categoryNameKey = 'help.category.shopping';
-      if (categoriesData is List) {
-        for (final c in categoriesData) {
-          final cm = c as Map<String, dynamic>;
-          if (cm['id'] == m['categoryId']) {
-            categoryNameKey = cm['nameKey'] as String? ?? categoryNameKey;
-            break;
-          }
-        }
-      }
-
-      final details = _AssignmentDetails(
-        categoryNameKey: categoryNameKey,
-        address: m['locationAddress'] as String?,
-        notes: m['notes'] as String?,
-        seniorDisplayName: m['seniorDisplayName'] as String?,
-        seniorPhone: m['seniorPhone'] as String?,
-        rowVersion: (m['rowVersion'] as num?)?.toInt() ?? 0,
-      );
-
-      final status = m['status'] as String?;
-
-      if (mounted) {
-        setState(() {
-          _details = details;
-          _isCheckedIn = status == 'InProgress' || status == 'Completed';
-          _isCompleted = status == 'Completed';
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _loadError = 'errors.generic'.tr();
-        });
-      }
-    }
-  }
-
   Future<void> _makeCall(String phoneNumber) async {
     final uri = Uri(scheme: 'tel', path: phoneNumber);
     if (await canLaunchUrl(uri)) {
@@ -138,100 +39,71 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
     }
   }
 
-  Future<void> _handleCheckIn() async {
-    setState(() {
-      _isActionInProgress = true;
-      _actionError = null;
-    });
-    try {
-      await widget.apiClient.post<dynamic>(
-        '/api/v1/help-requests/${widget.assignmentId}:check-in',
+  Future<void> _handleCheckIn(
+    BuildContext context,
+    WidgetRef ref,
+    ActiveAssignmentParams params,
+  ) async {
+    final success =
+        await ref.read(activeAssignmentProvider(params).notifier).handleCheckIn();
+    if (success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${'help.checkin'.tr()} ✓'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
       );
-      if (mounted) {
-        setState(() {
-          _isCheckedIn = true;
-          _isActionInProgress = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('help.checkin'.tr() + ' ✓'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
-      }
-    } catch (_) {
-      // P3-23 fix: a failed check-in must never be shown as a successful
-      // one — the coordinator's hours record depends on this being real.
-      if (mounted) {
-        setState(() {
-          _isActionInProgress = false;
-          _actionError = 'errors.generic'.tr();
-        });
-      }
     }
   }
 
-  Future<void> _handleComplete() async {
-    setState(() {
-      _isActionInProgress = true;
-      _actionError = null;
-    });
-    try {
-      await widget.apiClient.post<dynamic>(
-        '/api/v1/help-requests/${widget.assignmentId}:complete',
-        data: {'actualDurationMinutes': 60},
-      );
-      if (mounted) {
-        setState(() {
-          _isCompleted = true;
-          _isActionInProgress = false;
-        });
-      }
-    } catch (_) {
-      // P3-23 fix: same rule — a failed completion must surface as an
-      // error, never silently pretend the visit was recorded.
-      if (mounted) {
-        setState(() {
-          _isActionInProgress = false;
-          _actionError = 'errors.generic'.tr();
-        });
-      }
-    }
+  Future<void> _handleComplete(
+    BuildContext context,
+    WidgetRef ref,
+    ActiveAssignmentParams params,
+  ) async {
+    await ref.read(activeAssignmentProvider(params).notifier).handleComplete();
   }
 
-  void _reportSafeguardingConcern() {
+  void _reportSafeguardingConcern(BuildContext context) {
     SafeguardingConcernDialog.show(
       context,
-      subjectUserId: widget.assignmentId ?? 'unknown',
-      apiClient: widget.apiClient,
+      subjectUserId: assignmentId ?? 'unknown',
+      apiClient: apiClient,
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final params = ActiveAssignmentParams(
+      apiClient: apiClient,
+      assignmentId: assignmentId,
+    );
+    final state = ref.watch(activeAssignmentProvider(params));
 
-    if (_isLoading) {
+    if (state.isLoading) {
       return Scaffold(
         body: SafeArea(child: AppLoading(message: 'common.loading'.tr())),
       );
     }
 
-    if (_loadError != null || _details == null) {
+    if (state.loadError != null || state.details == null) {
       return Scaffold(
         body: SafeArea(
           child: AppErrorView(
-            message: _loadError ?? 'errors.generic'.tr(),
+            message: state.loadError ?? 'errors.generic'.tr(),
             retryLabel: 'common.retry'.tr(),
-            onRetry: _loadAssignment,
+            onRetry: () => ref
+                .read(activeAssignmentProvider(params).notifier)
+                .loadAssignment(),
           ),
         ),
       );
     }
 
-    final details = _details!;
+    final details = state.details!;
 
-    if (_isCompleted) {
+    if (state.isCompleted) {
       return Scaffold(
         body: SafeArea(
           child: Center(
@@ -280,7 +152,7 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
           IconButton(
             icon: const Icon(Icons.security),
             tooltip: 'safeguarding.report'.tr(),
-            onPressed: _reportSafeguardingConcern,
+            onPressed: () => _reportSafeguardingConcern(context),
           ),
         ],
       ),
@@ -297,7 +169,7 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                   Container(
                     padding: const EdgeInsetsDirectional.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: _isCheckedIn
+                      color: state.isCheckedIn
                           ? theme.colorScheme.tertiaryContainer
                           : theme.colorScheme.primaryContainer,
                       borderRadius: AppRadius.card,
@@ -305,20 +177,20 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                     child: Row(
                       children: [
                         Icon(
-                          _isCheckedIn ? Icons.timelapse : Icons.calendar_today,
-                          color: _isCheckedIn
+                          state.isCheckedIn ? Icons.timelapse : Icons.calendar_today,
+                          color: state.isCheckedIn
                               ? theme.colorScheme.onTertiaryContainer
                               : theme.colorScheme.onPrimaryContainer,
                         ),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Text(
-                            _isCheckedIn
+                            state.isCheckedIn
                                 ? 'help.status.in_progress'.tr()
                                 : 'help.status.assigned'.tr(),
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: _isCheckedIn
+                              color: state.isCheckedIn
                                   ? theme.colorScheme.onTertiaryContainer
                                   : theme.colorScheme.onPrimaryContainer,
                             ),
@@ -423,29 +295,29 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                   ),
                   const SizedBox(height: AppSpacing.xl),
 
-                  if (_actionError != null) ...[
+                  if (state.actionError != null) ...[
                     Text(
-                      _actionError!,
+                      state.actionError!,
                       style: TextStyle(color: theme.colorScheme.error),
                     ),
                     const SizedBox(height: AppSpacing.md),
                   ],
 
                   // Check-in or Complete Action Button
-                  if (!_isCheckedIn)
+                  if (!state.isCheckedIn)
                     AppButton(
-                      label: 'help.checkin'.tr() + ' (Angekommen)',
+                      label: '${'help.checkin'.tr()} (Angekommen)',
                       icon: Icons.login,
-                      isLoading: _isActionInProgress,
-                      onPressed: _handleCheckIn,
+                      isLoading: state.isActionInProgress,
+                      onPressed: () => _handleCheckIn(context, ref, params),
                     )
                   else
                     AppButton(
-                      label: 'help.checkout'.tr() + ' (Abschließen)',
+                      label: '${'help.checkout'.tr()} (Abschließen)',
                       icon: Icons.check_circle,
-                      isLoading: _isActionInProgress,
+                      isLoading: state.isActionInProgress,
                       variant: AppButtonVariant.primary,
-                      onPressed: _handleComplete,
+                      onPressed: () => _handleComplete(context, ref, params),
                     ),
 
                   const SizedBox(height: AppSpacing.lg),
@@ -457,7 +329,7 @@ class _ActiveAssignmentScreenState extends State<ActiveAssignmentScreen> {
                       'safeguarding.report'.tr(),
                       style: TextStyle(color: theme.colorScheme.error),
                     ),
-                    onPressed: _reportSafeguardingConcern,
+                    onPressed: () => _reportSafeguardingConcern(context),
                   ),
                 ],
               ),
