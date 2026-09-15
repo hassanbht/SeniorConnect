@@ -77,18 +77,33 @@ public sealed class FunderService : IFunderService
 
         var viewRows = await query.ToListAsync(cancellationToken);
 
-        var items = viewRows.Select(row => new FunderMonthlyReportItemDto(
+        var items = viewRows.Select(ToSuppressedDto).ToList();
+
+        return Result<IReadOnlyList<FunderMonthlyReportItemDto>>.Success(items);
+    }
+
+    /// <summary>
+    /// P2-34 / BR-FUNDER-03: a cohort under 10 must suppress EVERY measure in
+    /// the row, not just the headcount — TotalHours included, or a funder
+    /// could re-derive who a "&lt;10" cohort is by cross-referencing hours
+    /// against other data they hold.
+    /// </summary>
+    public static FunderMonthlyReportItemDto ToSuppressedDto(FunderMonthlyReportView row)
+    {
+        var isSuppressed = row.IsSuppressed
+            || (row.DistinctVolunteers ?? 0) < 10
+            || (row.DistinctPeopleSupported ?? 0) < 10;
+
+        return new FunderMonthlyReportItemDto(
             OrganizationId: row.OrganizationId,
             Month: row.Month,
             CategoryCode: row.CategoryCode,
             ActivityCount: MaskCohort(row.ActivityCount ?? 0),
             DistinctVolunteers: MaskCohort(row.DistinctVolunteers ?? 0),
             DistinctPeopleSupported: MaskCohort(row.DistinctPeopleSupported ?? 0),
-            TotalHours: (row.Hours ?? 0.0).ToString("0.0", CultureInfo.InvariantCulture),
-            IsSuppressed: row.IsSuppressed || (row.DistinctVolunteers < 10) || (row.DistinctPeopleSupported < 10)
-        )).ToList();
-
-        return Result<IReadOnlyList<FunderMonthlyReportItemDto>>.Success(items);
+            TotalHours: isSuppressed ? "<10" : (row.Hours ?? 0.0).ToString("0.0", CultureInfo.InvariantCulture),
+            IsSuppressed: isSuppressed
+        );
     }
 
     public async Task<Result<MultiOrgFunderDashboardDto>> GetMultiOrgDashboardAsync(

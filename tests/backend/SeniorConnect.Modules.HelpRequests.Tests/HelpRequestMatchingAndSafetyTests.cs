@@ -61,7 +61,7 @@ public sealed class HelpRequestMatchingAndSafetyTests
 
         var trustReader = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
         var safetyReader = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
-        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader, safetyReader, new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db));
+        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader, safetyReader, new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db), new SeniorConnect.Modules.Profiles.Infrastructure.VolunteerReliabilityUpdater(db));
 
         var result = await service.AcceptHelpRequestAsync(
             request.Id,
@@ -103,7 +103,7 @@ public sealed class HelpRequestMatchingAndSafetyTests
 
         var trustReader2 = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
         var safetyReader2 = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
-        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader2, safetyReader2, new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db));
+        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader2, safetyReader2, new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db), new SeniorConnect.Modules.Profiles.Infrastructure.VolunteerReliabilityUpdater(db));
 
         var result = await service.AcceptHelpRequestAsync(
             request.Id,
@@ -113,6 +113,49 @@ public sealed class HelpRequestMatchingAndSafetyTests
         result.IsFailure.Should().BeTrue();
         result.Error!.Code.Should().Be("BUDDY_REQUIRED");
         result.Error.Kind.Should().Be(ErrorKind.Forbidden);
+    }
+
+    [Fact]
+    public async Task FindCandidates_ExcludesBuddyRequiredVolunteer_FromSafetyLevel3PlusRequest()
+    {
+        using var db = CreateInMemoryDb();
+        var seniorId = Guid.NewGuid();
+        var volunteerId = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        var request = HelpRequest.Create(
+            organizationId: null,
+            seniorUserId: seniorId,
+            createdByUserId: seniorId,
+            categoryId: categoryId,
+            safetyLevel: 3,
+            trustLevel: 3,
+            scheduledStartUtc: now.AddHours(2),
+            scheduledEndUtc: now.AddHours(3),
+            durationMinutes: 60,
+            locationType: LocationType.SeniorHome).Value!;
+        db.HelpRequests.Add(request);
+
+        // Trust level satisfied, but brand new — no buddy history yet.
+        db.TrustLevelSnapshots.Add(TrustLevelSnapshot.Create(volunteerId, 3, "{}"));
+        db.VolunteerProfiles.Add(SeniorConnect.Modules.Profiles.Domain.VolunteerProfile.Create(volunteerId));
+        await db.SaveChangesAsync();
+
+        var matchingService = new SeniorConnect.Modules.Matching.Infrastructure.MatchingService(
+            db, db,
+            new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db),
+            new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db),
+            Microsoft.Extensions.Options.Options.Create(new SeniorConnect.Modules.Matching.Domain.MatchingConfig()),
+            new SeniorConnect.Modules.Notifications.Infrastructure.NotificationService(db),
+            new SeniorConnect.Modules.Organizations.Infrastructure.OrganizationCoordinatorReader(db));
+
+        var result = await matchingService.FindCandidatesAsync(request.Id);
+
+        result.IsSuccess.Should().BeTrue();
+        var candidate = result.Value!.Single(c => c.VolunteerUserId == volunteerId);
+        candidate.IsEligible.Should().BeFalse("P4-07: a volunteer needing a buddy must never be offered a Safety Level 3+ request");
+        candidate.IneligibilityReasons.Should().Contain(r => r.Contains("buddy", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -148,7 +191,7 @@ public sealed class HelpRequestMatchingAndSafetyTests
 
         var trustReader3 = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
         var safetyReader3 = new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db);
-        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader3, safetyReader3, new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db));
+        var service = new HelpRequestService(db, new ActivitySafetyPolicy(), trustReader3, safetyReader3, new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db), new SeniorConnect.Modules.Profiles.Infrastructure.VolunteerReliabilityUpdater(db));
 
         var result = await service.AcceptHelpRequestAsync(
             request.Id,
@@ -338,7 +381,7 @@ public sealed class HelpRequestMatchingAndSafetyTests
             db, new ActivitySafetyPolicy(),
             new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db),
             new SeniorConnect.Modules.TrustSafety.Infrastructure.SafetyBoundaryReader(db),
-            new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db));
+            new SeniorConnect.Modules.Identity.Infrastructure.UserContactReader(db), new SeniorConnect.Modules.Profiles.Infrastructure.VolunteerReliabilityUpdater(db));
 
         var asVolunteer = await service.GetHelpRequestByIdAsync(request.Id, volunteerId);
         asVolunteer.Value!.SeniorDisplayName.Should().Be("Elisabeth Huber");

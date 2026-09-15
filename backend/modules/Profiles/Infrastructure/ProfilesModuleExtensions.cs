@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using SeniorConnect.Modules.Profiles.Application;
+using SeniorConnect.Modules.Profiles.Contracts;
 
 namespace SeniorConnect.Modules.Profiles.Infrastructure;
 
@@ -9,6 +10,7 @@ public static class ProfilesModuleExtensions
     {
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IReferenceDataService, ReferenceDataService>();
+        services.AddScoped<IVolunteerReliabilityUpdater, VolunteerReliabilityUpdater>();
 
         return services;
     }

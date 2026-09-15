@@ -171,6 +171,10 @@
       "submitted": "Your request is on its way.",
       "submitted_detail": "We are looking for someone. You will hear from us by tomorrow at the latest."
     },
+    "my_request": {
+      "title": "My Request",
+      "waiting_for_volunteer": "We are still looking for someone for you. You will be notified as soon as someone responds."
+    },
     "category": {
       "shopping": "Shopping",
       "doctor": "Doctor's appointment",
@@ -340,9 +344,9 @@
     "zugangskarte_banner_desc": "Connect your profile directly with relatives to securely coordinate support.",
     "transparency_section": "Transparency & Privacy",
     "perm_view_activities": "View Activities",
-    "perm_view_activities_hint": "Can see upcoming appointments and help requests.",
+    "perm_view_activities_hint": "Can see the supported person's upcoming appointments and help requests.",
     "perm_create_requests": "Create Help Requests",
-    "perm_create_requests_hint": "Can organize support on behalf of the senior.",
+    "perm_create_requests_hint": "Can organize support on behalf of the supported person.",
     "perm_view_emergency": "View Emergency Contacts",
     "perm_view_emergency_hint": "Can view registered emergency contacts.",
     "perm_safety_alerts": "Safety Alerts",
@@ -350,7 +354,7 @@
     "perm_manage_settings": "Manage Settings",
     "perm_manage_settings_hint": "Can adjust profile settings and permissions.",
     "log_viewed_activities": "Viewed current help requests.",
-    "log_created_request": "Created a help request for the senior."
+    "log_created_request": "Created a help request for the supported person."
   },
   "safeguarding": {
     "report": "Report Concern",

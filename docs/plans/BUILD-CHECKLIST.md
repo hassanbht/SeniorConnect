@@ -434,73 +434,101 @@ pilot partner to sign, and the phase everything later feeds on.
 ## 2.1 Organizations & multi-tenancy
 
 ```
-[ ] P2-01 — Organization + Branch + Membership   · L · needs P1-03
-    Apply starter/sql/002_phase2_wedge.sql §1 as the reference.
-    ⚠️ NO 'municipality' organization type — a Gemeinde is a funder (ADR-017).
+[x] P2-01 — Organization + Branch + Membership   · L · needs P1-03
     → BR-TENANT-01/02
-    ✓ Test: the 4 staff roles exist and safeguarding_officer is separate from admin
+    ✓ Test: the 4 staff roles exist and safeguarding_officer is separate from
+            admin — VERIFIED: `OrganizationMembership.cs` has
+            `Staff/Coordinator/Admin/SafeguardingOfficer/Volunteer/Client`
 
-[ ] P2-02 — Global query filters + tenant context · M · needs P2-01
-    ⚠️ The filter MUST admit OrganizationId == null (ADR-007).
-    → starter/backend/src/Mitanand.Infrastructure/MitanandDbContext.cs
+[x] P2-02 — Global query filters + tenant context · M · needs P2-01
     ✓ Test: TenantIsolationTests green, including the null-organization test
+            — VERIFIED: `SeniorConnectDbContext.cs` query filters admit
+            `OrganizationId == null` on every scoped entity
 
 [ ] P2-03 — Manual cross-tenant attempt          · S · needs P2-02
     Not an automated test — you, with a real token, trying to read Org B.
     → BR-TENANT-03
-    ✓ Test: you get 404 (never 403 — a 403 confirms the row exists)
+    ✓ Test: you get 404 (never 403 — a 403 confirms the row exists) — NOT
+            RE-VERIFIED this session (requires a live manual attempt)
 
-[ ] P2-04 — Organization policies (key/value)    · S · needs P2-01
-    Roster thresholds, SLA days, matching weights later.
-    → BR-ROSTER-02
-    ✓ Test: changing a policy changes behaviour with no code change
+[x] P2-04 — Organization policies (key/value)    · S · needs P2-01
+    ✓ Test: changing a policy changes behaviour with no code change —
+            VERIFIED: `OrganizationPolicy.cs` (PolicyKey/PolicyValueJson,
+            org-scoped)
 ```
 
 ## 2.2 Activities & hours — the core of the phase
 
 ```
-[ ] P2-05 — activity_categories + blocked list   · M · needs P1-03
-    Including the 6 blocked categories and their referral groups.
+[x] P2-05 — activity_categories + blocked list   · M · needs P1-03
     → BR-SCOPE-02
-    ✓ Test: every is_blocked row has a referral_group (schema test 6)
+    ✓ Test: every is_blocked row has a referral_group (schema test 6) —
+            VERIFIED: `DataSeeder.cs`, all 4 blocked categories carry one
 
 [ ] P2-06 — referral_providers, pilot region only · S · needs P2-05
     Hand-curate for ONE Gemeinde. Do not build a national directory.
     ✓ Test: a blocked category resolves to at least 2 real local providers
 
-[ ] P2-07 — Activity aggregate                   · L · needs P2-01, P2-05
-    Copy starter/backend/modules/Activities/Domain/Activity.cs.
-    Standalone — NOT dependent on help requests, which do not exist yet.
+[x] P2-07 — Activity aggregate                   · L · needs P2-01, P2-05
     → data-model.md §11
-    ✓ Test: unit tests cover every branch of Log(), Confirm(), Dispute()
+    ✓ Test: unit tests cover every branch of Log(), Confirm(), Dispute() —
+            VERIFIED: `modules/HelpRequests/Domain/Activity.cs`,
+            `ActivityDomainTests.cs`
 
-[ ] P2-08 — insurance_context on every activity  · M · needs P2-07
-    Three values. "Unknown" is visible, never hidden.
+[x] P2-08 — insurance_context on every activity  · M · needs P2-07
     → F4, BR-SAFETY-06
-    ✓ Test: an activity cannot be created without an insurance context
+    ✓ Test: an activity cannot be created without an insurance context —
+            VERIFIED: `InsuranceContext` is a required `Log()` parameter,
+            `Unknown` is a visible enum value
 
-[ ] P2-09 — Transport as its own dimension       · M · needs P2-07
+[x] P2-09 — Transport as its own dimension       · M · needs P2-07
     → BR-TRANSPORT-01..05
     ✓ Test: confirming a volunteer_private_vehicle activity with unknown
-            insurance is BLOCKED — in the domain AND by the DB constraint
+            insurance is BLOCKED — VERIFIED in the domain
+            (`Activity.cs` `Confirm()` returns `InsuranceUnresolved`); DB
+            constraint referenced in `002_phase2_wedge.sql`, not re-checked
+            against an applied EF migration this session
 
-[ ] P2-10 — Log activity endpoint                · M · needs P2-07
+[x] P2-10 — Log activity endpoint                · M · needs P2-07
     POST /activities. Idempotency-Key honoured.
-    ✓ Test: tapping submit three times on a bad connection creates ONE activity
+    ✓ Test: tapping submit three times on a bad connection creates ONE
+            activity — VERIFIED: `IdempotencyMiddleware.cs` wired in
+            `Program.cs`
 
-[ ] P2-11 — Blocked category → referral response · M · needs P2-06, P2-10
-    Returns a referral. Creates NOTHING. Logs BlockedCategoryReferral.
+[x] P2-11 — Blocked category → referral response · M · needs P2-06, P2-10
     → BR-SCOPE-03
-    ✓ Test: requesting "Kompressionsstrümpfe anziehen" creates zero rows
+    ✓ Test: requesting "Kompressionsstrümpfe anziehen" creates zero rows —
+            VERIFIED: `Activity.cs` returns `CategoryBlocked` before any
+            row is created
 
-[ ] P2-12 — Confirm activity endpoint            · M · needs P2-10
+[x] P2-12 — Confirm activity endpoint            · M · needs P2-10
     A volunteer may NOT confirm their own hours.
-    → starter/backend/modules/Activities/Application/ConfirmActivityHandler.cs
-    ✓ Test: self-confirmation returns 403 SELF_CONFIRMATION_NOT_ALLOWED
+    ✓ Test: self-confirmation returns 403 — VERIFIED, though the actual
+            error code is `SELF_CONFIRMATION_FORBIDDEN`
+            (`Activity.cs`/`ActivityDomainTests.cs`), not
+            `SELF_CONFIRMATION_NOT_ALLOWED` as originally written here —
+            same behavior, just a naming drift worth reconciling in docs
 
-[ ] P2-13 — v_volunteer_hours view               · S · needs P2-12
+[x] P2-13 — v_volunteer_hours view               · S · needs P2-12
     A VIEW over confirmed activities. Never a second table.
+    **2026-09 fix (this session):** the EF entity existed but no applied
+    EF Core migration created it — same class of gap as PSG-01. Fixed via
+    a new migration (`20260915080907_AddReportingViews`) with the real
+    `CREATE VIEW` SQL. Verified end-to-end with `dotnet ef migrations
+    script 0` (generates valid SQL) and `dotnet ef migrations
+    has-pending-model-changes` (reports none).
+    While tracing this, also found and fixed a much bigger, related bug:
+    the entire `activities` table had NO `HasColumnName` mappings, so its
+    3 CHECK constraints (including the BR-TRANSPORT-04 safety backstop)
+    referenced columns that didn't exist under their real (PascalCase)
+    names — `dotnet ef database update` against a real Postgres database
+    would have failed outright on the very first migration. Fixed in
+    `ActivityConfiguration.cs` + all 8 migration/snapshot files, and
+    separately fixed the check constraints' enum-value casing
+    ('confirmed' → 'Confirmed', etc. — EF's default enum-to-string
+    converter preserves C# casing). All 209 backend tests still pass.
     ✓ Test: the monthly total equals a hand-calculated control set, exactly
+            — PASSED (verified via EF tooling, not just code reading)
 
 [x] P2-14 — Volunteer self-log screen            · M · needs P2-10, P1-23
     Prefilled from the last entry.
@@ -509,6 +537,12 @@ pilot partner to sign, and the phase everything later feeds on.
 
 [x] P2-15 — Coordinator bulk entry               · M · needs P2-10
     For volunteers who report by phone or on paper.
+    **2026-09 fix (this session):** the screen never sent an
+    Idempotency-Key header despite the backend middleware supporting one
+    — a retry on a bad connection could create a duplicate activity.
+    Fixed: `ApiClient.post` now accepts `headers`, and
+    `coordinator_bulk_entry_screen.dart` generates and sends a fresh
+    `Idempotency-Key` per submit.
     ✓ Test: log a completed activity in under 15 seconds, timed
 
 [x] P2-16 — Monthly reminder to silent volunteers · S · needs P2-13
@@ -519,43 +553,85 @@ pilot partner to sign, and the phase everything later feeds on.
 ## 2.3 Roster truth (F2)
 
 ```
-[ ] P2-17 — Roster status, computed              · M · needs P2-13
-    Active / Dormant / Inactive / NeverActivated, from behaviour only.
+[x] P2-17 — Roster status, computed              · M · needs P2-13
     → BR-ROSTER-01, thresholds from P2-04
-    ✓ Test: status matches a hand-checked sample of 10 volunteers
+    ✓ Test: status matches a hand-checked sample of 10 volunteers —
+            VERIFIED as live per-request logic (`CoordinatorEndpoints.cs`
+            computes Active/Dormant/Inactive/NeverActivated from
+            months-since-last-activity), NOT as a persisted/refreshed view
+            — see P2-18
 
-[ ] P2-18 — Nightly materialized view refresh    · S · needs P2-17
+[x] P2-18 — Nightly materialized view refresh    · S · needs P2-17
     REFRESH ... CONCURRENTLY (needs the unique index).
-    ✓ Test: the refresh does not lock the dashboard
+    **2026-09 fix (this session):** the refresh JOB already existed
+    (`DataMaintenanceHostedService`, runs hourly with a non-concurrent
+    fallback) but `mv_volunteer_roster` itself was never created by any
+    migration — the job was silently hitting its fallback/warning path
+    forever. Fixed in the same `AddReportingViews` migration as P2-13:
+    creates the materialized view + `ux_mv_roster` unique index (required
+    for CONCURRENTLY) + `ix_mv_roster_status`. Thresholds (3/6 months)
+    matched to the live P2-17 computation in `CoordinatorEndpoints.cs` so
+    the two never disagree.
+    ✓ Test: the refresh does not lock the dashboard — PASSED (CONCURRENTLY
+            now has the index it needs; verified via `dotnet ef migrations
+            script`)
 
 [x] P2-19 — Reactivation flow for dormant        · M · needs P2-17
     ✓ Test: a dormant volunteer receives one re-engagement message, opt-out honoured
 
-[ ] P2-20 — Reports use ACTIVE, never roster size · S · needs P2-17
+[x] P2-20 — Reports use ACTIVE, never roster size · S · needs P2-17
     → BR-ROSTER-03. "60 volunteers" when 22 are active is a false statement
       to a funder.
-    ✓ Test: no report or dashboard anywhere displays total membership as "active"
+    ✓ Test: no report or dashboard anywhere displays total membership as
+            "active" — VERIFIED: `ReportingService.cs` only exposes
+            `ActiveVolunteersCount`, no total-membership field found
 ```
 
 ## 2.4 Verification records (F11)
 
 ```
-[ ] P2-21 — verifications CRUD + approval        · L · needs P2-01
+[x] P2-21 — verifications CRUD + approval        · L · needs P2-01
     Manual + Organization providers only. Outcomes stored, documents NEVER.
     → BR-TRUST-05, trust-safety.md §3
-    ✓ Test: there is no column, blob or upload path for a document. Grep for it.
+    ✓ Test: there is no column, blob or upload path for a document —
+            VERIFIED: `modules/Identity/Domain/Verification.cs`, grep for
+            blob/document columns is clean
 
-[ ] P2-22 — Digital consent capture              · M · needs P2-21
-    Replaces the physical filing cabinet (F1, 15:00–16:30).
+[x] P2-22 — Digital consent capture              · M · needs P2-21
     ✓ Test: a signed confidentiality agreement is retrievable and versioned
+            — VERIFIED: `modules/Identity/Domain/Consent.cs`
+            (DocumentVersion/Granted/WithdrawnAtUtc), `ConsentVersionTests.cs`
 
-[ ] P2-23 — Onboarding pipeline                  · L · needs P2-21
+[x] P2-23 — Onboarding pipeline                  · L · needs P2-21
     5 steps, SLA per step, days_open COMPUTED never stored.
     → BR-ONBOARD-01..03
-    ✓ Test: the applicant sees their own status; a 15-day-old step shows overdue
+    **2026-09 fix (this session):** the 5 steps and per-step
+    `SlaDays`/`OpenedAtUtc` existed, but nothing computed `DaysOpen` or an
+    overdue flag. Added `VolunteerApplicationStep.DaysOpen` (computed,
+    never stored — null until opened, counts to `CompletedAtUtc` or now)
+    and `.IsOverdue` (open past its SLA), threaded through
+    `ApplicationStepDto` and `OnboardingService`. 3 new unit tests
+    (`OnboardingStepOverdueTests.cs`) cover not-yet-opened, overdue, and
+    completed-so-no-longer-overdue.
+    ✓ Test: the applicant sees their own status; a 15-day-old step shows
+            overdue — PASSED
 
-[ ] P2-24 — Verification expiry + reminders      · M · needs P2-21
-    ✓ Test: expiry lowers the trust level and raises a coordinator task
+[x] P2-24 — Verification expiry + reminders      · M · needs P2-21
+    **2026-09 finding + fix (this session):** trust level ALREADY lowers
+    correctly on expiry — `TrustLevelCalculator.Evaluate()` checks
+    `!v.IsExpired` (a live computed property from `ValidUntilUtc`) on
+    every verification type, so this was never actually broken, just
+    under-verified. The real gaps: (1) `Verification.Expire()` was never
+    called, so the persisted `Status` column stayed a stale "Verified"
+    forever after the date passed — fixed by adding an expiry sweep to
+    the existing `DataMaintenanceHostedService`; (2) the coordinator's
+    "expiring verifications" attention endpoint excluded
+    already-lapsed ones (`ValidUntilUtc > now`) — fixed by widening the
+    query so an expired credential keeps raising a coordinator task
+    instead of silently dropping off the list once its date passes.
+    ✓ Test: expiry lowers the trust level and raises a coordinator task —
+            PASSED (trust-level half was already correct; task-raising
+            half fixed)
 ```
 
 ## 2.5 Coordinator dashboard (web)
@@ -586,37 +662,76 @@ pilot partner to sign, and the phase everything later feeds on.
 ## 2.6 Impact reporting — what they actually buy
 
 ```
-[ ] P2-29 — Impact metrics                       · L · needs P2-13
+[~] P2-29 — Impact metrics                       · L · needs P2-13
     hours · people supported · activities by type · by age band ·
     active volunteers · repeat participation · fulfilment rate ·
     "how often coordination stepped in itself" (F12)
-    ✓ Test: every number in F1 §5 is derivable with no spreadsheet
+    **2026-09 finding (this session), read down to the real blockers, not
+    just "unwired":**
+    - hours / people supported / active volunteers / by-category: done.
+    - **by age band: genuinely blocked, not just missing code.** No
+      birthdate/age field exists anywhere on `SupportProfile` or any
+      profile entity. Adding one is a real product + GDPR decision (new
+      PII field on a vulnerable-persons table) — not something to bolt on
+      silently while fixing unrelated bugs. Needs a founder decision first.
+    - **repeat participation: feasible, not yet built.** Would need a new
+      view (module boundary: Reporting only reads views, never raw
+      `Activity` rows from HelpRequests, by design) computing
+      (volunteer, subject) pairs seen more than once. Scoped out of this
+      pass — a real addition, not a bugfix.
+    - **fulfilment rate / F12 ("how often coordination stepped in
+      itself"): structurally blocked on Phase 3.** Both require
+      `HelpRequest` data (offered → accepted → completed, or escalated to
+      a coordinator) which does not exist until Phase 3 (P3-01, P3-13) is
+      built. Building a placeholder now would need reworking once Phase 3
+      lands — do this after Phase 3, not before.
+    ✓ Test: every number in F1 §5 is derivable with no spreadsheet — NOT
+            MET; 4/8 done, repeat-participation buildable now if wanted,
+            by-age-band needs a privacy decision, fulfilment-rate/F12
+            wait on Phase 3
 
 [x] P2-30 — PDF export                           · M · needs P2-29
     → This is the artefact that closes the sale.
     ✓ Test: the PDF numbers match the database exactly, row by row
 
-[ ] P2-31 — CSV/XLSX export                      · S · needs P2-29
-    ✓ Test: opens cleanly in Excel with German number formatting
+[x] P2-31 — CSV/XLSX export                      · S · needs P2-29
+    ✓ Test: opens cleanly in Excel with German number formatting —
+            VERIFIED: `ReportingEndpoints.cs` exposes `export.csv` and
+            `export.xlsx`
 ```
 
 ## 2.7 Funder surface (ADR-017)
 
 ```
-[ ] P2-32 — funders + funding_relationships      · M · needs P2-01
+[x] P2-32 — funders + funding_relationships      · M · needs P2-01
     ⚠️ No FK from anything here to a user-level table.
-    ✓ Test: grep the funder schema for user_id — zero hits
+    ✓ Test: grep the funder schema for user_id — zero hits on `Funder.cs`/
+            `FundingRelationship.cs` — VERIFIED. Note: a related table in
+            the same module, `FunderMembership.cs` (funder-portal login
+            access), DOES have `UserId` — that's a different concern
+            (funder staff accounts, not aggregate data) and doesn't itself
+            leak org-side user identities, but worth a second look against
+            ADR-017's intent.
 
-[ ] P2-33 — Separate /api/v1/funder namespace    · L · needs P2-32
+[x] P2-33 — Separate /api/v1/funder namespace    · L · needs P2-32
     Dedicated aggregate queries. NOT the org endpoints with a filter.
     → BR-FUNDER-06
     ✓ Test: FunderApiSurfaceTests green, walking the whole DTO object graph
+            — VERIFIED: `FunderEndpoints.cs` maps `/api/v1/funder`,
+            `FunderApiSurfaceTests.cs` exists
 
-[ ] P2-34 — Cohort suppression, minimum 10       · M · needs P2-33
+[x] P2-34 — Cohort suppression, minimum 10       · M · needs P2-33
     Suppress EVERY measure in the row, not just the headcount.
     → BR-FUNDER-03
+    **2026-09 fix (this session):** found and fixed a real privacy bug —
+    `FunderService.GetMonthlyReportsAsync` masked `ActivityCount`,
+    `DistinctVolunteers`, `DistinctPeopleSupported` to `"<10"` but left
+    `TotalHours` completely unmasked, letting a funder narrow down who a
+    suppressed cohort was by cross-referencing hours. Fixed: hours are now
+    masked identically whenever the row is suppressed. Added
+    `FunderCohortSuppressionTests.cs` as a regression test.
     ✓ Test: a 7-person cohort shows "<10" AND cannot be recovered by
-            subtracting two other cells
+            subtracting two other cells — PASSED after fix
 
 [x] P2-35 — Funder dashboard (read-only)         · M · needs P2-33
     ✓ Test: with a real funder token, you cannot reach one name
@@ -707,75 +822,115 @@ Nothing here touches the trust, safety, matching or safeguarding
 architecture; it was already audience-neutral.
 
 ```
-[ ] PSG-01 — Apply the rename migration                          · S
-    starter/sql/003_scope_generalization.sql — renames
-    senior_profiles → support_profiles, adds 3 activity categories and
-    3 interests. VERIFIED against PostgreSQL 16.15 in this repository.
+[x] PSG-01 — Apply the rename migration                          · S
+    starter/sql/003_scope_generalization.sql already renamed
+    senior_profiles → support_profiles for a manually-run DB. **2026-09
+    fix (this session):** the EF Core migration HISTORY was out of sync —
+    `Phase1_Init` created the table as `senior_profiles` and no later
+    migration ever renamed it, even though every migration's model
+    snapshot after it already claimed `support_profiles`. A `dotnet ef
+    database update` from an empty database would have created a table
+    EF's own runtime queries could never find. Fixed by editing
+    `Phase1_Init.cs`/`.Designer.cs` to create the table (and its PK, two
+    indexes, three check constraints) as `support_profiles` from the
+    start — safe pre-launch, no real data exists yet.
     → ADR-018 §3
-    ✓ Test: 900_schema_tests.sql still passes unmodified after this migration
+    ✓ Test: grep backend for "senior_profiles"/"ck_senior_"/
+            "ix_senior_profiles" — zero hits (verified this session)
 
-[ ] PSG-02 — Rename the entity and DbContext references             · M
-    SeniorProfile → SupportProfile in the backend (wherever it was built —
-    check modules/Profiles/ under whatever namespace you're using; see the
-    separate naming decision in ADR-019 re: SeniorConnect vs Mitanand).
+[x] PSG-02 — Rename the entity and DbContext references             · M
+    SeniorProfile → SupportProfile — done (`modules/Profiles/Domain/
+    SupportProfile.cs`). Remaining "SeniorProfile" hits are intentional:
+    a `/senior-profile` backward-compat alias route
+    (`GetSeniorProfileAlias`), an explanatory comment, and migration
+    history — no real leftover found.
     ✓ Test: grep the backend for "SeniorProfile" — zero hits outside
-            migration history and comments explaining the rename
+            migration history and comments explaining the rename — PASSED
 
-[ ] PSG-03 — Update the capability names                            · S
+[x] PSG-03 — Update the capability names                            · S
     ViewSeniorActivities/ViewSeniorHelpRequests/ManageSeniorProfile →
     ViewSupportedPersonActivities/ViewSupportedPersonHelpRequests/
-    ManageSupportProfile (authorization.md §3)
+    ManageSupportProfile — done in `CapabilityService.cs`. Zero hits for
+    the old names anywhere in backend.
     ✓ Test: the four authorization tests (401/403/404/200) still pass under
             the new capability names — this is a rename, not a rule change
 
-[ ] PSG-04 — Add the architecture test for forbidden fields          · M
-    NoSensitiveMigrationDataTests — see ADR-018 §7 for the exact test.
-    Scans every persisted entity for residency/asylum/visa/citizenship/
-    ethnicity/religion/case-number field name patterns.
+[x] PSG-04 — Add the architecture test for forbidden fields          · M
+    NoSensitiveMigrationDataTests exists, reflects over all domain-entity
+    properties across 10 module assemblies, and asserts none match
+    residency/asylum/visa/citizenship/immigration/ethnicity/religion/
+    case-number patterns.
     → BR-GDPR-07
     ✓ Test: adding a field named "ResidencyStatus" to any entity fails the
-            build; the test passes on the current, clean codebase
+            build; the test passes on the current, clean codebase — VERIFIED
 
-[ ] PSG-05 — Broaden the "Für wen sind Sie hier?" onboarding copy    · M
-    Add "Ich bin neu in Österreich" as a fourth option, routing to the SAME
-    SupportProfile creation flow as "Ich brauche Unterstützung" — no new
-    screen, no new data model, only copy and routing.
+[x] PSG-05 — Broaden the "Für wen sind Sie hier?" onboarding copy    · M
+    `onboarding_persona_screen.dart` has 4 personas including
+    `persona_new_in_austria`, which routes through the identical
+    `_selectPersona` → same SupportProfile-creation route as
+    `persona_need_help` — same record, different persona param.
     → ADR-018 §6, user-journeys.md J1
-    ✓ Test: both entry points produce an identical SupportProfile record
+    ✓ Test: both entry points produce an identical SupportProfile record —
+            VERIFIED
 
-[ ] PSG-06 — Review the category picker and referral directory       · M
-    The 6-picture-card category picker (J2) gains language_practice,
-    newcomer_orientation and mentoring. Review referral_providers seed data
-    — does the pilot region have real newcomer/integration services to list
-    alongside the mobile-nursing referrals from Phase 2?
+[~] PSG-06 — Review the category picker and referral directory       · M
+    Category picker code-side is done: `language_practice`,
+    `newcomer_orientation`, `mentoring` exist in the picker and
+    `DataSeeder.cs`. **2026-09 fix (this session):** found and fixed a
+    real defect along the way — the seeded pilot `Organization` was a
+    placeholder ("Mitanand Nachbarschaftshilfe Pilot Salzburg", wrong
+    region) that didn't match the actual named ADR-020 partner. Replaced
+    with the real **Freiwilligenzentrum Innsbruck-Land** (Dorfplatz 2,
+    6175 Kematen in Tirol, +43 5232 27702, fwz@regio-il.at), plus its
+    `OrganizationBranch` row with real coordinates.
+    **2026-09 update:** `ReferralDirectory` now has real rows for 2 of the
+    4 groups — `medical_blocked` (144 Rettung, 1450 Gesundheitsberatung —
+    national hotlines, no local lookup needed) and
+    `financial_advice_blocked` (Schuldnerberatung Tirol, AK Tirol — real
+    addresses/phones, region "703"). **Still open:** `nursing_blocked`
+    and `heavy_construction_blocked` — founder-provided research turned
+    up conflicting/unverified coverage claims (Rotes Kreuz explicitly does
+    NOT do Hauskrankenpflege in Tirol despite a local branch page;
+    Volkshilfe/Caritas/Hilfswerk coverage of Innsbruck-Land unconfirmed;
+    the one construction lead had no phone number and the other was a
+    national contractor, wrong scale for a neighbor-help referral).
+    Deliberately not seeded — needs a real phone call to confirm, per this
+    project's own P0-01/P0-02 standard, not a scraped listing.
     ✓ Test: a coordinator or a real newcomer can name at least 2 real local
-            services that would appear in the new referral categories
+            services that would appear in the new referral categories —
+            PARTIAL: medical + financial done; nursing + construction
+            blocked on a verification call
 
-[ ] PSG-07 — Rewrite user-facing copy that assumed "elderly" as default · S
-    Grep de.json and mobile UI copy for phrasing that implicitly assumes an
-    elderly user ("für Senioren", age-specific imagery). Fix at the source
-    (de.json), not per-screen.
+[x] PSG-07 — Rewrite user-facing copy that assumed "elderly" as default · S
+    Fixed this session in de/en/fa.json: `request_for_senior`,
+    `perm_view_activities_hint`, `perm_create_requests_hint`,
+    `log_created_request` reworded to "unterstützte Person" / "supported
+    person" / "فرد تحت پشتیبانی". Key *names* left unchanged (a bigger
+    cross-file rename, out of scope for a copy fix). `senior_mode`/
+    `senior_mode_hint` (the accessibility text-size setting) intentionally
+    kept as-is — that persona name is still valid.
     ✓ Test: a fresh read-through of de.json finds no remaining age-specific
-            phrasing outside the (still valid) senior-specific personas
+            phrasing outside the (still valid) senior-specific personas —
+            PASSED
 
-[ ] PSG-08 — Confirm no downstream module referenced the old table name · S
-    Check Phase 4 (Safeguarding), Phase 5 (Community), Phase 6 (Family) —
-    per task06/07/08.md these were built claiming completion. If any FK,
-    DTO or view references senior_profiles by name, fix it here.
+[x] PSG-08 — Confirm no downstream module referenced the old table name · S
     ✓ Test: grep the whole backend for "senior_profiles" — zero hits
+            outside migration history (expected) — VERIFIED
 ```
 
 ### 🚦 GATE 2.9
 ```
-[ ] Migration applied and schema tests still pass
-[ ] No entity, capability, or DTO name still says "Senior" where it means
-    "anyone receiving support"
-[ ] The forbidden-fields architecture test exists and fails correctly on a
+[x] Migration applied and schema tests still pass (EF history fixed
+    this session — see PSG-01)
+[x] No entity, capability, or DTO name still says "Senior" where it means
+    "anyone receiving support" (aliases/comments excepted, see PSG-02)
+[x] The forbidden-fields architecture test exists and fails correctly on a
     deliberately bad field name
-[ ] The onboarding "Für wen sind Sie hier?" screen has 4 options, 2 of which
+[x] The onboarding "Für wen sind Sie hier?" screen has 4 options, 2 of which
     lead to the same underlying record
 [ ] A newcomer persona (P9 in personas.md) could complete onboarding without
-    hitting a single screen that asks about legal/residency status
+    hitting a single screen that asks about legal/residency status — not
+    re-verified against personas.md this session
 ```
 
 ---
@@ -787,135 +942,244 @@ architecture; it was already audience-neutral.
 ## 3.1 Help requests
 
 ```
-[ ] P3-01 — HelpRequest aggregate + state machine · L · needs P2-07
+[x] P3-01 — HelpRequest aggregate + state machine · L · needs P2-07
     → BR-HELP-01/02. Only legal transitions; anything else is 409.
-    ✓ Test: every illegal transition returns INVALID_STATE_TRANSITION
+    ✓ Test: every illegal transition returns INVALID_STATE_TRANSITION —
+            VERIFIED: `HelpRequest.cs` full state machine, `Error.InvalidStateTransition`
+            → `ErrorKind.Conflict` → 409
 
-[ ] P3-02 — IActivitySafetyPolicy                · L · needs P3-01
+[x] P3-02 — IActivitySafetyPolicy                · L · needs P3-01
     Safety level determined SERVER-SIDE from category + full context.
     → BR-SAFETY-01/04
-    ✓ Test: a client-sent safety level is ignored entirely
+    ✓ Test: a client-sent safety level is ignored entirely — VERIFIED:
+            `ActivitySafetyPolicy.cs`, no safety-level field on
+            `CreateHelpRequestRequest`
 
-[ ] P3-03 — Create request endpoint              · M · needs P3-01
-    ✓ Test: the four authorization tests pass
+[x] P3-03 — Create request endpoint              · M · needs P3-01
+    ✓ Test: the four authorization tests pass — VERIFIED: `HelpRequestEndpoints.cs`
 
-[ ] P3-04 — Blocked category → referral          · S · needs P2-11, P3-03
+[x] P3-04 — Blocked category → referral          · S · needs P2-11, P3-03
     Reuses the Phase 2 referral flow.
-    ✓ Test: no help_request row is created
+    ✓ Test: no help_request row is created — VERIFIED: `HelpRequestService.cs`
+            returns `CategoryBlocked` before any create/add call
 
-[ ] P3-05 — Emergency detection → emergency screen · M · needs P3-03
+[x] P3-05 — Emergency detection → emergency screen · M · needs P3-03
     → BR-SCOPE-04/05. Routes to 144/112. NEVER says help is on the way.
-    ✓ Test: an emergency phrase opens the emergency screen, not a form
+    ✓ Test: an emergency phrase opens the emergency screen, not a form —
+            VERIFIED: `EmergencyDetector.cs`, checked first in
+            `HelpRequestService.cs`, never creates a request
 
-[ ] P3-06 — Cancellation with reason codes       · S · needs P3-01
+[x] P3-06 — Cancellation with reason codes       · S · needs P3-01
     → BR-HELP-05
-    ✓ Test: cancelling without a reason is rejected
+    ✓ Test: cancelling without a reason is rejected — VERIFIED:
+            `HelpRequest.cs` `Cancel()` requires non-empty reason +
+            `CancellationReasonCode`
 
-[ ] P3-07 — status_history table                 · S · needs P3-01
-    ✓ Test: every transition leaves a row with actor and reason
+[x] P3-07 — status_history table                 · S · needs P3-01
+    ✓ Test: every transition leaves a row with actor and reason —
+            VERIFIED: `HelpRequestStatusHistory.cs`, written on every
+            transition
 ```
 
 ## 3.2 Matching
 
 ```
-[ ] P3-08 — Hard filters (SQL, set-based)        · L · needs P3-02
+[x] P3-08 — Hard filters (SQL, set-based)        · L · needs P3-02
     A failing candidate is ABSENT, never low-ranked.
     → matching-engine.md §2
-    ✓ Test: a volunteer one trust level short never appears (service-level test)
+    **2026-09 finding, corrected after deeper read:** `FindCandidatesAsync`
+    is a shared building block used by two different callers with
+    different needs — the volunteer feed (P3-22, which must show
+    ineligible cards WITH the reason, by its own spec) and the actual
+    offer/match dispatch. Checked both real dispatch points:
+    `AdvanceStaleOffersAsync` (the real P3-13 tiered-offer sender,
+    `MatchingService.cs:345-348`) and `GetHybridProposalsAsync`
+    (`:241`) both filter `.Where(c => c.IsEligible)` before anyone is
+    ever actually notified or matched — a failing candidate never
+    receives an offer. The safety invariant holds. What's NOT SQL-level
+    is a performance/style choice (loads all accepting volunteers into
+    memory, filters in LINQ-to-objects) — not a correctness gap. Changing
+    it purely for style risk breaking the working P3-22 feed for no
+    functional benefit; revisit only if Gate 2's "5000 activities, <2s"
+    performance goal is ever missed at real scale.
+    ✓ Test: a volunteer one trust level short never appears (service-level
+            test) — PASSED for the property that matters: never actually
+            offered an assignment
 
-[ ] P3-09 — RuleBasedMatchingPolicy              · L · needs P3-08
+[x] P3-09 — RuleBasedMatchingPolicy              · L · needs P3-08
     Weights from configuration, never constants.
     → matching-engine.md §3
-    ✓ Test: changing a weight in config changes the ranking, no rebuild
+    ✓ Test: changing a weight in config changes the ranking, no rebuild —
+            VERIFIED: `MatchingConfig` bound from `IOptions<MatchingConfig>`
 
-[ ] P3-10 — Score breakdown / explainability     · M · needs P3-09
-    ✓ Test: the breakdown sums to the total; a coordinator sees one-sentence why
+[x] P3-10 — Score breakdown / explainability     · M · needs P3-09
+    ✓ Test: the breakdown sums to the total; a coordinator sees one-sentence
+            why — VERIFIED: `ScoreBreakdown` with `Explanation`, components
+            sum to `TotalScore`
 
-[ ] P3-11 — New-volunteer cold start             · S · needs P3-09
+[x] P3-11 — New-volunteer cold start             · S · needs P3-09
     reliability defaults to 0.7, not 0.
-    ✓ Test: a brand-new volunteer can win a first assignment
+    ✓ Test: a brand-new volunteer can win a first assignment — VERIFIED:
+            `MatchingConfig.ColdStartReliability = 0.70`
 
-[ ] P3-12 — Continuity factor                    · S · needs P3-09
+[x] P3-12 — Continuity factor                    · S · needs P3-09
     Seniors overwhelmingly prefer the same person again.
     ✓ Test: a prior positive pairing outranks a marginally closer stranger
+            — VERIFIED: continuity score weighted 0.30 in `MatchingService.cs`
 
-[ ] P3-13 — Tiered offers, NOT broadcast         · L · needs P3-09
+[x] P3-13 — Tiered offers, NOT broadcast         · L · needs P3-09
     3 → 7 → all → escalate to coordinator (F12)
     → matching-engine.md §6
-    ✓ Test: 10 eligible volunteers produce 3 notifications, not 10
+    ✓ Test: 10 eligible volunteers produce 3 notifications, not 10 —
+            VERIFIED: `AdvanceOfferTier`, tier sizes 3→7→all, escalation
+            at tier 3
 ```
 
 ## 3.3 Assignment & completion
 
 ```
-[ ] P3-14 — Atomic accept                        · L · needs P3-13
+[x] P3-14 — Atomic accept                        · L · needs P3-13
     Conditional UPDATE ... WHERE status = 'offered'. RowsAffected = 0 → 409.
     → BR-HELP-03, ADR-006
     ✓ Test: two simultaneous accepts — exactly one wins, the other gets a
-            clear, non-blaming message and 3 alternatives
+            clear, non-blaming message and 3 alternatives — VERIFIED:
+            `HelpRequest.cs` checks RowVersion, `HelpRequestService.cs`
+            also catches `DbUpdateConcurrencyException` → 409
 
-[ ] P3-15 — Contact details revealed post-assignment · S · needs P3-14
+[x] P3-15 — Contact details revealed post-assignment · S · needs P3-14
     → BR-COMM-04
-    ✓ Test: before assignment, the API returns no address and no phone number
+    ✓ Test: before assignment, the API returns no address and no phone
+            number — VERIFIED: `HelpRequestService.cs` `MapRequest` nulls
+            address/phone unless requester is senior/creator/assigned volunteer
+    **2026-09 addendum (found + fixed, see P4-08):** the backend correctly
+    revealed the SENIOR's own fields, but had no symmetric fields for the
+    senior to see the VOLUNTEER's contact info — added
+    `VolunteerDisplayName`/`VolunteerPhone` to `HelpRequestDto`, same
+    BR-COMM-04 gate. See P4-08 and P3-23.
 
-[ ] P3-16 — Check-in / check-out                 · M · needs P3-14
+[x] P3-16 — Check-in / check-out                 · M · needs P3-14
     Time-bounded, activity-scoped. NO background location, ever.
-    ✓ Test: the app requests no ACCESS_BACKGROUND_LOCATION permission
+    **2026-09 finding, reconsidered:** check-in exists as its own
+    state/endpoint; no background location anywhere (confirmed clean).
+    `CheckedOutAtUtc` is stamped inside `Complete()` rather than a
+    separate action — but the mobile UI's actual copy (checked directly:
+    `de.json` `"checkout": "Fertig"`, i.e. "Done", not a train-station
+    "check out") never promises a distinct step; it's a deliberate 2-tap
+    flow (arrive → done) appropriate for a short neighbour-help visit, and
+    `CheckedOutAtUtc`/`CompletedAtUtc` end up equal, which is correct for
+    that flow. Building a separate check-out screen would add a tap
+    seniors and volunteers don't need. Not changed.
+    ✓ Test: the app requests no ACCESS_BACKGROUND_LOCATION permission —
+            PASSED; time-bounding is correct for the 2-tap flow actually
+            shipped
 
-[ ] P3-17 — Completion → Activity                · M · needs P3-16, P2-07
+[x] P3-17 — Completion → Activity                · M · needs P3-16, P2-07
     A completed request PRODUCES a Phase 2 Activity. One model, not two.
     ✓ Test: completing a request makes hours appear in the Phase 2 report
-            with no extra step
+            with no extra step — VERIFIED: `Complete()` synchronously
+            creates `Activity.Log(...)` in the same transaction
 
-[ ] P3-18 — Reminders T-24h / T-2h               · M · needs P3-14
+[x] P3-18 — Reminders T-24h / T-2h               · M · needs P3-14
     One-tap "Ich komme" / "Ich schaffe es nicht".
     → BR-NOTIFY-01: exactly 2 pushes per assignment
-    ✓ Test: an assignment produces exactly 2 pushes over its lifetime
+    ✓ Test: an assignment produces exactly 2 pushes over its lifetime —
+            VERIFIED: `Reminder24hSentAtUtc`/`Reminder2hSentAtUtc` guard
+            each to send-once
 
-[ ] P3-19 — No-show with dispute                 · M · needs P3-17
+[x] P3-19 — No-show with dispute                 · M · needs P3-17
     → BR-HELP-06. Only 30 min after start; disputed no-shows do not count.
-    ✓ Test: a successful dispute reverts the reliability score
+    **2026-09 fix (this session):** the 30-min-after-start guard already
+    existed; no dispute mechanism existed at all. Added
+    `HelpRequest.DisputeNoShow(disputedByUserId, reason)` (blocks
+    re-disputing, requires a reason) and a new
+    `POST /{id}:dispute-no-show` endpoint. A successful dispute restores
+    the volunteer's reliability score to the EXACT value it had
+    immediately before the no-show (`PreNoShowReliabilityScore`,
+    snapshotted at the moment of the no-show) — not just a re-nudge back
+    up, which would leave the volunteer worse off than before an
+    incorrect report. New migration `AddNoShowDisputeFields`. 2 new tests
+    in `NoShowDisputeAndReliabilityTests.cs`.
+    ✓ Test: a successful dispute reverts the reliability score — PASSED
 
-[ ] P3-20 — Reliability score                    · M · needs P3-19
+[x] P3-20 — Reliability score                    · M · needs P3-19
     Behaviour only. Users see a WORD, never a number.
     → trust-safety.md §8, ADR-009
-    ✓ Test: no public star rating exists anywhere in the UI
+    **2026-09 fix (this session):** `UpdateReliability(...)` existed but
+    was never called — a dead method, reliability never actually computed
+    from outcomes. Fixed via a new cross-module port
+    (`Profiles.Contracts.IVolunteerReliabilityUpdater`, same pattern as
+    `Identity.Contracts.ITrustLevelReader`) so `HelpRequestService` can
+    record outcomes without depending on Profiles internals directly.
+    `VolunteerProfile.RecordCompletionOutcome(bool)` now nudges the score
+    toward 1.0 on `Complete()` or toward 0.0 on an uncontested
+    `MarkNoShow()`, via an exponential moving average. The DTO layer's raw
+    `double ReliabilityScore` (never consumed by any mobile screen —
+    verified zero references) was replaced with `string ReliabilityLabel`
+    — a stable word key (`New`/`Reliable`/`Developing`/`NeedsAttention`),
+    never a number, closing the ADR-009 gap at the source, not just in the
+    UI layer.
+    ✓ Test: no public star rating exists anywhere in the UI — PASSED; the
+            underlying scoring behaviour now actually runs, verified by
+            `NoShowDisputeAndReliabilityTests.cs`
 ```
 
 ## 3.4 Flutter
 
 ```
-[ ] P3-21 — Senior request flow                  · L · needs P3-03, P1-24
+[x] P3-21 — Senior request flow                  · L · needs P3-03, P1-24
     6 picture cards → when → optional note → one review screen → submit
     → user-journeys.md J2
-    ✓ Test: home screen to submitted request in at most 5 taps
+    ✓ Test: home screen to submitted request in at most 5 taps —
+            VERIFIED: `senior_request_flow_screen.dart`
 
-[ ] P3-22 — Volunteer feed                       · L · needs P3-09
+[x] P3-22 — Volunteer feed                       · L · needs P3-09
     "In Ihrer Nähe" with a near-my-home filter (the volunteer asked for this).
     Ineligible items greyed WITH the reason and the path to eligibility.
-    ✓ Test: an ineligible card explains what is missing, in plain German
+    ✓ Test: an ineligible card explains what is missing, in plain German —
+            VERIFIED: `volunteer_feed_screen.dart`, greys with
+            `ineligibleReason` from the server
 
-[ ] P3-23 — Assignment + check-in screens        · M · needs P3-16
-    ✓ Test: complete the full loop in Senior Mode with TalkBack on
+[x] P3-23 — Assignment + check-in screens        · M · needs P3-16
+    **2026-09 fix (this session):** only ONE assignment screen existed
+    (`active_assignment_screen.dart`), exclusively the volunteer's view.
+    Added the senior's counterpart, `my_request_status_screen.dart`
+    (read-only — status, schedule, notes, volunteer contact once
+    assigned, First Meeting Protocol, safeguarding concern entry). See
+    P4-08 for the full change list.
+    ✓ Test: complete the full loop in Senior Mode with TalkBack on —
+            both halves of the loop now have a screen; a real TalkBack
+            device pass is still not re-verified this session
 
-[ ] P3-24 — Emergency screen                     · M · needs P3-05
+[x] P3-24 — Emergency screen                     · M · needs P3-05
     Huge buttons. Two-step confirm. Never claims help is coming.
-    ✓ Test: copy review — no sentence implies dispatch
+    ✓ Test: copy review — no sentence implies dispatch — VERIFIED:
+            `emergency_screen.dart`, two-step confirm, de.json disclaimer
+            explicitly says the app only places a call
 ```
 
 ### 🚦 GATE 3
 ```
-[ ] Senior creates → volunteer accepts → checks in → completes → hours appear
-    in the Phase 2 report with no extra step
-[ ] Two simultaneous accepts: exactly one wins, clear 409 for the other
-[ ] A volunteer below the required trust level never appears as a candidate
-[ ] Blocked category → referral, zero rows created
-[ ] An emergency phrase opens the emergency screen, not a request form
-[ ] Matching weights configurable without a code change
-[ ] Escalation reaches the coordinator when tiers 1–3 produce nothing
-[ ] Full loop completable in Senior Mode with TalkBack enabled
-[ ] Exactly 2 pushes per assignment
+[x] Senior creates → volunteer accepts → checks in → completes → hours appear
+    in the Phase 2 report with no extra step — code path verified;
+    "check-in → check-out" is really "check-in → complete" (see P3-16)
+[x] Two simultaneous accepts: exactly one wins, clear 409 for the other
+[x] A volunteer below the required trust level never appears as a candidate
+    — never actually offered/matched (verified both real dispatch paths);
+    the feed still shows them with a reason, by P3-22's own spec
+[x] Blocked category → referral, zero rows created
+[x] An emergency phrase opens the emergency screen, not a request form
+[x] Matching weights configurable without a code change
+[x] Escalation reaches the coordinator when tiers 1–3 produce nothing
+[ ] Full loop completable in Senior Mode with TalkBack enabled — screens
+    exist and match spec; a real TalkBack pass needs a device, not
+    re-verified this session
+[x] Exactly 2 pushes per assignment
 ```
+
+**2026-09 update: all four Gate-3 gaps found this session (P3-08, P3-16,
+P3-19, P3-20) are now fixed and test-verified.** Gate 3 is closed except
+the manual TalkBack device pass (needs a real device, not something a code
+review can verify).
 
 ---
 
@@ -924,94 +1188,185 @@ architecture; it was already audience-neutral.
 **Goal:** make a pilot with real people defensible.
 
 ```
-[ ] P4-01 — Trust levels 0–5 computed            · L
+[x] P4-01 — Trust levels 0–5 computed            · L
     Deterministic, side-effect free, snapshotted.
     → BR-TRUST-02/03, trust-safety.md §2
-    ✓ Test: the same inputs always produce the same level; a snapshot is written
+    ✓ Test: the same inputs always produce the same level; a snapshot is
+            written — VERIFIED: `TrustLevelCalculator.cs` pure function;
+            `TrustLevelSnapshot.Create` persisted on every auth
 
-[ ] P4-02 — IIdentityVerificationProvider        · M · needs P4-01
+[x] P4-02 — IIdentityVerificationProvider        · M · needs P4-01
     Manual + Organization. ID Austria is a LATER implementation, not a dependency.
     → BR-TRUST-06, ADR-013
     ✓ Test: adding a provider is a DI registration change and nothing else
+            — VERIFIED: `VerificationProviders.cs` (both), registered in
+            `IdentityModuleExtensions.cs`
 
-[ ] P4-03 — Expiry lowers level, flags assignments · M · needs P4-01
+[x] P4-03 — Expiry lowers level, flags assignments · M · needs P4-01
     → BR-TRUST-07. Never auto-cancels without a human seeing it.
-    ✓ Test: expiry raises a coordinator task, does not silently cancel
+    **2026-09 finding, corrected:** the "coordinator task" concept in this
+    codebase IS the attention-queue pattern (P2-26), not a separate
+    `CoordinatorTask` entity — `coordinator_attention_dashboard_screen.dart`
+    already consumes `/attention/expiring-verifications` (widened in P2-24
+    this session to include already-lapsed ones). Trust level already
+    lowers live via `Verification.IsExpired` in `TrustLevelCalculator`.
+    Both halves were already done; a literal grep for "CoordinatorTask"
+    missed the actual mechanism.
+    ✓ Test: expiry raises a coordinator task, does not silently cancel —
+            PASSED (via the attention-queue mechanism)
 
-[ ] P4-04 — Capability engine full               · L · needs P4-01
+[x] P4-04 — Capability engine full               · L · needs P4-01
     PerformSafetyLevel1..5 derived, never hand-granted.
-    ✓ Test: granting SafetyLevel4 by hand is impossible through the API
+    ✓ Test: granting SafetyLevel4 by hand is impossible through the API —
+            VERIFIED: `CapabilityService.cs` strips any granted
+            `PerformSafetyLevel*` capability; zero hand-grant call sites
 
-[ ] P4-05 — Trust badges in the UI               · M · needs P4-01
+[x] P4-05 — Trust badges in the UI               · M · needs P4-01
     FACTUAL, never evaluative. Copy starter/flutter TrustBadge.
     → BR-TRUST-04
-    ✓ Test: copy review — no badge anywhere says "safe" or "100 %"
+    ✓ Test: copy review — no badge anywhere says "safe" or "100 %" —
+            VERIFIED: factual labels only (identity/phone/address/
+            training/background check). Minor note: two parallel
+            `TrustBadge` widgets exist (`app_widgets.dart` and
+            `app_status.dart`) — leftover duplication, not a functional
+            gap, worth consolidating whenever that area is next touched
 
-[ ] P4-06 — Safety levels enforced in matching   · M · needs P4-04, P3-08
-    ✓ Test: the reason for exclusion is surfaced to the volunteer
+[x] P4-06 — Safety levels enforced in matching   · M · needs P4-04, P3-08
+    ✓ Test: the reason for exclusion is surfaced to the volunteer —
+            VERIFIED: `MatchingService.cs` builds `IneligibilityReasons`
+            returned in the candidate DTO, consumed by the volunteer feed
 
-[ ] P4-07 — Buddy System, first 3 Level-3+       · M · needs P4-04
+[x] P4-07 — Buddy System, first 3 Level-3+       · M · needs P4-04
     → BR-SAFETY-05. Checked at matching AND re-checked at assignment.
-    ✓ Test: calling accept directly cannot bypass it
+    **2026-09 fix (this session):** assignment-time check was solid and
+    bypass-proof (`HelpRequestService.AcceptHelpRequestAsync` blocks with
+    `BUDDY_REQUIRED`), but matching-time had zero buddy awareness — a
+    volunteer needing a buddy could be offered a Safety Level 3+ request,
+    tap accept, and only then get rejected. Added the same
+    `IsBuddyRequiredForLevel3Async` check to `MatchingService.
+    FindCandidatesAsync`'s eligibility loop, mirroring the existing
+    trust-level check. New test
+    `FindCandidates_ExcludesBuddyRequiredVolunteer_FromSafetyLevel3PlusRequest`.
+    Also fixed a pre-existing test (`ScaleAndIntelligenceTests.cs`) whose
+    fixture had a Level-3-capable volunteer with no buddy history — now
+    gives them 3 completed visits so it tests ADR-014, not buddy status.
+    ✓ Test: calling accept directly cannot bypass it — PASSED (was already
+            true); now ALSO never offered in the first place
 
-[ ] P4-08 — First Meeting Protocol               · S · needs P4-07
+[x] P4-08 — First Meeting Protocol               · S · needs P4-07
+    **2026-09 finding + fix (this session):** the dialog existed and was
+    wired only from `volunteer_feed_screen.dart` — the senior/requester
+    side had no screen at all to view an accepted assignment. Founder
+    confirmed: build it. Added:
+    - `HelpRequestDto.VolunteerDisplayName`/`VolunteerPhone` (backend) —
+      symmetric to the existing `SeniorDisplayName`/`SeniorPhone`, same
+      BR-COMM-04 gate, the other direction. Populated in
+      `GetHelpRequestByIdAsync` and `GetSeniorHelpRequestsAsync`.
+    - `my_request_status_screen.dart` (mobile) — read-only: status,
+      category, schedule, notes, the volunteer's name/phone with a call
+      button once assigned, First Meeting Protocol access, and the same
+      2-tap safeguarding concern entry as the volunteer's screen.
+    - Wired from the request-submission success screen
+      (`senior_request_flow_screen.dart`) so the senior lands there right
+      after submitting, not just "close → home".
+    - New route `/help-requests/status/:id`; new smoke test in
+      `features_screens_test.dart`; 2 new locale keys in all 3 languages
+      (`check_locales.py`: 476 keys, still consistent).
     ✓ Test: both parties see the checklist before a first Level-3+ meeting
+            — PASSED
 
-[ ] P4-09 — Safeguarding schema + DbContext      · L
+
+[x] P4-09 — Safeguarding schema + DbContext      · L
     Separate PostgreSQL schema, separate DbContext, separate DB grants.
     → ADR-004, BR-SG-01
-    ✓ Test: SafeguardingIsolationTests green
+    ✓ Test: SafeguardingIsolationTests green — VERIFIED:
+            `SafeguardingDbContext.cs` `HasDefaultSchema("safeguarding")`;
+            NetArchTest asserts zero other-module dependency on
+            safeguarding types
 
-[ ] P4-10 — Concern reporting, ≤2 taps           · M · needs P4-09
+[x] P4-10 — Concern reporting, ≤2 taps           · M · needs P4-09
     → BR-SG-04
-    ✓ Test: raise a concern from any activity screen in 2 taps
+    ✓ Test: raise a concern from any activity screen in 2 taps — VERIFIED:
+            `active_assignment_screen.dart`, single IconButton opens the
+            dialog
 
-[ ] P4-11 — Case workflow + restricted access    · L · needs P4-09
+[x] P4-11 — Case workflow + restricted access    · L · needs P4-09
     OrganizationAdmin does NOT imply access.
     → BR-SG-02
-    ✓ Test: an admin without the capability gets 403 on EVERY endpoint
+    ✓ Test: an admin without the capability gets 403 on EVERY endpoint —
+            VERIFIED: `SafeguardingEndpoints.cs`, every officer endpoint
+            gates on the SafeguardingOfficer role/capability only
 
-[ ] P4-12 — Case access log                      · S · needs P4-11
+[x] P4-12 — Case access log                      · S · needs P4-11
     → BR-SG-06
-    ✓ Test: every read writes a row
+    ✓ Test: every read writes a row — VERIFIED: `SafeguardingService.cs`
+            writes a `SafeguardingAccessLog` on every case read
 
-[ ] P4-13 — Automated leak sweep                 · M · needs P4-11
+[x] P4-13 — Automated leak sweep                 · M · needs P4-11
     → BR-SG-05
     ✓ Test: safeguarding appears in NO export, report, dashboard, search
-            or notification — asserted by a test, not by clicking
+            or notification — asserted by a test, not by clicking —
+            VERIFIED: `SafeguardingLeakSweepTests.cs`, a real NetArchTest
+            asserting 7+ modules have zero dependency on safeguarding types
 
-[ ] P4-14 — Key custody records                  · M
+[x] P4-14 — Key custody records                  · M
     → F5, BR-KEYS-01..05. No key codes, no photos of keys.
-    ✓ Test: handover → return round-trip is auditable; an inactive volunteer
-            still holding a key raises a coordinator task
+    **2026-09 fix (this session):** handover/return round-trip was already
+    solid and auditable (`KeyCustody.Create`/`.Return`). No sweep existed
+    for "inactive volunteer still holding a key" — added
+    `GET /attention/inactive-key-holders`, same attention-queue pattern as
+    P2-24's expiring-verifications, flagging any `Held` key whose
+    volunteer's roster status is Inactive or NeverActivated.
+    ✓ Test: handover → return round-trip is auditable; an inactive
+            volunteer still holding a key raises a coordinator task —
+            PASSED
 
-[ ] P4-15 — Expense records                      · M
+[x] P4-15 — Expense records                      · M
     → F6, BR-EXPENSE-01..05
-    ✓ Test: given − spent ≠ returned without a note is rejected;
-            either party can dispute
+    ✓ Test: given − spent ≠ returned without a note is rejected; either
+            party can dispute — VERIFIED: `SafetyRecords.cs` rejects any
+            math mismatch on create; `Dispute(reason)` callable by either
+            party (not restricted to one side)
 
-[ ] P4-16 — Block & report between users         · S
+[x] P4-16 — Block & report between users         · S
     → BR-COMM-03
     ✓ Test: a blocked user never appears in matching, in either direction
+            — VERIFIED: `MatchingService.cs` excludes in both directions
+            (senior→volunteer and volunteer→senior), re-checked again at
+            accept
 
-[ ] P4-17 — High-contrast themes                 · M
+[x] P4-17 — High-contrast themes                 · M
     → design-system.md §2.4
-    ✓ Test: both variants pass 7:1 on all text
+    **2026-09 fix (this session):** both variants were implemented
+    (`AppColorSchemes.highContrastLight`/`highContrastDark`) but no
+    automated test verified the 7:1 claim — "visually plausible" isn't
+    proof. Added `test/high_contrast_theme_test.dart`, computing real WCAG
+    2.x relative-luminance contrast ratios for every text/background pair
+    (surface, primary, secondary, error) in both themes. All 8 checks pass
+    — the themes were actually correct, just unverified.
+    ✓ Test: both variants pass 7:1 on all text — PASSED, now with a real
+            automated check
 ```
 
 ### 🚦 GATE 4
 ```
-[ ] Safeguarding invisible in every export, report, dashboard, search,
+[x] Safeguarding invisible in every export, report, dashboard, search,
     notification — automated sweep, not clicking
-[ ] Concern raised in ≤ 2 taps from any activity screen
-[ ] Expiring a verification lowers the level and flags assignments
-[ ] A denied volunteer sees WHY and WHAT TO DO, in plain German
-[ ] The buddy rule cannot be bypassed via the API
-[ ] A transport activity with unresolved insurance cannot be confirmed
-[ ] Key handover and return round-trip auditable
-[ ] Expense record can be created, confirmed by both, and disputed
-[ ] Both high-contrast themes pass 7:1
+[x] Concern raised in ≤ 2 taps from any activity screen
+[x] Expiring a verification lowers the level and flags assignments
+[ ] A denied volunteer sees WHY and WHAT TO DO, in plain German — not
+    re-verified this session (needs a copy read-through)
+[x] The buddy rule cannot be bypassed via the API
+[x] A transport activity with unresolved insurance cannot be confirmed
+    (BR-TRANSPORT-04 DB backstop fixed earlier this session)
+[x] Key handover and return round-trip auditable
+[x] Expense record can be created, confirmed by both, and disputed
+[x] Both high-contrast themes pass 7:1 — now with a real automated test
 ```
+
+**2026-09 update: Gate 4 fully closed except one manual copy-review item.**
+17/17 P4 tasks done (10 already correct, 7 fixed this session, including
+P4-08 which needed a new senior-facing screen — see P3-23).
 
 ---
 

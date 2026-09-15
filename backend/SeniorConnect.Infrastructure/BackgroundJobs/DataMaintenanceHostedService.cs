@@ -7,8 +7,11 @@ using SeniorConnect.Modules.Identity.Domain;
 namespace SeniorConnect.Infrastructure.BackgroundJobs;
 
 /// <summary>
-/// P2-18 / P7-08: Background worker executing scheduled data maintenance:
+/// P2-18 / P2-24 / P7-08: Background worker executing scheduled data maintenance:
 /// - Refresh materialized view (mv_volunteer_roster)
+/// - Mark lapsed verifications Expired (trust level already excludes them
+///   live via Verification.IsExpired — this keeps the persisted Status
+///   truthful for coordinator-facing lists and audit history)
 /// - Tier-2 GDPR retention purge for expired deactivated accounts
 /// </summary>
 public sealed class DataMaintenanceHostedService : BackgroundService
@@ -69,7 +72,24 @@ public sealed class DataMaintenanceHostedService : BackgroundService
             }
         }
 
-        // 2. Execute Tier-2 GDPR Deletion Purge (P7-08)
+        // 2. Expire lapsed verifications (P2-24)
+        var nowUtc = DateTimeOffset.UtcNow;
+        var lapsedVerifications = await db.Verifications
+            .Where(v => v.Status == VerificationStatus.Verified && v.ValidUntilUtc != null && v.ValidUntilUtc < nowUtc)
+            .ToListAsync(ct);
+
+        foreach (var verification in lapsedVerifications)
+        {
+            verification.Expire();
+        }
+
+        if (lapsedVerifications.Count > 0)
+        {
+            await db.SaveChangesAsync(ct);
+            _logger.LogInformation("Marked {Count} lapsed verification(s) as Expired.", lapsedVerifications.Count);
+        }
+
+        // 3. Execute Tier-2 GDPR Deletion Purge (P7-08)
         var now = DateTimeOffset.UtcNow;
         var pendingPurges = await db.AccountDeletionRequests
             .Where(r => r.Status == DeletionTierStatus.Tier1Deactivated && r.ScheduledTier2PurgeUtc <= now)

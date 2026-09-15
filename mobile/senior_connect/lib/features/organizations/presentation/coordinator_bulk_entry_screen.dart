@@ -3,6 +3,8 @@
 // P2-15 / Coordinator Wedge: Fast entry of completed activities for volunteers
 // who report hours by phone or paper (target: entry in under 15 seconds).
 
+import 'dart:math';
+
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -93,6 +95,18 @@ class _CoordinatorBulkEntryScreenState
     }
   }
 
+  static final _random = Random.secure();
+
+  /// A fresh key per submit attempt, stable across retries within one
+  /// button press — repeat taps while a request is in flight are already
+  /// blocked by `_isSubmitting`, so one key per `_submit()` call is enough
+  /// for the server's Idempotency-Key middleware to collapse duplicate
+  /// sends caused by a flaky connection retrying the same HTTP request.
+  String _generateIdempotencyKey() {
+    final bytes = List<int>.generate(16, (_) => _random.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+
   Future<void> _submit() async {
     if (_selectedVolunteerId == null || _selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -126,6 +140,7 @@ class _CoordinatorBulkEntryScreenState
       await widget.apiClient.post<dynamic>(
         '/api/v1/coordinator/activities:bulk-entry',
         data: payload,
+        headers: {'Idempotency-Key': _generateIdempotencyKey()},
       );
 
       if (mounted) {

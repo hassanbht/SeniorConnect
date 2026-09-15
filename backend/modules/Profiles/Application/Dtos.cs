@@ -47,7 +47,7 @@ public sealed record VolunteerProfileDto(
     int MaxHoursPerWeek,
     bool HasCar,
     bool HasDrivingLicense,
-    double ReliabilityScore,
+    string ReliabilityLabel,
     bool IsCurrentlyAvailable,
     double? Latitude,
     double? Longitude,

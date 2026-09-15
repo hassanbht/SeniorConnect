@@ -12,8 +12,8 @@ using SeniorConnect.Infrastructure;
 namespace SeniorConnect.Infrastructure.Migrations
 {
     [DbContext(typeof(SeniorConnectDbContext))]
-    [Migration("20260914065426_AddStaffTotp")]
-    partial class AddStaffTotp
+    [Migration("20260915085250_AddNoShowDisputeFields")]
+    partial class AddNoShowDisputeFields
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -611,124 +611,124 @@ namespace SeniorConnect.Infrastructure.Migrations
             modelBuilder.Entity("SeniorConnect.Modules.HelpRequests.Domain.Activity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnName("id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid?>("BranchId")
-                        .HasColumnName("branch_id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
 
                     b.Property<Guid>("CategoryId")
-                        .HasColumnName("category_id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
 
                     b.Property<DateTimeOffset?>("ConfirmedAtUtc")
-                        .HasColumnName("confirmed_at_utc")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("confirmed_at_utc");
 
                     b.Property<Guid?>("ConfirmedByUserId")
-                        .HasColumnName("confirmed_by_user_id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("confirmed_by_user_id");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnName("created_at_utc")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at_utc");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnName("created_by")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
 
                     b.Property<int>("DurationMinutes")
-                        .HasColumnName("duration_minutes")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes");
 
                     b.Property<Guid?>("EventId")
-                        .HasColumnName("event_id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
 
                     b.Property<Guid?>("HelpRequestId")
-                        .HasColumnName("help_request_id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("help_request_id");
 
                     b.Property<string>("InsuranceContext")
-                        .HasColumnName("insurance_context")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("insurance_context");
 
                     b.Property<DateTimeOffset?>("InsuranceDisclaimerAcceptedAtUtc")
-                        .HasColumnName("insurance_disclaimer_accepted_at_utc")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("insurance_disclaimer_accepted_at_utc");
 
                     b.Property<Guid?>("InsuranceDisclaimerAcceptedByUserId")
-                        .HasColumnName("insurance_disclaimer_accepted_by_user_id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("insurance_disclaimer_accepted_by_user_id");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnName("is_deleted")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
 
                     b.Property<string>("LocationType")
-                        .HasColumnName("location_type")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("location_type");
 
                     b.Property<DateTimeOffset>("LoggedAtUtc")
-                        .HasColumnName("logged_at_utc")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("logged_at_utc");
 
                     b.Property<Guid>("LoggedByUserId")
-                        .HasColumnName("logged_by_user_id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("logged_by_user_id");
 
                     b.Property<string>("Notes")
-                        .HasColumnName("notes")
                         .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
 
                     b.Property<DateOnly>("OccurredOn")
-                        .HasColumnName("occurred_on")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("occurred_on");
 
                     b.Property<Guid?>("OrganizationId")
-                        .HasColumnName("organization_id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
 
                     b.Property<string>("Source")
-                        .HasColumnName("source")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("source");
 
                     b.Property<string>("Status")
-                        .HasColumnName("status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
 
                     b.Property<Guid?>("SubjectUserId")
-                        .HasColumnName("subject_user_id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_user_id");
 
                     b.Property<string>("TransportMode")
-                        .HasColumnName("transport_mode")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("transport_mode");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnName("updated_at_utc")
-                        .HasColumnType("timestamptz");
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at_utc");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnName("updated_by")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
 
                     b.Property<Guid>("VolunteerUserId")
-                        .HasColumnName("volunteer_user_id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("volunteer_user_id");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
@@ -882,6 +882,15 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.Property<double?>("Longitude")
                         .HasColumnType("double precision");
 
+                    b.Property<string>("NoShowDisputeReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("NoShowDisputedAtUtc")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Guid?>("NoShowDisputedByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text");
 
@@ -894,6 +903,9 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
+
+                    b.Property<decimal?>("PreNoShowReliabilityScore")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTimeOffset?>("Reminder24hSentAtUtc")
                         .HasColumnType("timestamptz");
@@ -1400,6 +1412,10 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("PhoneVerifiedAtUtc")
                         .HasColumnType("timestamptz")
                         .HasColumnName("phone_verified_at_utc");
+
+                    b.Property<string>("PhotoUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("photo_url");
 
                     b.Property<string>("PreferredLocale")
                         .IsRequired()
@@ -2560,6 +2576,21 @@ namespace SeniorConnect.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SeniorConnect.Modules.Profiles.Domain.UserInterest", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("InterestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("interest_id");
+
+                    b.HasKey("UserId", "InterestId");
+
+                    b.ToTable("user_interests", "public");
+                });
+
             modelBuilder.Entity("SeniorConnect.Modules.Profiles.Domain.UserLanguage", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -3442,43 +3473,11 @@ namespace SeniorConnect.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("user_interests", b =>
-                {
-                    b.Property<Guid>("user_id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<Guid>("interest_id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("interest_id");
-
-                    b.HasKey("user_id", "interest_id");
-
-                    b.HasIndex("interest_id");
-
-                    b.ToTable("user_interests", "public");
-                });
-
             modelBuilder.Entity("SeniorConnect.Modules.Family.Domain.FamilyPermission", b =>
                 {
                     b.HasOne("SeniorConnect.Modules.Family.Domain.FamilyRelationship", null)
                         .WithMany("Permissions")
                         .HasForeignKey("FamilyRelationshipId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("user_interests", b =>
-                {
-                    b.HasOne("SeniorConnect.Modules.Profiles.Domain.Interest", null)
-                        .WithMany()
-                        .HasForeignKey("interest_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SeniorConnect.Modules.Identity.Domain.User", null)
-                        .WithMany()
-                        .HasForeignKey("user_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

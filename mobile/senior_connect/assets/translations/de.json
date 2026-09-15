@@ -171,6 +171,10 @@
       "submitted": "Ihre Anfrage ist unterwegs.",
       "submitted_detail": "Wir suchen jemanden. Sie hören spätestens morgen von uns."
     },
+    "my_request": {
+      "title": "Meine Anfrage",
+      "waiting_for_volunteer": "Wir suchen noch jemanden für Sie. Sie werden benachrichtigt, sobald sich jemand meldet."
+    },
     "category": {
       "shopping": "Einkaufen",
       "doctor": "Arzttermin",
@@ -331,7 +335,7 @@
     "connected_seniors": "Verbundene Profile",
     "family_member": "Angehöriger",
     "status_active": "Aktiv verbunden",
-    "request_for_senior": "Hilfe für Senior anfragen",
+    "request_for_senior": "Hilfe anfragen",
     "manage_permissions": "Berechtigungen anpassen",
     "permissions_for": "Berechtigungen für {}",
     "permissions_saved": "Berechtigungen erfolgreich aktualisiert.",
@@ -340,9 +344,9 @@
     "zugangskarte_banner_desc": "Verbinden Sie Ihr Profil direkt mit Ihren Angehörigen, um Unterstützung sicher zu koordinieren.",
     "transparency_section": "Transparenz & Datenschutz",
     "perm_view_activities": "Aktivitäten einsehen",
-    "perm_view_activities_hint": "Darf Termine und Hilfeanfragen des Seniors sehen.",
+    "perm_view_activities_hint": "Darf Termine und Hilfeanfragen der unterstützten Person sehen.",
     "perm_create_requests": "Hilfeanfragen erstellen",
-    "perm_create_requests_hint": "Darf im Namen des Seniors Unterstützung organisieren.",
+    "perm_create_requests_hint": "Darf im Namen der unterstützten Person Unterstützung organisieren.",
     "perm_view_emergency": "Notfallkontakte einsehen",
     "perm_view_emergency_hint": "Darf hinterlegte Notfallkontakte einsehen.",
     "perm_safety_alerts": "Sicherheitsbenachrichtigungen",
@@ -350,7 +354,7 @@
     "perm_manage_settings": "Einstellungen verwalten",
     "perm_manage_settings_hint": "Darf Einstellungen und Berechtigungen anpassen.",
     "log_viewed_activities": "Hat die aktuellen Hilfeanfragen eingesehen.",
-    "log_created_request": "Hat eine Hilfeanfrage für den Senior erstellt."
+    "log_created_request": "Hat eine Hilfeanfrage für die unterstützte Person erstellt."
   },
   "safeguarding": {
     "report": "Bedenken melden",

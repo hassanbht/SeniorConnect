@@ -72,9 +72,14 @@ class ApiClient {
   Future<T> post<T>(
     String path, {
     dynamic data,
+    Map<String, dynamic>? headers,
     T Function(dynamic)? fromJson,
   }) async {
-    final response = await _dio.post<dynamic>(path, data: data);
+    final response = await _dio.post<dynamic>(
+      path,
+      data: data,
+      options: headers != null ? Options(headers: headers) : null,
+    );
     return _decode(response, fromJson);
   }
 

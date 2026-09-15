@@ -173,6 +173,26 @@ public static class HelpRequestEndpoints
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .ProducesProblem(StatusCodes.Status404NotFound);
 
+        // P3-19: a successful dispute reverts the volunteer's reliability
+        // score to what it was before the no-show, not just a re-nudge.
+        helpGroup.MapPost("/{id:guid}:dispute-no-show", async (
+            Guid id,
+            DisputeNoShowRequest request,
+            ClaimsPrincipal user,
+            IHelpRequestService helpService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await helpService.DisputeNoShowAsync(id, userId.Value, request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("DisputeHelpRequestNoShow")
+        .Produces<HelpRequestDto>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
         helpGroup.MapGet("/{id:guid}/history", async (
             Guid id,
             IHelpRequestService helpService,

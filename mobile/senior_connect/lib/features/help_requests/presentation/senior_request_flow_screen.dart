@@ -65,6 +65,7 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
   final _detailsController = TextEditingController();
   bool _isSubmitting = false;
   String? _errorMessage;
+  String? _createdRequestId;
 
   // P3-21 fix: real category ids fetched from the backend, never a
   // hardcoded GUID — the server-side blocked-category/emergency routing
@@ -282,7 +283,7 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
         'notes': _detailsController.text.trim().isEmpty ? null : _detailsController.text.trim(),
       };
 
-      await widget.apiClient.post<dynamic>(
+      final response = await widget.apiClient.post<dynamic>(
         '/api/v1/help-requests',
         data: payload,
       );
@@ -291,6 +292,7 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
         setState(() {
           _isSubmitting = false;
           _currentStep = _RequestStep.submittedSuccess;
+          _createdRequestId = (response is Map<String, dynamic>) ? response['id'] as String? : null;
         });
       }
     } catch (e) {
@@ -544,8 +546,17 @@ class _SeniorRequestFlowScreenState extends State<SeniorRequestFlowScreen> {
         ),
         const SizedBox(height: AppSpacing.xxl),
         AppButton(
-          label: 'common.close'.tr(),
-          onPressed: () => context.go(AppRoutes.home),
+          label: _createdRequestId != null
+              ? 'help.my_request.title'.tr()
+              : 'common.close'.tr(),
+          onPressed: () {
+            final id = _createdRequestId;
+            if (id != null) {
+              context.go('${AppRoutes.myRequestStatus}/$id');
+            } else {
+              context.go(AppRoutes.home);
+            }
+          },
         ),
       ],
     );

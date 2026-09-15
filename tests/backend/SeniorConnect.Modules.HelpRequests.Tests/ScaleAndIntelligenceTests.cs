@@ -118,6 +118,17 @@ public sealed class ScaleAndIntelligenceTests
         volunteerProfile.UpdateReliability(0.95m);
         db.VolunteerProfiles.Add(volunteerProfile);
         db.TrustLevelSnapshots.Add(SeniorConnect.Modules.Identity.Domain.TrustLevelSnapshot.Create(volunteerUserId, 3, "{}"));
+
+        // P4-07: this test is about ADR-014's manual-approval flag, not the
+        // buddy system — give the volunteer 3 completed Level-3+ visits so
+        // the (now correctly enforced at matching-time) buddy requirement
+        // doesn't exclude them from the candidate pool being tested here.
+        var buddyAssignment = SeniorConnect.Modules.TrustSafety.Domain.BuddyAssignment.Create(volunteerUserId);
+        buddyAssignment.RecordActivityCompleted();
+        buddyAssignment.RecordActivityCompleted();
+        buddyAssignment.RecordActivityCompleted();
+        db.BuddyAssignments.Add(buddyAssignment);
+
         await db.SaveChangesAsync();
 
         var trustReader = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);

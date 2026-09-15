@@ -547,96 +547,123 @@ namespace SeniorConnect.Infrastructure.Migrations
             modelBuilder.Entity("SeniorConnect.Modules.HelpRequests.Domain.Activity", b =>
                 {
                     b.Property<Guid>("Id")
+                        .HasColumnName("id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("BranchId")
+                        .HasColumnName("branch_id")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CategoryId")
+                        .HasColumnName("category_id")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("ConfirmedAtUtc")
+                        .HasColumnName("confirmed_at_utc")
                         .HasColumnType("timestamptz");
 
                     b.Property<Guid?>("ConfirmedByUserId")
+                        .HasColumnName("confirmed_by_user_id")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnName("created_at_utc")
                         .HasColumnType("timestamptz");
 
                     b.Property<Guid?>("CreatedBy")
+                        .HasColumnName("created_by")
                         .HasColumnType("uuid");
 
                     b.Property<int>("DurationMinutes")
+                        .HasColumnName("duration_minutes")
                         .HasColumnType("integer");
 
                     b.Property<Guid?>("EventId")
+                        .HasColumnName("event_id")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("HelpRequestId")
+                        .HasColumnName("help_request_id")
                         .HasColumnType("uuid");
 
                     b.Property<string>("InsuranceContext")
+                        .HasColumnName("insurance_context")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
                     b.Property<DateTimeOffset?>("InsuranceDisclaimerAcceptedAtUtc")
+                        .HasColumnName("insurance_disclaimer_accepted_at_utc")
                         .HasColumnType("timestamptz");
 
                     b.Property<Guid?>("InsuranceDisclaimerAcceptedByUserId")
+                        .HasColumnName("insurance_disclaimer_accepted_by_user_id")
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnName("is_deleted")
                         .HasColumnType("boolean");
 
                     b.Property<string>("LocationType")
+                        .HasColumnName("location_type")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
                     b.Property<DateTimeOffset>("LoggedAtUtc")
+                        .HasColumnName("logged_at_utc")
                         .HasColumnType("timestamptz");
 
                     b.Property<Guid>("LoggedByUserId")
+                        .HasColumnName("logged_by_user_id")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Notes")
+                        .HasColumnName("notes")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
                     b.Property<DateOnly>("OccurredOn")
+                        .HasColumnName("occurred_on")
                         .HasColumnType("date");
 
                     b.Property<Guid?>("OrganizationId")
+                        .HasColumnName("organization_id")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Source")
+                        .HasColumnName("source")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
                     b.Property<string>("Status")
+                        .HasColumnName("status")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
                     b.Property<Guid?>("SubjectUserId")
+                        .HasColumnName("subject_user_id")
                         .HasColumnType("uuid");
 
                     b.Property<string>("TransportMode")
+                        .HasColumnName("transport_mode")
                         .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnName("updated_at_utc")
                         .HasColumnType("timestamptz");
 
                     b.Property<Guid?>("UpdatedBy")
+                        .HasColumnName("updated_by")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("VolunteerUserId")
+                        .HasColumnName("volunteer_user_id")
                         .HasColumnType("uuid");
 
                     b.Property<uint>("xmin")
@@ -657,7 +684,7 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                             t.HasCheckConstraint("ck_activities_duration", "duration_minutes BETWEEN 1 AND 1440");
 
-                            t.HasCheckConstraint("ck_activities_transport_insurance", "transport_mode <> 'volunteer_private_vehicle' OR status <> 'confirmed' OR insurance_context <> 'unknown'");
+                            t.HasCheckConstraint("ck_activities_transport_insurance", "transport_mode <> 'VolunteerPrivateVehicle' OR status <> 'Confirmed' OR insurance_context <> 'Unknown'");
                         });
                 });
 

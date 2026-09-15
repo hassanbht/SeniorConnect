@@ -114,6 +114,21 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
     [DataClass(DataClass.Operational)]
     public DateTimeOffset? CancelledAtUtc { get; private set; }
 
+    /// <summary>P3-19 / BR-HELP-06: the volunteer's reliability score as it
+    /// was immediately before this no-show, so a successful dispute can
+    /// restore it exactly rather than just nudging it back up.</summary>
+    [DataClass(DataClass.Operational)]
+    public decimal? PreNoShowReliabilityScore { get; private set; }
+
+    [DataClass(DataClass.PersonalData)]
+    public string? NoShowDisputeReason { get; private set; }
+
+    [DataClass(DataClass.Operational)]
+    public Guid? NoShowDisputedByUserId { get; private set; }
+
+    [DataClass(DataClass.Operational)]
+    public DateTimeOffset? NoShowDisputedAtUtc { get; private set; }
+
     [DataClass(DataClass.Operational)]
     public int RowVersion { get; private set; } = 1;
 
@@ -432,6 +447,47 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
         RowVersion++;
         UpdatedAtUtc = now;
         UpdatedBy = reportedByUserId;
+
+        return Result.Success();
+    }
+
+    /// <summary>Records the volunteer's reliability score as it was just
+    /// before this no-show — called by the service layer right after a
+    /// successful <see cref="MarkNoShow"/>, once the score has actually
+    /// been read/updated elsewhere. Kept separate from MarkNoShow so the
+    /// no-show's own validation never depends on reliability lookups.</summary>
+    public void RecordPreNoShowReliabilityScore(decimal? score) => PreNoShowReliabilityScore = score;
+
+    /// <summary>
+    /// P3-19 / BR-HELP-06: a successful dispute REVERTS the reliability
+    /// score to what it was before the no-show — the caller (service layer)
+    /// reads <see cref="PreNoShowReliabilityScore"/> and restores it via
+    /// IVolunteerReliabilityUpdater; this method only records that the
+    /// dispute happened, once, and blocks re-disputing.
+    /// </summary>
+    public Result DisputeNoShow(Guid disputedByUserId, string reason)
+    {
+        if (Status != HelpRequestStatus.NoShow)
+        {
+            return Error.InvalidStateTransition(Status.ToString(), "NoShowDisputed");
+        }
+
+        if (NoShowDisputedAtUtc.HasValue)
+        {
+            return Error.Validation("This no-show has already been disputed.");
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Error.Validation("A dispute requires a reason.");
+        }
+
+        NoShowDisputeReason = reason.Trim();
+        NoShowDisputedByUserId = disputedByUserId;
+        NoShowDisputedAtUtc = DateTimeOffset.UtcNow;
+        RowVersion++;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+        UpdatedBy = disputedByUserId;
 
         return Result.Success();
     }
