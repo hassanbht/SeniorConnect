@@ -71,7 +71,7 @@ class CommunityFeedScreen extends ConsumerWidget {
                           padding:
                               const EdgeInsetsDirectional.all(AppSpacing.md),
                           itemCount: state.events.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: AppSpacing.md),
                           itemBuilder: (context, index) {
                             final ev = state.events[index];

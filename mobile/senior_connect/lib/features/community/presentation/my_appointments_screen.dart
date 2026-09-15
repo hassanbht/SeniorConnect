@@ -52,7 +52,7 @@ class MyAppointmentsScreen extends ConsumerWidget {
                           padding:
                               const EdgeInsetsDirectional.all(AppSpacing.md),
                           itemCount: state.appointments.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: AppSpacing.md),
                           itemBuilder: (context, index) {
                             final item = state.appointments[index];

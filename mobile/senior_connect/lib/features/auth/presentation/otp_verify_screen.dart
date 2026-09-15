@@ -156,7 +156,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                         hintText: '------',
                         counterText: '',
                         border: const OutlineInputBorder(),
-                        errorText: otpState.errorKey != null ? otpState.errorKey!.tr() : null,
+                        errorText: otpState.errorKey?.tr(),
                       ),
                       onChanged: (value) {
                         if (value.length == 6) {

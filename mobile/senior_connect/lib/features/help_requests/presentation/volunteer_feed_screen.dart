@@ -180,7 +180,7 @@ class VolunteerFeedScreen extends ConsumerWidget {
             child: ListView.separated(
               padding: const EdgeInsetsDirectional.all(AppSpacing.md),
               itemCount: feedState.requests.length,
-              separatorBuilder: (_, __) =>
+              separatorBuilder: (_, _) =>
                   const SizedBox(height: AppSpacing.md),
               itemBuilder: (ctx, index) {
                 final item = feedState.requests[index];
