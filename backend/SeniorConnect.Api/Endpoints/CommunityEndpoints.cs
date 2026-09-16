@@ -178,10 +178,12 @@ public static class CommunityEndpoints
 
         group.MapGet("/events/{id:guid}", async (
             Guid id,
+            ClaimsPrincipal user,
             ICommunityService communityService,
             CancellationToken ct) =>
         {
-            var result = await communityService.GetEventByIdAsync(id, ct);
+            var userId = user.GetUserId();
+            var result = await communityService.GetEventByIdAsync(id, userId, ct);
             return result.ToHttpResult();
         })
         .WithName("GetCommunityEventById")
@@ -221,6 +223,25 @@ public static class CommunityEndpoints
         })
         .WithName("CancelCommunityEvent")
         .Produces(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapPost("/events/{id:guid}:cancel-occurrence", async (
+            Guid id,
+            CancelEventOccurrenceRequest request,
+            ClaimsPrincipal user,
+            ICommunityService communityService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await communityService.CancelEventOccurrenceAsync(id, userId.Value, request, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("CancelCommunityEventOccurrence")
+        .Produces<CommunityEventDto>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status404NotFound);
 

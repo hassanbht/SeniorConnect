@@ -128,6 +128,9 @@ public sealed class VolunteerProfile : Entity, IAuditable
         return true;
     }
 
+    /// <summary>Direct set — used only to restore a snapshot on a successful
+    /// no-show dispute (P3-19). Behaviour-driven updates go through
+    /// <see cref="RecordCompletionOutcome"/>.</summary>
     public void UpdateReliability(decimal? score)
     {
         ReliabilityScore = score;
@@ -137,4 +140,34 @@ public sealed class VolunteerProfile : Entity, IAuditable
         }
         UpdatedAtUtc = DateTimeOffset.UtcNow;
     }
+
+    private const decimal ReliabilityLearningRate = 0.2m;
+
+    /// <summary>
+    /// P3-20: behaviour-only reliability, nudged toward 1.0 on a completed
+    /// assignment or toward 0.0 on an uncontested no-show. An exponential
+    /// moving average so one bad outcome after a long good history doesn't
+    /// crater the score, but a pattern of no-shows does.
+    /// </summary>
+    public void RecordCompletionOutcome(bool wasReliable)
+    {
+        var previous = ReliabilityScore ?? 1.0m;
+        var target = wasReliable ? 1.0m : 0.0m;
+        ReliabilityScore = previous + (target - previous) * ReliabilityLearningRate;
+        ActiveSinceUtc ??= DateTimeOffset.UtcNow;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// P3-20 / ADR-009: users see a WORD, never a number. Stable keys —
+    /// mobile maps each to a localized string, never renders the raw score.
+    /// </summary>
+    [DataClass(DataClass.Operational)]
+    public string ReliabilityLabel => ReliabilityScore switch
+    {
+        null => "New",
+        >= 0.85m => "Reliable",
+        >= 0.6m => "Developing",
+        _ => "NeedsAttention"
+    };
 }

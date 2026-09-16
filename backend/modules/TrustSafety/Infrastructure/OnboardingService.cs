@@ -194,5 +194,7 @@ public sealed class OnboardingService : IOnboardingService
             s.OpenedAtUtc,
             s.CompletedAtUtc,
             s.CompletedByUserId,
-            s.Note)).ToList());
+            s.Note,
+            s.DaysOpen,
+            s.IsOverdue)).ToList());
 }

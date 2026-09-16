@@ -20,6 +20,7 @@ import 'package:senior_connect/features/family/presentation/family_dashboard_scr
 import 'package:senior_connect/features/family/presentation/senior_access_log_screen.dart';
 import 'package:senior_connect/features/help_requests/presentation/active_assignment_screen.dart';
 import 'package:senior_connect/features/help_requests/presentation/emergency_screen.dart';
+import 'package:senior_connect/features/help_requests/presentation/my_request_status_screen.dart';
 import 'package:senior_connect/features/help_requests/presentation/senior_request_flow_screen.dart';
 import 'package:senior_connect/features/help_requests/presentation/volunteer_feed_screen.dart';
 import 'package:senior_connect/features/help_requests/presentation/widgets/first_meeting_protocol_dialog.dart';
@@ -146,6 +147,21 @@ void main() {
     ) async {
       await tester.pumpWidget(
         wrapForTest(ActiveAssignmentScreen(apiClient: testApiClient), c),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await expectNoOverflow(tester);
+    }, matrix: smokeMatrix());
+  });
+
+  group('MyRequestStatusScreen (P3-23 senior side / P4-08)', () {
+    testAcrossMatrix('renders request status without overflow', (
+      tester,
+      c,
+    ) async {
+      await tester.pumpWidget(
+        wrapForTest(MyRequestStatusScreen(apiClient: testApiClient), c),
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));

@@ -6,13 +6,15 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
+import '../application/my_appointments_notifier.dart';
 
-class MyAppointmentsScreen extends StatefulWidget {
+class MyAppointmentsScreen extends ConsumerWidget {
   const MyAppointmentsScreen({
     super.key,
     required this.apiClient,
@@ -21,115 +23,49 @@ class MyAppointmentsScreen extends StatefulWidget {
   final ApiClient apiClient;
 
   @override
-  State<MyAppointmentsScreen> createState() => _MyAppointmentsScreenState();
-}
-
-class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
-  bool _isLoading = false;
-  String? _error;
-  List<Map<String, dynamic>> _appointments = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAppointments();
-  }
-
-  Future<void> _loadAppointments() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final response = await widget.apiClient.get<List<dynamic>>('/api/v1/community/me/schedule');
-      if (mounted) {
-        setState(() {
-          _appointments = response.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        // Fallback demo items for offline/testing
-        setState(() {
-          _appointments = [
-            {
-              'eventId': 'ev-1',
-              'title': 'Senioren-Schachtreff',
-              'category': 'sports',
-              'startsAtUtc': DateTime.now().add(const Duration(days: 1, hours: 3)).toIso8601String(),
-              'locationAddress': 'Gemeindezentrum Mitte, Raum 2',
-              'locationPostalCode': '1010',
-              'myStatus': 'Going',
-              'isCancelled': false,
-            },
-            {
-              'eventId': 'ev-2',
-              'title': 'Gemeinsames Kaffeetrinken & Plaudern',
-              'category': 'general',
-              'startsAtUtc': DateTime.now().add(const Duration(days: 3, hours: 2)).toIso8601String(),
-              'locationAddress': 'Café Sonnenschein, Hauptstraße 12',
-              'locationPostalCode': '1010',
-              'myStatus': 'Waitlisted',
-              'waitlistPosition': 2,
-              'isCancelled': false,
-            },
-          ];
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _cancelAppointment(String eventId) async {
-    try {
-      await widget.apiClient.delete<dynamic>('/api/v1/community/events/$eventId/register');
-      _loadAppointments();
-    } catch (_) {
-      setState(() {
-        _appointments.removeWhere((a) => a['eventId'] == eventId);
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final state = ref.watch(myAppointmentsProvider(apiClient));
+    final notifier = ref.read(myAppointmentsProvider(apiClient).notifier);
 
     return Scaffold(
       appBar: AppBar(
         title: Text('community.my_appointments'.tr()),
       ),
       body: SafeArea(
-        child: _isLoading
+        child: state.isLoading
             ? AppLoading(message: 'common.loading'.tr())
-            : _error != null
+            : state.error != null
                 ? AppErrorView(
-                    message: _error!,
+                    message: state.error!,
                     retryLabel: 'common.retry'.tr(),
-                    onRetry: _loadAppointments,
+                    onRetry: () => notifier.loadAppointments(),
                   )
-                : _appointments.isEmpty
+                : state.appointments.isEmpty
                     ? AppEmptyState(
                         icon: Icons.event_available,
                         message: 'empty.no_activities'.tr(),
                       )
                     : RefreshIndicator(
-                        onRefresh: _loadAppointments,
+                        onRefresh: () => notifier.loadAppointments(),
                         child: ListView.separated(
-                          padding: const EdgeInsetsDirectional.all(AppSpacing.md),
-                          itemCount: _appointments.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+                          padding:
+                              const EdgeInsetsDirectional.all(AppSpacing.md),
+                          itemCount: state.appointments.length,
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: AppSpacing.md),
                           itemBuilder: (context, index) {
-                            final item = _appointments[index];
-                            final isWaitlisted = item['myStatus'] == 'Waitlisted';
-                            final isCancelled = item['isCancelled'] == true;
+                            final item = state.appointments[index];
+                            final isWaitlisted =
+                                item['myStatus'] == 'Waitlisted';
+                            final isCancelled =
+                                item['isCancelled'] == true;
 
                             return Card(
                               elevation: 2,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.md),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.md),
                                 side: BorderSide(
                                   color: isCancelled
                                       ? theme.colorScheme.error
@@ -140,16 +76,19 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                 ),
                               ),
                               child: Padding(
-                                padding: const EdgeInsetsDirectional.all(AppSpacing.lg),
+                                padding: const EdgeInsetsDirectional.all(
+                                    AppSpacing.lg),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
                                         Expanded(
                                           child: Text(
                                             item['title'] as String? ?? '',
-                                            style: theme.textTheme.titleMedium?.copyWith(
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -157,7 +96,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                         _StatusBadge(
                                           isCancelled: isCancelled,
                                           isWaitlisted: isWaitlisted,
-                                          waitlistPosition: item['waitlistPosition'] as int?,
+                                          waitlistPosition:
+                                              item['waitlistPosition']
+                                                  as int?,
                                           theme: theme,
                                         ),
                                       ],
@@ -167,13 +108,20 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                       Row(
                                         children: [
                                           Icon(Icons.location_on,
-                                              size: 18, color: theme.colorScheme.onSurfaceVariant),
-                                          const SizedBox(width: AppSpacing.xs),
+                                              size: 18,
+                                              color: theme.colorScheme
+                                                  .onSurfaceVariant),
+                                          const SizedBox(
+                                              width: AppSpacing.xs),
                                           Expanded(
                                             child: Text(
-                                              item['locationAddress'] as String,
-                                              style: theme.textTheme.bodyMedium?.copyWith(
-                                                color: theme.colorScheme.onSurfaceVariant,
+                                              item['locationAddress']
+                                                  as String,
+                                              style: theme
+                                                  .textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                color: theme.colorScheme
+                                                    .onSurfaceVariant,
                                               ),
                                             ),
                                           ),
@@ -184,11 +132,16 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                     Row(
                                       children: [
                                         Icon(Icons.access_time,
-                                            size: 18, color: theme.colorScheme.primary),
-                                        const SizedBox(width: AppSpacing.xs),
+                                            size: 18,
+                                            color: theme
+                                                .colorScheme.primary),
+                                        const SizedBox(
+                                            width: AppSpacing.xs),
                                         Text(
                                           'community.starts_soon'.tr(),
-                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                          style: theme
+                                              .textTheme.bodyMedium
+                                              ?.copyWith(
                                             fontWeight: FontWeight.w600,
                                             color: theme.colorScheme.primary,
                                           ),
@@ -197,11 +150,13 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                     ),
                                     const SizedBox(height: AppSpacing.md),
                                     AppButton(
-                                      label: 'community.cancel_registration'.tr(),
+                                      label:
+                                          'community.cancel_registration'.tr(),
                                       variant: AppButtonVariant.outlined,
                                       icon: Icons.cancel_outlined,
-                                      onPressed: () =>
-                                          _cancelAppointment(item['eventId'] as String),
+                                      onPressed: () => notifier
+                                          .cancelAppointment(
+                                              item['eventId'] as String),
                                     ),
                                   ],
                                 ),

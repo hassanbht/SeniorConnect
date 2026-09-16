@@ -4,9 +4,9 @@
 // authenticated user; staff (active Coordinator/Admin) additionally see a
 // "manage" entry point into OrganizationPostFormScreen.
 
-import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design_system/app_tokens.dart';
@@ -14,10 +14,11 @@ import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
+import '../application/organization_profile_notifier.dart';
 import '../data/intake_form_repository.dart';
 import 'organization_post_form_screen.dart';
 
-class OrganizationProfileScreen extends StatefulWidget {
+class OrganizationProfileScreen extends ConsumerWidget {
   const OrganizationProfileScreen({
     super.key,
     required this.organizationId,
@@ -27,87 +28,21 @@ class OrganizationProfileScreen extends StatefulWidget {
   final String organizationId;
   final ApiClient apiClient;
 
-  @override
-  State<OrganizationProfileScreen> createState() =>
-      _OrganizationProfileScreenState();
-}
-
-class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
-  late final IntakeFormRepository _intakeFormRepository =
-      IntakeFormRepositoryImpl(widget.apiClient);
-
-  bool _isLoading = true;
-  Map<String, dynamic>? _organization;
-  List<Map<String, dynamic>> _newsItems = [];
-  List<Map<String, dynamic>> _events = [];
-  bool _canManage = false;
-  bool _isActivatingTemplate = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() => _isLoading = true);
-    try {
-      final org = await widget.apiClient.get<Map<String, dynamic>>(
-        '/api/v1/organizations/${widget.organizationId}',
-      );
-
-      final posts = await widget.apiClient.get<List<dynamic>>(
-        '/api/v1/community/events',
-        queryParameters: {'organizationId': widget.organizationId},
-      );
-      final postMaps = posts
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-
-      var canManage = false;
-      try {
-        final mine = await widget.apiClient.get<List<dynamic>>(
-          '/api/v1/me/organizations',
-        );
-        canManage = mine.any(
-          (m) =>
-              Map<String, dynamic>.from(m as Map)['organizationId'] ==
-              widget.organizationId,
-        );
-      } catch (_) {
-        // Staff-entry-point visibility only — the server call is the real
-        // gate, so a failure here just hides the button.
-      }
-
-      if (mounted) {
-        setState(() {
-          _organization = org;
-          _newsItems = postMaps.where((e) => e['category'] == 'news').toList();
-          _events = postMaps.where((e) => e['category'] != 'news').toList();
-          _canManage = canManage;
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _openIntakeForm(IntakeFormType formType) {
+  void _openIntakeForm(BuildContext context, IntakeFormType formType) {
     context.pushNamed(
       'intake-form',
       pathParameters: {
-        'id': widget.organizationId,
+        'id': organizationId,
         'formType': _formTypeSegment(formType),
       },
     );
   }
 
-  void _openSubmissions(IntakeFormType formType) {
+  void _openSubmissions(BuildContext context, IntakeFormType formType) {
     context.pushNamed(
       'intake-form-submissions',
       pathParameters: {
-        'id': widget.organizationId,
+        'id': organizationId,
         'formType': _formTypeSegment(formType),
       },
     );
@@ -116,67 +51,67 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
   String _formTypeSegment(IntakeFormType formType) =>
       formType == IntakeFormType.helpSeeker ? 'help_seeker' : 'volunteer';
 
-  Future<void> _activateFwzTemplate() async {
-    setState(() => _isActivatingTemplate = true);
-    try {
-      await _intakeFormRepository.activateFwzTemplate(
-        widget.organizationId,
-        IntakeFormType.volunteer,
+  Future<void> _activateFwzTemplate(
+    BuildContext context,
+    WidgetRef ref,
+    OrganizationProfileParams params,
+  ) async {
+    final error = await ref
+        .read(organizationProfileProvider(params).notifier)
+        .activateFwzTemplate();
+    if (!context.mounted) return;
+    if (error == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('organizations.template_activated'.tr())),
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('organizations.template_activated'.tr())),
-        );
-      }
-    } on DioException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mapDioError(e).l10nKey.tr())),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('errors.generic'.tr())),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isActivatingTemplate = false);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.tr())),
+      );
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final orgName = _organization?['name'] as String? ?? '';
+    final params = OrganizationProfileParams(
+      organizationId: organizationId,
+      apiClient: apiClient,
+    );
+    final state = ref.watch(organizationProfileProvider(params));
+    final orgName = state.organization?['name'] as String? ?? '';
 
     return Scaffold(
       appBar: AppBar(title: Text(orgName)),
-      floatingActionButton: _canManage
+      floatingActionButton: state.canManage
           ? FloatingActionButton.extended(
               onPressed: () async {
                 final saved = await Navigator.of(context).push<bool>(
                   MaterialPageRoute<bool>(
                     builder: (_) => OrganizationPostFormScreen(
-                      organizationId: widget.organizationId,
-                      apiClient: widget.apiClient,
+                      organizationId: organizationId,
+                      apiClient: apiClient,
                     ),
                   ),
                 );
-                if (saved == true) _load();
+                if (saved == true) {
+                  ref
+                      .read(organizationProfileProvider(params).notifier)
+                      .load();
+                }
               },
               icon: const Icon(Icons.add),
               label: Text('organizations.post_news_or_event'.tr()),
             )
           : null,
       body: SafeArea(
-        child: _isLoading
+        child: state.isLoading
             ? AppLoading(message: 'common.loading'.tr())
             : ListView(
                 padding: const EdgeInsetsDirectional.all(AppSpacing.md),
                 children: [
-                  if (_organization?['supportEmail'] != null ||
-                      _organization?['supportPhone'] != null)
+                  if (state.organization?['supportEmail'] != null ||
+                      state.organization?['supportPhone'] != null)
                     Padding(
                       padding: const EdgeInsetsDirectional.only(
                         bottom: AppSpacing.md,
@@ -184,14 +119,14 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (_organization?['supportEmail'] != null)
+                          if (state.organization?['supportEmail'] != null)
                             Text(
-                              _organization!['supportEmail'] as String,
+                              state.organization!['supportEmail'] as String,
                               style: theme.textTheme.bodyMedium,
                             ),
-                          if (_organization?['supportPhone'] != null)
+                          if (state.organization?['supportPhone'] != null)
                             Text(
-                              _organization!['supportPhone'] as String,
+                              state.organization!['supportPhone'] as String,
                               style: theme.textTheme.bodyMedium,
                             ),
                         ],
@@ -202,7 +137,7 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                     style: theme.textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  if (_newsItems.isEmpty)
+                  if (state.newsItems.isEmpty)
                     Padding(
                       padding: const EdgeInsetsDirectional.only(
                         bottom: AppSpacing.md,
@@ -210,19 +145,19 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                       child: Text('organizations.no_posts'.tr()),
                     )
                   else
-                    ..._newsItems.map((item) => _PostCard(item: item)),
+                    ...state.newsItems.map((item) => _PostCard(item: item)),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
                     'organizations.events'.tr(),
                     style: theme.textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  if (_events.isEmpty)
+                  if (state.events.isEmpty)
                     Text('organizations.no_posts'.tr())
                   else
-                    ..._events.map((item) => _PostCard(item: item)),
+                    ...state.events.map((item) => _PostCard(item: item)),
                   const SizedBox(height: AppSpacing.xl),
-                  if (_canManage) ...[
+                  if (state.canManage) ...[
                     Text(
                       'organizations.coordinator_tools_title'.tr(),
                       style: theme.textTheme.titleLarge,
@@ -233,7 +168,7 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                       icon: Icons.warning_amber_rounded,
                       variant: AppButtonVariant.primary,
                       onPressed: () => context.push(
-                        '${AppRoutes.organizations}/${widget.organizationId}/coordinator/attention',
+                        '${AppRoutes.organizations}/$organizationId/coordinator/attention',
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -242,7 +177,7 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                       icon: Icons.people_outline,
                       variant: AppButtonVariant.tonal,
                       onPressed: () => context.push(
-                        '${AppRoutes.organizations}/${widget.organizationId}/coordinator/roster',
+                        '${AppRoutes.organizations}/$organizationId/coordinator/roster',
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -251,7 +186,7 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                       icon: Icons.pending_actions_outlined,
                       variant: AppButtonVariant.tonal,
                       onPressed: () => context.push(
-                        '${AppRoutes.organizations}/${widget.organizationId}/coordinator/hours-queue',
+                        '${AppRoutes.organizations}/$organizationId/coordinator/hours-queue',
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -260,7 +195,7 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                       icon: Icons.edit_note_outlined,
                       variant: AppButtonVariant.tonal,
                       onPressed: () => context.push(
-                        '${AppRoutes.organizations}/${widget.organizationId}/coordinator/bulk-entry',
+                        '${AppRoutes.organizations}/$organizationId/coordinator/bulk-entry',
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -268,22 +203,28 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                       label: 'organizations.review_volunteer_applications'.tr(),
                       icon: Icons.how_to_reg_outlined,
                       variant: AppButtonVariant.tonal,
-                      onPressed: () => _openSubmissions(IntakeFormType.volunteer),
+                      onPressed: () =>
+                          _openSubmissions(context, IntakeFormType.volunteer),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     AppButton(
-                      label: 'organizations.review_help_seeker_applications'.tr(),
+                      label:
+                          'organizations.review_help_seeker_applications'.tr(),
                       icon: Icons.assignment_ind_outlined,
                       variant: AppButtonVariant.tonal,
-                      onPressed: () => _openSubmissions(IntakeFormType.helpSeeker),
+                      onPressed: () =>
+                          _openSubmissions(context, IntakeFormType.helpSeeker),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     AppButton(
                       label: 'organizations.activate_fwz_template'.tr(),
                       variant: AppButtonVariant.destructive,
-                      confirmationText: 'organizations.activate_fwz_template_confirm'.tr(),
-                      isLoading: _isActivatingTemplate,
-                      onPressed: _isActivatingTemplate ? null : _activateFwzTemplate,
+                      confirmationText:
+                          'organizations.activate_fwz_template_confirm'.tr(),
+                      isLoading: state.isActivatingTemplate,
+                      onPressed: state.isActivatingTemplate
+                          ? null
+                          : () => _activateFwzTemplate(context, ref, params),
                     ),
                   ] else ...[
                     Text(
@@ -293,13 +234,15 @@ class _OrganizationProfileScreenState extends State<OrganizationProfileScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     AppButton(
                       label: 'organizations.apply_volunteer'.tr(),
-                      onPressed: () => _openIntakeForm(IntakeFormType.volunteer),
+                      onPressed: () =>
+                          _openIntakeForm(context, IntakeFormType.volunteer),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     AppButton(
                       label: 'organizations.apply_help_seeker'.tr(),
                       variant: AppButtonVariant.tonal,
-                      onPressed: () => _openIntakeForm(IntakeFormType.helpSeeker),
+                      onPressed: () =>
+                          _openIntakeForm(context, IntakeFormType.helpSeeker),
                     ),
                   ],
                 ],

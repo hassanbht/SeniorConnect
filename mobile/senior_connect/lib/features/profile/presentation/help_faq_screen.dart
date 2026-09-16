@@ -5,21 +5,16 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../application/help_faq_notifier.dart';
 
-class HelpFaqScreen extends StatefulWidget {
+class HelpFaqScreen extends ConsumerWidget {
   const HelpFaqScreen({super.key});
 
-  @override
-  State<HelpFaqScreen> createState() => _HelpFaqScreenState();
-}
-
-class _HelpFaqScreenState extends State<HelpFaqScreen> {
-  String _searchQuery = '';
-
-  final List<Map<String, String>> _faqItems = [
+  static const List<Map<String, String>> _faqItems = [
     {
       'questionKey': 'faq.q_how_to_request',
       'answerKey': 'faq.a_how_to_request',
@@ -47,14 +42,15 @@ class _HelpFaqScreenState extends State<HelpFaqScreen> {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final searchQuery = ref.watch(helpFaqSearchProvider);
 
     final filtered = _faqItems.where((item) {
-      if (_searchQuery.isEmpty) return true;
+      if (searchQuery.isEmpty) return true;
       final q = item['questionKey']!.tr().toLowerCase();
       final a = item['answerKey']!.tr().toLowerCase();
-      final term = _searchQuery.toLowerCase();
+      final term = searchQuery.toLowerCase();
       return q.contains(term) || a.contains(term);
     }).toList();
 
@@ -75,9 +71,7 @@ class _HelpFaqScreenState extends State<HelpFaqScreen> {
                 ),
               ),
               onChanged: (val) {
-                setState(() {
-                  _searchQuery = val.trim();
-                });
+                ref.read(helpFaqSearchProvider.notifier).state = val.trim();
               },
             ),
             const SizedBox(height: AppSpacing.md),

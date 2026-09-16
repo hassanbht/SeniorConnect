@@ -48,7 +48,20 @@ public interface IProximityService
 
     Task<Result<IReadOnlyList<NearbyTownDto>>> GetNearestTownsAsync(
         double latitude, double longitude, double maxDistanceKm = 50, int maxResults = 10, CancellationToken ct = default);
+
+    // P5-06: community events near a point, optionally restricted to the
+    // caller's own saved interests (Interest.Code matched against the
+    // event's Category — same free-text vocabulary).
+    Task<Result<IReadOnlyList<CommunityEventDiscoveryResult>>> FindNearbyCommunityEventsAsync(
+        double latitude, double longitude, double radiusKm, Guid? callerUserId, bool matchMyInterests, CancellationToken ct = default);
 }
+
+public sealed record CommunityEventDiscoveryResult(
+    Guid EventId,
+    string Title,
+    string Category,
+    DateTimeOffset StartsAtUtc,
+    double DistanceKm);
 
 public sealed record ProximityResult(
     Guid UserId,

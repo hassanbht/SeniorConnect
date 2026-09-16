@@ -33,6 +33,22 @@ public sealed class VolunteerApplicationStep : Entity
     [DataClass(DataClass.PersonalData)]
     public string? Note { get; private set; }
 
+    /// <summary>
+    /// P2-23: COMPUTED, never stored. Null until the step is opened.
+    /// Counts to CompletedAtUtc once done, otherwise to now.
+    /// </summary>
+    [DataClass(DataClass.Operational)]
+    public int? DaysOpen => OpenedAtUtc is null
+        ? null
+        : (int)((CompletedAtUtc ?? DateTimeOffset.UtcNow) - OpenedAtUtc.Value).TotalDays;
+
+    /// <summary>P2-23: still open and past its SLA.</summary>
+    [DataClass(DataClass.Operational)]
+    public bool IsOverdue =>
+        Status is StepStatus.NotStarted or StepStatus.InProgress
+        && DaysOpen is { } daysOpen
+        && daysOpen > SlaDays;
+
     public static VolunteerApplicationStep Create(
         Guid applicationId,
         ApplicationStepType step,

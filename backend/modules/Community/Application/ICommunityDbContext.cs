@@ -11,6 +11,7 @@ public interface ICommunityDbContext
     DbSet<EventRegistration> EventRegistrations { get; }
     DbSet<MessageThread> MessageThreads { get; }
     DbSet<ThreadMessage> ThreadMessages { get; }
+    DbSet<CommunityEventOccurrenceCancellation> EventOccurrenceCancellations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

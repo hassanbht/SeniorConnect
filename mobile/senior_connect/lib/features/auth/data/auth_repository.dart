@@ -13,14 +13,14 @@ class DeviceSession {
   });
 
   factory DeviceSession.fromJson(Map<String, dynamic> json) => DeviceSession(
-        id: json['id'] as String,
-        deviceLabel: json['deviceLabel'] as String?,
-        isPersonalDevice: json['isPersonalDevice'] as bool,
-        issuedAtUtc: DateTime.parse(json['issuedAtUtc'] as String),
-        expiresAtUtc: DateTime.parse(json['expiresAtUtc'] as String),
-        isActive: json['isActive'] as bool,
-        isCurrent: json['isCurrent'] as bool,
-      );
+    id: json['id'] as String,
+    deviceLabel: json['deviceLabel'] as String?,
+    isPersonalDevice: json['isPersonalDevice'] as bool,
+    issuedAtUtc: DateTime.parse(json['issuedAtUtc'] as String),
+    expiresAtUtc: DateTime.parse(json['expiresAtUtc'] as String),
+    isActive: json['isActive'] as bool,
+    isCurrent: json['isCurrent'] as bool,
+  );
 
   final String id;
   final String? deviceLabel;
@@ -49,10 +49,7 @@ abstract class AuthRepository {
     required String password,
   });
   Future<void> googleSignIn(String idToken);
-  Future<void> idAustriaSignIn({
-    required String code,
-    String? state,
-  });
+  Future<void> idAustriaSignIn({required String code, String? state});
   Future<void> requestProfilePhoneVerification(String phone);
   Future<void> verifyProfilePhone(String phone, String code);
 
@@ -88,9 +85,9 @@ class TotpEnrollment {
   const TotpEnrollment({required this.secret, required this.provisioningUri});
 
   factory TotpEnrollment.fromJson(Map<String, dynamic> json) => TotpEnrollment(
-        secret: json['secret'] as String,
-        provisioningUri: json['provisioningUri'] as String,
-      );
+    secret: json['secret'] as String,
+    provisioningUri: json['provisioningUri'] as String,
+  );
 
   final String secret;
   final String provisioningUri;
@@ -113,10 +110,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> verifyPhoneOtp(String phoneNumber, String code) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/api/v1/auth/verify-phone',
-      data: {
-        'phone': phoneNumber,
-        'code': code,
-      },
+      data: {'phone': phoneNumber, 'code': code},
     );
 
     final accessToken = response['accessToken'] as String?;
@@ -186,10 +180,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/api/v1/auth/login',
-      data: {
-        'email': email,
-        'password': password,
-      },
+      data: {'email': email, 'password': password},
     );
 
     final accessToken = response['accessToken'] as String?;
@@ -222,16 +213,10 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> idAustriaSignIn({
-    required String code,
-    String? state,
-  }) async {
+  Future<void> idAustriaSignIn({required String code, String? state}) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/api/v1/auth/id-austria',
-      data: {
-        'code': code,
-        if (state != null) 'state': state,
-      },
+      data: {'code': code, if (state != null) 'state': state},
     );
 
     final accessToken = response['accessToken'] as String?;
@@ -257,10 +242,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> verifyProfilePhone(String phone, String code) async {
     await _apiClient.post<void>(
       '/api/v1/me/phone/verify',
-      data: {
-        'phone': phone,
-        'code': code,
-      },
+      data: {'phone': phone, 'code': code},
     );
   }
 
@@ -276,10 +258,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> verifyEmailMagicLink(String email, String code) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/api/v1/auth/verify-email',
-      data: {
-        'email': email,
-        'code': code,
-      },
+      data: {'email': email, 'code': code},
     );
 
     final accessToken = response['accessToken'] as String?;
@@ -321,8 +300,12 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<List<DeviceSession>> getDevices() async {
-    final response = await _apiClient.get<List<dynamic>>('/api/v1/auth/devices');
-    return response.map((e) => DeviceSession.fromJson(e as Map<String, dynamic>)).toList();
+    final response = await _apiClient.get<List<dynamic>>(
+      '/api/v1/auth/devices',
+    );
+    return response
+        .map((e) => DeviceSession.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   @override
@@ -332,7 +315,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<TotpEnrollment> enrollTotp() async {
-    final response = await _apiClient.post<Map<String, dynamic>>('/api/v1/me/totp/enroll');
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      '/api/v1/me/totp/enroll',
+    );
     return TotpEnrollment.fromJson(response);
   }
 
@@ -356,10 +341,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> verifyPhoneChange(String newPhone, String code) async {
     await _apiClient.post<void>(
       '/api/v1/auth/change-phone:verify',
-      data: {
-        'newPhone': newPhone,
-        'code': code,
-      },
+      data: {'newPhone': newPhone, 'code': code},
     );
   }
 }

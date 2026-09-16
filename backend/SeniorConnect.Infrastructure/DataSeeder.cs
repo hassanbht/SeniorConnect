@@ -20,6 +20,15 @@ public static class DataSeeder
         }
 
         // 2. Seed Activity Categories (Reference Taxonomy: P1-15, P2-06, PSG-06)
+        // 1. Seed Austrian Administrative Units (P1-15b)
+        if (!await db.AustrianAdministrativeUnits.AnyAsync(cancellationToken))
+        {
+            var units = CreateAustrianAdministrativeUnits();
+            await db.AustrianAdministrativeUnits.AddRangeAsync(units, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        // 2. Seed Activity Categories (Reference Taxonomy: P1-15, P2-06, PSG-06)
         if (!await db.ActivityCategories.AnyAsync(cancellationToken))
         {
             var categories = new List<ActivityCategory>
@@ -67,17 +76,78 @@ public static class DataSeeder
             await db.SaveChangesAsync(cancellationToken);
         }
 
+        // 2b. Seed Referral Directory for the pilot region (P2-06, PSG-06)
+        //
+        // Deliberately incomplete: only groups with a confidently-sourced,
+        // verified-format contact are seeded. "nursing_blocked" and
+        // "heavy_construction_blocked" are skipped — the founder's own
+        // research turned up conflicting/unverified coverage claims for
+        // those two (see BUILD-CHECKLIST.md PSG-06). Seed those once a real
+        // phone call confirms a provider, per this project's own P0-01/P0-02
+        // "verify with a real call" standard — do not add scraped business
+        // listings here without that call.
+        if (!await db.ReferralDirectories.AnyAsync(cancellationToken))
+        {
+            var referralProviders = new List<ReferralDirectory>
+            {
+                ReferralDirectory.Create(
+                    referralGroup: "Gesundheitsberatung & Notdienst 1450 / Rettungsdienst 144",
+                    regionCode: "AT",
+                    name: "Rettungsdienst (Notruf)",
+                    phone: "144",
+                    noteKey: "referral.medical.rettung"),
+                ReferralDirectory.Create(
+                    referralGroup: "Gesundheitsberatung & Notdienst 1450 / Rettungsdienst 144",
+                    regionCode: "AT",
+                    name: "Gesundheitsberatung Österreich",
+                    phone: "1450",
+                    noteKey: "referral.medical.gesundheitsberatung"),
+                ReferralDirectory.Create(
+                    referralGroup: "Staatliche Schuldenberatung & Arbeiterkammer (AK)",
+                    regionCode: "703",
+                    name: "Schuldnerberatung Tirol",
+                    phone: "+43 512 577649",
+                    website: "https://www.sbtirol.at",
+                    address: "Wilhelm-Greil-Straße 23, 6020 Innsbruck"),
+                ReferralDirectory.Create(
+                    referralGroup: "Staatliche Schuldenberatung & Arbeiterkammer (AK)",
+                    regionCode: "703",
+                    name: "Arbeiterkammer Tirol",
+                    phone: "0800 22 55 22",
+                    website: "https://tirol.arbeiterkammer.at",
+                    address: "Maximilianstraße 7, 6020 Innsbruck")
+            };
+
+            await db.ReferralDirectories.AddRangeAsync(referralProviders, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
         // 3. Seed Pilot Organizations (P2-01)
         if (!await db.Organizations.AnyAsync(cancellationToken))
         {
+            // Real named pilot partner per ADR-020 (MVP lockdown): Freiwilligenzentrum
+            // Innsbruck-Land, Dorfplatz 2, 6175 Kematen in Tirol.
+            // Contacts: Lea Gohm, Veronika Schneider.
             var org = Organization.Create(
-                name: "Mitanand Nachbarschaftshilfe Pilot Salzburg",
+                name: "Freiwilligenzentrum Innsbruck-Land",
                 type: OrganizationType.Association,
-                legalName: "Verein Mitanand Österreich",
-                supportEmail: "kontakt@mitanand-pilot.at",
-                supportPhone: "+43 662 123456");
+                legalName: "Freiwilligenzentrum Innsbruck-Land",
+                supportEmail: "fwz@regio-il.at",
+                supportPhone: "+43 5232 27702");
 
             await db.Organizations.AddAsync(org, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+
+            var branch = OrganizationBranch.Create(
+                organizationId: org.Id,
+                name: "Freiwilligenzentrum Innsbruck-Land (Hauptsitz)",
+                address: "Dorfplatz 2",
+                postalCode: "6175",
+                city: "Kematen in Tirol",
+                latitude: 47.2600,
+                longitude: 11.2433);
+
+            await db.OrganizationBranches.AddAsync(branch, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
         }
     }

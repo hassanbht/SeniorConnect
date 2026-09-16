@@ -14,6 +14,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:senior_connect/core/design_system/app_theme.dart';
@@ -74,32 +75,35 @@ List<MatrixCase> smokeMatrix() => buildMatrix(
     );
 
 /// Wraps a widget in the app's real theme for a given matrix case.
-Widget wrapForTest(Widget child, MatrixCase c) {
+Widget wrapForTest(Widget child, MatrixCase c, {List<Override> overrides = const []}) {
   final theme = c.brightness == Brightness.light
       ? AppTheme.light(seniorMode: c.seniorMode, locale: c.locale)
       : AppTheme.dark(seniorMode: c.seniorMode, locale: c.locale);
 
-  return MaterialApp(
-    theme: theme,
-    locale: c.locale,
-    localizationsDelegates: const [
-      GlobalMaterialLocalizations.delegate,
-      GlobalWidgetsLocalizations.delegate,
-      GlobalCupertinoLocalizations.delegate,
-      DefaultMaterialLocalizations.delegate,
-      DefaultWidgetsLocalizations.delegate,
-    ],
-    supportedLocales: const [Locale('de'), Locale('en'), Locale('fa')],
-    home: Builder(
-      builder: (context) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(c.textScale),
-        ),
-        child: Directionality(
-          textDirection: c.isRtl ? TextDirection.rtl : TextDirection.ltr,
-          child: SeniorModeScope(
-            enabled: c.seniorMode,
-            child: Scaffold(body: child),
+  return ProviderScope(
+    overrides: overrides,
+    child: MaterialApp(
+      theme: theme,
+      locale: c.locale,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        DefaultMaterialLocalizations.delegate,
+        DefaultWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('de'), Locale('en'), Locale('fa')],
+      home: Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(c.textScale),
+          ),
+          child: Directionality(
+            textDirection: c.isRtl ? TextDirection.rtl : TextDirection.ltr,
+            child: SeniorModeScope(
+              enabled: c.seniorMode,
+              child: Scaffold(body: child),
+            ),
           ),
         ),
       ),

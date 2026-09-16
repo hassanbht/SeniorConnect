@@ -87,7 +87,9 @@ public sealed record HelpRequestDto(
     string? CancellationReason,
     int RowVersion,
     string? SeniorDisplayName = null,
-    string? SeniorPhone = null);
+    string? SeniorPhone = null,
+    string? VolunteerDisplayName = null,
+    string? VolunteerPhone = null);
 
 public sealed record CreateHelpRequestRequest(
     Guid? OrganizationId,
@@ -117,6 +119,9 @@ public sealed record CancelHelpRequestRequest(
 
 public sealed record NoShowHelpRequestRequest(
     string? Notes = null);
+
+public sealed record DisputeNoShowRequest(
+    string Reason);
 
 public sealed record HelpRequestStatusHistoryDto(
     Guid Id,

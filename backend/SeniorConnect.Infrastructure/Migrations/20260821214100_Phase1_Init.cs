@@ -19,41 +19,41 @@ namespace SeniorConnect.Infrastructure.Migrations
                 schema: "public",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: true),
-                    BranchId = table.Column<Guid>(type: "uuid", nullable: true),
-                    VolunteerUserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    SubjectUserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    CategoryId = table.Column<Guid>(type: "uuid", nullable: false),
-                    HelpRequestId = table.Column<Guid>(type: "uuid", nullable: true),
-                    EventId = table.Column<Guid>(type: "uuid", nullable: true),
-                    OccurredOn = table.Column<DateOnly>(type: "date", nullable: false),
-                    DurationMinutes = table.Column<int>(type: "integer", nullable: false),
-                    LocationType = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
-                    Notes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
-                    InsuranceContext = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
-                    InsuranceDisclaimerAcceptedAtUtc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true),
-                    InsuranceDisclaimerAcceptedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    TransportMode = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    Source = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
-                    LoggedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    LoggedAtUtc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
-                    ConfirmedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    ConfirmedAtUtc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true),
-                    Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
-                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    UpdatedAtUtc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
-                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    organization_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    branch_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    volunteer_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    subject_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    category_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    help_request_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    event_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    occurred_on = table.Column<DateOnly>(type: "date", nullable: false),
+                    duration_minutes = table.Column<int>(type: "integer", nullable: false),
+                    location_type = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    notes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    insurance_context = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    insurance_disclaimer_accepted_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true),
+                    insurance_disclaimer_accepted_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    transport_mode = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    source = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    logged_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    logged_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
+                    confirmed_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    confirmed_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true),
+                    status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    created_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
+                    created_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    updated_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
+                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    is_deleted = table.Column<bool>(type: "boolean", nullable: false),
                     xmin = table.Column<uint>(type: "xmin", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_activities", x => x.Id);
+                    table.PrimaryKey("PK_activities", x => x.id);
                     table.CheckConstraint("ck_activities_distinct_parties", "subject_user_id IS NULL OR subject_user_id <> volunteer_user_id");
                     table.CheckConstraint("ck_activities_duration", "duration_minutes BETWEEN 1 AND 1440");
-                    table.CheckConstraint("ck_activities_transport_insurance", "transport_mode <> 'volunteer_private_vehicle' OR status <> 'confirmed' OR insurance_context <> 'unknown'");
+                    table.CheckConstraint("ck_activities_transport_insurance", "transport_mode <> 'VolunteerPrivateVehicle' OR status <> 'Confirmed' OR insurance_context <> 'Unknown'");
                 });
 
             migrationBuilder.CreateTable(
@@ -390,7 +390,7 @@ namespace SeniorConnect.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "senior_profiles",
+                name: "support_profiles",
                 schema: "public",
                 columns: table => new
                 {
@@ -415,10 +415,10 @@ namespace SeniorConnect.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_senior_profiles", x => x.id);
-                    table.CheckConstraint("ck_senior_contact_method", "preferred_contact_method IN ('app','phone','sms','family')");
-                    table.CheckConstraint("ck_senior_geo_pair", "(latitude IS NULL) = (longitude IS NULL)");
-                    table.CheckConstraint("ck_senior_vulnerability_reason", "NOT vulnerability_flag OR vulnerability_reason IS NOT NULL");
+                    table.PrimaryKey("PK_support_profiles", x => x.id);
+                    table.CheckConstraint("ck_support_contact_method", "preferred_contact_method IN ('app','phone','sms','family')");
+                    table.CheckConstraint("ck_support_geo_pair", "(latitude IS NULL) = (longitude IS NULL)");
+                    table.CheckConstraint("ck_support_vulnerability_reason", "NOT vulnerability_flag OR vulnerability_reason IS NOT NULL");
                 });
 
             migrationBuilder.CreateTable(
@@ -683,14 +683,14 @@ namespace SeniorConnect.Infrastructure.Migrations
                 name: "IX_activities_OrganizationId_OccurredOn",
                 schema: "public",
                 table: "activities",
-                columns: new[] { "OrganizationId", "OccurredOn" },
+                columns: new[] { "organization_id", "occurred_on" },
                 filter: "status = 'Confirmed'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_activities_VolunteerUserId_OccurredOn",
                 schema: "public",
                 table: "activities",
-                columns: new[] { "VolunteerUserId", "OccurredOn" });
+                columns: new[] { "volunteer_user_id", "occurred_on" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_activity_categories_code",
@@ -783,16 +783,16 @@ namespace SeniorConnect.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_senior_profiles_geo",
+                name: "ix_support_profiles_geo",
                 schema: "public",
-                table: "senior_profiles",
+                table: "support_profiles",
                 columns: new[] { "latitude", "longitude" },
                 filter: "latitude IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "ix_senior_profiles_postal",
+                name: "ix_support_profiles_postal",
                 schema: "public",
-                table: "senior_profiles",
+                table: "support_profiles",
                 column: "postal_code");
 
             migrationBuilder.CreateIndex(
@@ -983,7 +983,7 @@ ON CONFLICT (code) DO NOTHING;
                 schema: "public");
 
             migrationBuilder.DropTable(
-                name: "senior_profiles",
+                name: "support_profiles",
                 schema: "public");
 
             migrationBuilder.DropTable(

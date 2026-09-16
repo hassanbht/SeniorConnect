@@ -31,13 +31,13 @@ Localization keys
 
 ## Step 3 — Build
 
-Layer order: `data → domain → application (cubit) → presentation`.
+Layer order: `data → domain → application (riverpod) → presentation`.
 
 ```
 ✗ Direct HTTP in a widget
 ✗ Business logic in a widget
 ✗ setState for anything beyond a purely local visual toggle
-✓ Cubit + Freezed, five states: initial / loading / loaded / empty / error
+✓ riverpod + Freezed, five states: initial / loading / loaded / empty / error
 ```
 
 ## Design system — non-negotiable

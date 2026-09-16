@@ -1,11 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:senior_connect/core/design_system/app_tokens.dart';
 import 'package:senior_connect/shared/widgets/app_button.dart';
 
+import '../application/voice_request_notifier.dart';
+
 /// Modal dialog allowing seniors to speak their request or type via speech-to-text,
 /// running local emergency triage and auto-populating structured form fields (P8-04, P8-05).
-class VoiceRequestDialog extends StatefulWidget {
+class VoiceRequestDialog extends ConsumerWidget {
   final ValueChanged<String> onTranscriptConfirmed;
 
   const VoiceRequestDialog({
@@ -14,45 +17,10 @@ class VoiceRequestDialog extends StatefulWidget {
   });
 
   @override
-  State<VoiceRequestDialog> createState() => _VoiceRequestDialogState();
-}
-
-class _VoiceRequestDialogState extends State<VoiceRequestDialog> {
-  bool _isListening = false;
-  String _currentTranscript = '';
-  bool _emergencyDetected = false;
-  bool _nursingDetected = false;
-
-  final List<String> _emergencyKeywords = [
-    'notfall', 'schmerz', 'herz', 'sturz', 'gefallen', 'blut',
-    'atemnot', '144', '112', 'emergency', 'درد', 'سقوط', 'خون'
-  ];
-
-  final List<String> _nursingKeywords = [
-    'spritze', 'medikament dosieren', 'strümpfe anziehen',
-    'verband wechseln', 'infusion', 'katheter', 'تزریق', 'پانسمان'
-  ];
-
-  void _toggleListening() {
-    setState(() {
-      _isListening = !_isListening;
-      if (_isListening) {
-        // Simulated speech streaming
-        _currentTranscript = 'Ich brauche morgen Hilfe beim Lebensmitteleinkauf beim SPAR.';
-        _evaluateText(_currentTranscript);
-      }
-    });
-  }
-
-  void _evaluateText(String text) {
-    final lower = text.toLowerCase();
-    _emergencyDetected = _emergencyKeywords.any((k) => lower.contains(k));
-    _nursingDetected = _nursingKeywords.any((k) => lower.contains(k));
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final state = ref.watch(voiceRequestProvider);
+    final notifier = ref.read(voiceRequestProvider.notifier);
 
     return Dialog(
       shape: RoundedRectangleBorder(
@@ -90,19 +58,19 @@ class _VoiceRequestDialogState extends State<VoiceRequestDialog> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: _isListening
-                    ? theme.colorScheme.primaryContainer.withValues(alpha: 0.2)
-                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                color: state.isListening
+                    ? theme.colorScheme.primaryContainer.withAlpha(51)
+                    : theme.colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
-                  color: _isListening
+                  color: state.isListening
                       ? theme.colorScheme.primary
                       : theme.colorScheme.outlineVariant,
                 ),
               ),
               child: Column(
                 children: [
-                  if (_isListening)
+                  if (state.isListening)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -122,16 +90,16 @@ class _VoiceRequestDialogState extends State<VoiceRequestDialog> {
                     ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    _currentTranscript.isEmpty
+                    state.currentTranscript.isEmpty
                         ? 'Tippen Sie auf das Mikrofon und sprechen Sie ganz natürlich.'
-                        : _currentTranscript,
+                        : state.currentTranscript,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge,
                   ),
                 ],
               ),
             ),
-            if (_emergencyDetected) ...[
+            if (state.emergencyDetected) ...[
               const SizedBox(height: AppSpacing.md),
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
@@ -148,7 +116,7 @@ class _VoiceRequestDialogState extends State<VoiceRequestDialog> {
                 ),
               ),
             ],
-            if (_nursingDetected) ...[
+            if (state.nursingDetected) ...[
               const SizedBox(height: AppSpacing.md),
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
@@ -169,17 +137,18 @@ class _VoiceRequestDialogState extends State<VoiceRequestDialog> {
               children: [
                 Expanded(
                   child: AppButton(
-                    label: _isListening
+                    label: state.isListening
                         ? 'voice_input.stop_recording'.tr()
                         : 'voice_input.start_recording'.tr(),
-                    icon: _isListening ? Icons.stop : Icons.mic,
-                    variant: _isListening
+                    icon: state.isListening ? Icons.stop : Icons.mic,
+                    variant: state.isListening
                         ? AppButtonVariant.tonal
                         : AppButtonVariant.primary,
-                    onPressed: _toggleListening,
+                    onPressed: notifier.toggleListening,
                   ),
                 ),
-                if (_currentTranscript.isNotEmpty && !_emergencyDetected) ...[
+                if (state.currentTranscript.isNotEmpty &&
+                    !state.emergencyDetected) ...[
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: AppButton(
@@ -187,7 +156,7 @@ class _VoiceRequestDialogState extends State<VoiceRequestDialog> {
                       icon: Icons.check,
                       variant: AppButtonVariant.primary,
                       onPressed: () {
-                        widget.onTranscriptConfirmed(_currentTranscript);
+                        onTranscriptConfirmed(state.currentTranscript);
                         Navigator.of(context).pop();
                       },
                     ),

@@ -193,4 +193,38 @@ public sealed class CommunityEvent : Entity, IAuditable, ISoftDeletable, IOrgani
         IsDeleted = true;
         UpdatedAtUtc = DateTimeOffset.UtcNow;
     }
+
+    // P5-04: occurrences are computed on read, never persisted — only a
+    // cancellation of a specific occurrence persists
+    // (CommunityEventOccurrenceCancellation). Bounded to maxOccurrences so a
+    // series with no RecurrenceUntilUtc can't enumerate forever.
+    public IReadOnlyList<DateTimeOffset> ComputeOccurrenceStartsUtc(int maxOccurrences = 52)
+    {
+        if (RecurrenceFrequency == EventRecurrenceFrequency.None)
+        {
+            return [StartsAtUtc];
+        }
+
+        var step = RecurrenceFrequency switch
+        {
+            EventRecurrenceFrequency.Daily => TimeSpan.FromDays(1),
+            EventRecurrenceFrequency.Weekly => TimeSpan.FromDays(7),
+            EventRecurrenceFrequency.BiWeekly => TimeSpan.FromDays(14),
+            // Approximate — this is a discovery/cancel-picker horizon, not a
+            // billing calendar; exact month-length RRULE math is not needed here.
+            EventRecurrenceFrequency.Monthly => TimeSpan.FromDays(30),
+            _ => TimeSpan.Zero
+        };
+
+        var occurrences = new List<DateTimeOffset>();
+        var current = StartsAtUtc;
+        while (occurrences.Count < maxOccurrences
+            && (RecurrenceUntilUtc is null || current <= RecurrenceUntilUtc.Value))
+        {
+            occurrences.Add(current);
+            current += step;
+        }
+
+        return occurrences;
+    }
 }

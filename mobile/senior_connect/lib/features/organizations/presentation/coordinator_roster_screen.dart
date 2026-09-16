@@ -3,17 +3,18 @@
 // P2-27 / BR-ROSTER-01: Volunteer Roster with behavioral status classification
 // (Active, Dormant, Inactive, NeverActivated) and one-tap reactivation (P2-19).
 
-import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
 import '../../../shared/widgets/app_status.dart';
+import '../application/coordinator_roster_notifier.dart';
 
-class CoordinatorRosterScreen extends StatefulWidget {
+class CoordinatorRosterScreen extends ConsumerWidget {
   const CoordinatorRosterScreen({
     super.key,
     required this.organizationId,
@@ -23,104 +24,37 @@ class CoordinatorRosterScreen extends StatefulWidget {
   final String organizationId;
   final ApiClient apiClient;
 
-  @override
-  State<CoordinatorRosterScreen> createState() => _CoordinatorRosterScreenState();
-}
+  Future<void> _reactivate(
+    BuildContext context,
+    WidgetRef ref,
+    CoordinatorRosterParams params,
+    String volunteerUserId,
+  ) async {
+    final error = await ref
+        .read(coordinatorRosterProvider(params).notifier)
+        .reactivate(volunteerUserId);
+    if (!context.mounted) return;
 
-class _CoordinatorRosterScreenState extends State<CoordinatorRosterScreen> {
-  bool _isLoading = true;
-  String? _errorMessage;
-  List<dynamic> _allVolunteers = [];
-  String _selectedStatusFilter = 'all';
-  String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRoster();
-  }
-
-  Future<void> _loadRoster() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final resp = await widget.apiClient.get<dynamic>(
-        '/api/v1/coordinator/volunteers?organizationId=${widget.organizationId}',
+    if (error == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('coordinator.volunteer_reactivated'.tr())),
       );
-
-      if (resp is List) {
-        _allVolunteers = resp;
-      }
-
-      if (mounted) setState(() => _isLoading = false);
-    } on DioException catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = mapDioError(e).l10nKey.tr();
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'errors.generic'.tr();
-        });
-      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.tr())),
+      );
     }
   }
 
-  Future<void> _reactivate(String volunteerUserId) async {
-    try {
-      await widget.apiClient.post<dynamic>(
-        '/api/v1/coordinator/volunteers/$volunteerUserId:reactivate',
-        data: {'notes': 'coordinator.reactivated_by_coordinator'.tr()},
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('coordinator.volunteer_reactivated'.tr())),
-        );
-        _loadRoster();
-      }
-    } on DioException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mapDioError(e).l10nKey.tr())),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('errors.generic'.tr())),
-        );
-      }
-    }
-  }
-
-  List<dynamic> get _filteredVolunteers {
-    return _allVolunteers.where((v) {
-      final m = v as Map<String, dynamic>;
-      final status = m['rosterStatus'] as String? ?? '';
-      final name = (m['displayName'] as String? ?? '').toLowerCase();
-      final phone = (m['phone'] as String? ?? '').toLowerCase();
-
-      final matchesStatus = _selectedStatusFilter == 'all' ||
-          status.toLowerCase() == _selectedStatusFilter.toLowerCase();
-      final matchesSearch = _searchQuery.isEmpty ||
-          name.contains(_searchQuery.toLowerCase()) ||
-          phone.contains(_searchQuery.toLowerCase());
-
-      return matchesStatus && matchesSearch;
-    }).toList();
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final params = CoordinatorRosterParams(
+      organizationId: organizationId,
+      apiClient: apiClient,
+    );
+    final state = ref.watch(coordinatorRosterProvider(params));
+    final notifier = ref.read(coordinatorRosterProvider(params).notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -129,50 +63,79 @@ class _CoordinatorRosterScreenState extends State<CoordinatorRosterScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'common.retry'.tr(),
-            onPressed: _loadRoster,
+            onPressed: () => notifier.loadRoster(),
           ),
         ],
       ),
       body: SafeArea(
-        child: _isLoading
+        child: state.isLoading
             ? AppLoading(message: 'common.loading'.tr())
-            : _errorMessage != null
+            : state.errorMessage != null
                 ? AppErrorView(
-                    message: _errorMessage!,
+                    message: state.errorMessage!,
                     retryLabel: 'common.retry'.tr(),
-                    onRetry: _loadRoster,
+                    onRetry: () => notifier.loadRoster(),
                   )
                 : Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsetsDirectional.all(AppSpacing.md),
+                        padding:
+                            const EdgeInsetsDirectional.all(AppSpacing.md),
                         child: Column(
                           children: [
                             TextField(
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.search),
-                                hintText: 'coordinator.search_volunteers_hint'.tr(),
+                                hintText:
+                                    'coordinator.search_volunteers_hint'.tr(),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppRadius.md),
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.md),
                                 ),
                                 isDense: true,
                               ),
-                              onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                              onChanged: (val) =>
+                                  notifier.setSearchQuery(val.trim()),
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: Row(
                                 children: [
-                                  _filterChip('all', 'coordinator.status_all'.tr()),
+                                  _filterChip(
+                                    notifier,
+                                    state.selectedStatusFilter,
+                                    'all',
+                                    'coordinator.status_all'.tr(),
+                                  ),
                                   const SizedBox(width: AppSpacing.xs),
-                                  _filterChip('Active', 'coordinator.status_active'.tr()),
+                                  _filterChip(
+                                    notifier,
+                                    state.selectedStatusFilter,
+                                    'Active',
+                                    'coordinator.status_active'.tr(),
+                                  ),
                                   const SizedBox(width: AppSpacing.xs),
-                                  _filterChip('Dormant', 'coordinator.status_dormant'.tr()),
+                                  _filterChip(
+                                    notifier,
+                                    state.selectedStatusFilter,
+                                    'Dormant',
+                                    'coordinator.status_dormant'.tr(),
+                                  ),
                                   const SizedBox(width: AppSpacing.xs),
-                                  _filterChip('Inactive', 'coordinator.status_inactive'.tr()),
+                                  _filterChip(
+                                    notifier,
+                                    state.selectedStatusFilter,
+                                    'Inactive',
+                                    'coordinator.status_inactive'.tr(),
+                                  ),
                                   const SizedBox(width: AppSpacing.xs),
-                                  _filterChip('NeverActivated', 'coordinator.status_never_activated'.tr()),
+                                  _filterChip(
+                                    notifier,
+                                    state.selectedStatusFilter,
+                                    'NeverActivated',
+                                    'coordinator.status_never_activated'.tr(),
+                                  ),
                                 ],
                               ),
                             ),
@@ -181,21 +144,30 @@ class _CoordinatorRosterScreenState extends State<CoordinatorRosterScreen> {
                       ),
                       const Divider(height: 1),
                       Expanded(
-                        child: _filteredVolunteers.isEmpty
+                        child: state.filteredVolunteers.isEmpty
                             ? AppEmptyState(
                                 icon: Icons.people_outline,
-                                message: 'coordinator.no_volunteers_found'.tr(),
+                                message:
+                                    'coordinator.no_volunteers_found'.tr(),
                               )
                             : ListView.separated(
-                                padding: const EdgeInsetsDirectional.all(AppSpacing.md),
-                                itemCount: _filteredVolunteers.length,
-                                separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+                                padding: const EdgeInsetsDirectional.all(
+                                    AppSpacing.md),
+                                itemCount: state.filteredVolunteers.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: AppSpacing.sm),
                                 itemBuilder: (context, index) {
-                                  final v = _filteredVolunteers[index] as Map<String, dynamic>;
+                                  final v = state.filteredVolunteers[index]
+                                      as Map<String, dynamic>;
                                   return _VolunteerCard(
                                     volunteer: v,
                                     theme: theme,
-                                    onReactivate: () => _reactivate(v['userId'] as String),
+                                    onReactivate: () => _reactivate(
+                                      context,
+                                      ref,
+                                      params,
+                                      v['userId'] as String,
+                                    ),
                                   );
                                 },
                               ),
@@ -206,13 +178,18 @@ class _CoordinatorRosterScreenState extends State<CoordinatorRosterScreen> {
     );
   }
 
-  Widget _filterChip(String filterKey, String label) {
-    final isSelected = _selectedStatusFilter == filterKey;
+  Widget _filterChip(
+    CoordinatorRosterNotifier notifier,
+    String selectedFilter,
+    String filterKey,
+    String label,
+  ) {
+    final isSelected = selectedFilter == filterKey;
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
-        if (selected) setState(() => _selectedStatusFilter = filterKey);
+        if (selected) notifier.setStatusFilter(filterKey);
       },
     );
   }
@@ -257,7 +234,8 @@ class _VolunteerCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     name,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
                 AppStatusChip(tone: chipTone, label: status),
@@ -290,7 +268,8 @@ class _VolunteerCard extends StatelessWidget {
               children: [
                 Text(
                   'coordinator.hours_logged'.tr(args: ['$totalHours']),
-                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 Text(
                   lastDate != null

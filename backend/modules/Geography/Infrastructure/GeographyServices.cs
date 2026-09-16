@@ -5,6 +5,7 @@ using SeniorConnect.Modules.Geography.Application;
 using SeniorConnect.Modules.Profiles.Application;
 using SeniorConnect.Modules.Organizations.Application;
 using SeniorConnect.Modules.HelpRequests.Contracts;
+using SeniorConnect.Modules.Community.Contracts;
 
 namespace SeniorConnect.Modules.Geography.Infrastructure;
 
@@ -147,17 +148,20 @@ public sealed class ProximityService : IProximityService
     private readonly IProfilesDbContext _profileDb;
     private readonly IOrganizationsDbContext _orgDb;
     private readonly IHelpRequestDiscoveryReader _helpRequestReader;
+    private readonly ICommunityDiscoveryReader _communityReader;
 
     public ProximityService(
         IGeographyDbContext geoDb,
         IProfilesDbContext profileDb,
         IOrganizationsDbContext orgDb,
-        IHelpRequestDiscoveryReader helpRequestReader)
+        IHelpRequestDiscoveryReader helpRequestReader,
+        ICommunityDiscoveryReader communityReader)
     {
         _geoDb = geoDb;
         _profileDb = profileDb;
         _orgDb = orgDb;
         _helpRequestReader = helpRequestReader;
+        _communityReader = communityReader;
     }
 
     private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
@@ -292,6 +296,54 @@ public sealed class ProximityService : IProximityService
             .ToList();
 
         return Result<IReadOnlyList<NearbyTownDto>>.Success(results);
+    }
+
+    public async Task<Result<IReadOnlyList<CommunityEventDiscoveryResult>>> FindNearbyCommunityEventsAsync(
+        double latitude, double longitude, double radiusKm, Guid? callerUserId, bool matchMyInterests, CancellationToken ct = default)
+    {
+        var events = await _communityReader.FindUpcomingEventsForDiscoveryAsync(ct);
+
+        var withPostalCode = events.Where(e => !string.IsNullOrWhiteSpace(e.PostalCode)).ToList();
+        if (withPostalCode.Count == 0)
+        {
+            return Result<IReadOnlyList<CommunityEventDiscoveryResult>>.Success([]);
+        }
+
+        var postalCodes = withPostalCode.Select(e => e.PostalCode!).Distinct().ToList();
+        var matchingUnits = await _geoDb.AustrianAdministrativeUnits
+            .Where(u => u.IsActive && postalCodes.Contains(u.PostalCode))
+            .ToListAsync(ct);
+        var unitsByPostalCode = matchingUnits
+            .GroupBy(u => u.PostalCode)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        HashSet<string>? myInterestCodes = null;
+        if (matchMyInterests && callerUserId is not null)
+        {
+            myInterestCodes = (await _profileDb.UserInterests
+                .Where(ui => ui.UserId == callerUserId.Value)
+                .Join(_profileDb.Interests, ui => ui.InterestId, i => i.Id, (ui, i) => i.Code)
+                .ToListAsync(ct))
+                .Select(c => c.ToLowerInvariant())
+                .ToHashSet();
+        }
+
+        var results = withPostalCode
+            .Where(e => unitsByPostalCode.ContainsKey(e.PostalCode!))
+            // No saved interests yet is "no filter", not "hide everything".
+            .Where(e => myInterestCodes is null || myInterestCodes.Count == 0
+                || myInterestCodes.Contains(e.Category.ToLowerInvariant()))
+            .Select(e =>
+            {
+                var unit = unitsByPostalCode[e.PostalCode!];
+                var distanceKm = HaversineKm(latitude, longitude, unit.Latitude, unit.Longitude);
+                return new CommunityEventDiscoveryResult(e.EventId, e.Title, e.Category, e.StartsAtUtc, Math.Round(distanceKm, 1));
+            })
+            .Where(r => r.DistanceKm <= radiusKm)
+            .OrderBy(r => r.DistanceKm)
+            .ToList();
+
+        return Result<IReadOnlyList<CommunityEventDiscoveryResult>>.Success(results);
     }
 }
 

@@ -100,6 +100,15 @@ public sealed class MatchingService : IMatchingService
                 ineligibility.Add(string.Format(CultureInfo.InvariantCulture, "Volunteer trust level (L{0}) is below required level (L{1})", trustLevel, request.RequiredTrustLevel));
             }
 
+            // P4-07: Buddy System — checked here too, not just at accept, so a
+            // volunteer who cannot yet accept a Safety Level 3+ request
+            // without a buddy is never offered one in the first place.
+            if (request.RequiredSafetyLevel >= 3
+                && await _safetyBoundaryReader.IsBuddyRequiredForLevel3Async(v.UserId, cancellationToken))
+            {
+                ineligibility.Add("Requires an assigned buddy for the first three Safety Level 3+ visits");
+            }
+
             // Calculate spatial distance
             double distanceKm = 5.0; // default if coordinates not set
             if (v.Latitude.HasValue && v.Longitude.HasValue && request.Latitude.HasValue && request.Longitude.HasValue)

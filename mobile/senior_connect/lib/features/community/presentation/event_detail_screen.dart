@@ -4,13 +4,15 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
+import '../application/event_detail_notifier.dart';
 
-class EventDetailScreen extends StatefulWidget {
+class EventDetailScreen extends ConsumerWidget {
   const EventDetailScreen({
     super.key,
     required this.eventId,
@@ -21,99 +23,28 @@ class EventDetailScreen extends StatefulWidget {
   final ApiClient apiClient;
 
   @override
-  State<EventDetailScreen> createState() => _EventDetailScreenState();
-}
-
-class _EventDetailScreenState extends State<EventDetailScreen> {
-  bool _isLoading = false;
-  String? _error;
-  Map<String, dynamic>? _event;
-  bool _isRegistered = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadEvent();
-  }
-
-  Future<void> _loadEvent() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final data = await widget.apiClient.get<Map<String, dynamic>>('/api/v1/community/events/${widget.eventId}');
-      if (mounted) {
-        setState(() {
-          _event = data;
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _event = {
-            'id': widget.eventId,
-            'title': 'Senioren-Schachtreff',
-            'description': 'Jeden Dienstag spielen wir Schach im Gemeindezentrum. Anfänger und Fortgeschrittene sind herzlich willkommen!',
-            'category': 'sports',
-            'startsAtUtc': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
-            'locationAddress': 'Gemeindezentrum Mitte, Raum 2',
-            'locationPostalCode': '1010',
-            'capacity': 8,
-            'goingCount': 5,
-            'waitlistCount': 0,
-          };
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _toggleRegistration() async {
-    setState(() => _isLoading = true);
-
-    try {
-      if (!_isRegistered) {
-        await widget.apiClient.post<dynamic>(
-          '/api/v1/community/events/${widget.eventId}/register',
-          data: {'status': 0},
-        );
-        if (mounted) setState(() => _isRegistered = true);
-      } else {
-        await widget.apiClient.delete<dynamic>('/api/v1/community/events/${widget.eventId}/register');
-        if (mounted) setState(() => _isRegistered = false);
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isRegistered = !_isRegistered);
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final params = EventDetailParams(eventId: eventId, apiClient: apiClient);
+    final state = ref.watch(eventDetailProvider(params));
+    final notifier = ref.read(eventDetailProvider(params).notifier);
 
-    if (_isLoading && _event == null) {
+    if (state.isLoading && state.event == null) {
       return Scaffold(body: AppLoading(message: 'common.loading'.tr()));
     }
 
-    if (_error != null && _event == null) {
+    if (state.error != null && state.event == null) {
       return Scaffold(
         appBar: AppBar(),
         body: AppErrorView(
-          message: _error!,
+          message: state.error!,
           retryLabel: 'common.retry'.tr(),
-          onRetry: _loadEvent,
+          onRetry: () => notifier.loadEvent(),
         ),
       );
     }
 
-    final ev = _event ?? {};
+    final ev = state.event ?? {};
     final title = ev['title'] as String? ?? 'Event';
     final description = ev['description'] as String? ?? '';
     final address = ev['locationAddress'] as String?;
@@ -159,7 +90,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         if (address != null) ...[
                           Row(
                             children: [
-                              Icon(Icons.location_on, color: theme.colorScheme.primary),
+                              Icon(Icons.location_on,
+                                  color: theme.colorScheme.primary),
                               const SizedBox(width: AppSpacing.sm),
                               Expanded(
                                 child: Text(
@@ -173,13 +105,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ],
                         Row(
                           children: [
-                            Icon(Icons.people, color: theme.colorScheme.primary),
+                            Icon(Icons.people,
+                                color: theme.colorScheme.primary),
                             const SizedBox(width: AppSpacing.sm),
                             Text(
                               capacity != null
                                   ? '$goingCount / $capacity ${'community.spots_taken'.tr()}'
                                   : '$goingCount ${'community.attendees'.tr()}',
-                              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -189,12 +123,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 AppButton(
-                  label: _isRegistered
+                  label: state.isRegistered
                       ? 'community.cancel_registration'.tr()
                       : 'community.join_event'.tr(),
-                  variant: _isRegistered ? AppButtonVariant.outlined : AppButtonVariant.primary,
-                  icon: _isRegistered ? Icons.check : Icons.add_circle_outline,
-                  onPressed: _toggleRegistration,
+                  variant: state.isRegistered
+                      ? AppButtonVariant.outlined
+                      : AppButtonVariant.primary,
+                  icon: state.isRegistered
+                      ? Icons.check
+                      : Icons.add_circle_outline,
+                  isLoading: state.isActionInProgress,
+                  onPressed: () => notifier.toggleRegistration(),
                 ),
               ],
             ),

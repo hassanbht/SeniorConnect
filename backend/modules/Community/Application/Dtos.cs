@@ -63,7 +63,13 @@ public sealed record CommunityEventDto(
     int WaitlistCount,
     bool IsCancelled,
     string? CancellationReason,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    IReadOnlyList<EventOccurrenceDto> Occurrences,
+    EventRsvpStatus? MyRegistrationStatus = null);
+
+public sealed record EventOccurrenceDto(DateTimeOffset StartsAtUtc, bool IsCancelled);
+
+public sealed record CancelEventOccurrenceRequest(DateTimeOffset OccurrenceStartUtc, string Reason);
 
 public sealed record CreateCommunityEventRequest(
     string Title,

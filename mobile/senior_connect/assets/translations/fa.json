@@ -171,6 +171,10 @@
       "submitted": "درخواست شما با موفقیت ثبت شد.",
       "submitted_detail": "در حال یافتن داوطلب مناسب هستیم. به‌زودی با شما تماس گرفته می‌شود."
     },
+    "my_request": {
+      "title": "درخواست من",
+      "waiting_for_volunteer": "هنوز در حال یافتن داوطلب برای شما هستیم. به محض پاسخ کسی، به شما اطلاع داده می‌شود."
+    },
     "category": {
       "shopping": "خرید روزمره",
       "doctor": "همراهی تا پزشک",
@@ -248,7 +252,9 @@
     "cat_general": "دورهمی و گفتگو",
     "cat_culture": "فرهنگ و هنر",
     "cat_language_practice": "تمرین گفتگو",
-    "cat_local_orientation": "آشنایی با شهر"
+    "cat_local_orientation": "آشنایی با شهر",
+    "nearby_filter": "نزدیک من",
+    "distance_km": "{km} کیلومتر با شما فاصله دارد"
   },
   "organizations": {
     "directory_title": "سازمان‌ها",
@@ -340,9 +346,9 @@
     "zugangskarte_banner_desc": "پروفایل خود را مستقیماً به بستگان متصل کنید تا هماهنگی‌های لازم به سادگی انجام شود.",
     "transparency_section": "شفافیت و حریم خصوصی",
     "perm_view_activities": "مشاهده فعالیت‌ها",
-    "perm_view_activities_hint": "امکان مشاهده قرارهای ملاقات و درخواست‌های جاری.",
+    "perm_view_activities_hint": "امکان مشاهده قرارهای ملاقات و درخواست‌های فرد تحت پشتیبانی.",
     "perm_create_requests": "ایجاد درخواست کمک",
-    "perm_create_requests_hint": "امکان ثبت درخواست به نیابت از سالمند.",
+    "perm_create_requests_hint": "امکان ثبت درخواست به نیابت از فرد تحت پشتیبانی.",
     "perm_view_emergency": "مشاهده مخاطبین اضطراری",
     "perm_view_emergency_hint": "مشاهده اطلاعات تماس اضطراری ثبت‌شده.",
     "perm_safety_alerts": "هشدارهای ایمنی",
@@ -350,7 +356,7 @@
     "perm_manage_settings": "مدیریت تنظیمات",
     "perm_manage_settings_hint": "امکان تغییر تنظیمات حساب کاربری.",
     "log_viewed_activities": "درخواست‌های جاری را مشاهده کرد.",
-    "log_created_request": "یک درخواست کمک جدید ثبت کرد."
+    "log_created_request": "یک درخواست کمک جدید برای فرد تحت پشتیبانی ثبت کرد."
   },
   "safeguarding": {
     "report": "گزارش موارد نگران‌کننده",

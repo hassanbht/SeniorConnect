@@ -105,6 +105,7 @@ public sealed class SeniorConnectDbContext(
     public DbSet<EventRegistration> EventRegistrations => Set<EventRegistration>();
     public DbSet<MessageThread> MessageThreads => Set<MessageThread>();
     public DbSet<ThreadMessage> ThreadMessages => Set<ThreadMessage>();
+    public DbSet<CommunityEventOccurrenceCancellation> EventOccurrenceCancellations => Set<CommunityEventOccurrenceCancellation>();
 
     // --- Family ---
     public DbSet<FamilyRelationship> FamilyRelationships => Set<FamilyRelationship>();

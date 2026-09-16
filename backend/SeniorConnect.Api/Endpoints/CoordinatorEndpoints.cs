@@ -319,6 +319,10 @@ public static class CoordinatorEndpoints
         .Produces<IReadOnlyList<ActivityDto>>(StatusCodes.Status200OK);
 
         // P2-24 / P2-26: Attention Queue - Expiring Verifications
+        // Includes already-lapsed credentials (negative DaysRemaining), not
+        // just upcoming ones — an expired verification must keep raising a
+        // coordinator task until someone acts on it, not silently drop off
+        // the list once its date passes.
         coordGroup.MapGet("/attention/expiring-verifications", async (
             SeniorConnectDbContext db,
             CancellationToken ct) =>
@@ -327,7 +331,7 @@ public static class CoordinatorEndpoints
             var in30Days = now.AddDays(30);
 
             var expiring = await db.Verifications
-                .Where(v => v.Status == SeniorConnect.Modules.Identity.Domain.VerificationStatus.Verified && v.ValidUntilUtc != null && v.ValidUntilUtc <= in30Days && v.ValidUntilUtc > now)
+                .Where(v => v.Status == SeniorConnect.Modules.Identity.Domain.VerificationStatus.Verified && v.ValidUntilUtc != null && v.ValidUntilUtc <= in30Days)
                 .Select(v => new
                 {
                     v.Id,
@@ -343,6 +347,66 @@ public static class CoordinatorEndpoints
             return Results.Ok(expiring);
         })
         .WithName("GetExpiringVerificationsAttention")
+        .Produces(StatusCodes.Status200OK);
+
+        // P4-14: Attention Queue - Inactive volunteers still holding a key.
+        // A held key never auto-expires or auto-cancels anything — a human
+        // (the coordinator) has to see it and follow up.
+        coordGroup.MapGet("/attention/inactive-key-holders", async (
+            SeniorConnectDbContext db,
+            CancellationToken ct) =>
+        {
+            var heldKeys = await db.KeyCustodies
+                .Where(k => k.Status == KeyCustodyStatus.Held)
+                .ToListAsync(ct);
+
+            if (heldKeys.Count == 0)
+            {
+                return Results.Ok(Array.Empty<object>());
+            }
+
+            var volunteerIds = heldKeys.Select(k => k.VolunteerUserId).Distinct().ToList();
+            var lastActivity = await db.Activities
+                .Where(a => volunteerIds.Contains(a.VolunteerUserId) && !a.IsDeleted)
+                .GroupBy(a => a.VolunteerUserId)
+                .Select(g => new { VolunteerUserId = g.Key, LastDate = g.Max(a => (DateOnly?)a.OccurredOn) })
+                .ToDictionaryAsync(g => g.VolunteerUserId, g => g.LastDate, ct);
+
+            var now = DateTime.UtcNow;
+            var flagged = heldKeys
+                .Select(k =>
+                {
+                    lastActivity.TryGetValue(k.VolunteerUserId, out var lastDate);
+                    string rosterStatus;
+                    if (!lastDate.HasValue)
+                    {
+                        rosterStatus = "NeverActivated";
+                    }
+                    else
+                    {
+                        var monthsAgo = (now.Year - lastDate.Value.Year) * 12 + now.Month - lastDate.Value.Month;
+                        rosterStatus = monthsAgo <= 3 ? "Active" : monthsAgo <= 6 ? "Dormant" : "Inactive";
+                    }
+
+                    return new
+                    {
+                        k.Id,
+                        k.SeniorUserId,
+                        k.VolunteerUserId,
+                        k.KeyTag,
+                        k.HandedOverAtUtc,
+                        k.ExpectedReturnAtUtc,
+                        RosterStatus = rosterStatus,
+                        LastActivityDate = lastDate
+                    };
+                })
+                .Where(k => k.RosterStatus is "Inactive" or "NeverActivated")
+                .OrderBy(k => k.HandedOverAtUtc)
+                .ToList();
+
+            return Results.Ok(flagged);
+        })
+        .WithName("GetInactiveKeyHoldersAttention")
         .Produces(StatusCodes.Status200OK);
 
         // P2-28: Attention Queue - Unconfirmed Hours

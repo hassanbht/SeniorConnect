@@ -38,6 +38,38 @@ public sealed class CommunityService : ICommunityService
         return null;
     }
 
+    // BR-COMM-05 / ADR-020: a non-Public group's discussion thread is only
+    // readable/postable by its active members. Event threads stay open to
+    // anyone regardless of registration (by design — an event is a public
+    // announcement, not a private circle).
+    private async Task<Error?> RequireThreadAccessAsync(ThreadContextType contextType, Guid contextId, Guid userId, CancellationToken ct)
+    {
+        if (contextType == ThreadContextType.Event)
+        {
+            return null;
+        }
+
+        var group = await _db.CommunityGroups
+            .FirstOrDefaultAsync(g => g.Id == contextId, ct);
+
+        if (group is null)
+        {
+            return Error.NotFound("CommunityGroup");
+        }
+
+        if (group.Scope == GroupVisibilityScope.Public)
+        {
+            return null;
+        }
+
+        var isActiveMember = await _db.GroupMemberships
+            .AnyAsync(m => m.GroupId == group.Id && m.UserId == userId && m.Status == GroupMembershipStatus.Active, ct);
+
+        return isActiveMember
+            ? null
+            : Error.Forbidden("Only active members of this group may access its discussion thread.");
+    }
+
     // --- Groups ---
 
     public async Task<Result<CommunityGroupDto>> CreateGroupAsync(
@@ -367,6 +399,7 @@ public sealed class CommunityService : ICommunityService
 
     public async Task<Result<CommunityEventDto>> GetEventByIdAsync(
         Guid eventId,
+        Guid? requestingUserId = null,
         CancellationToken cancellationToken = default)
     {
         var ev = await _db.CommunityEvents
@@ -382,8 +415,22 @@ public sealed class CommunityService : ICommunityService
 
         var waitlistCount = await _db.EventRegistrations
             .CountAsync(r => r.EventId == eventId && r.Status == EventRsvpStatus.Waitlisted, cancellationToken);
+        var cancelledOccurrences = await _db.EventOccurrenceCancellations
+            .Where(c => c.EventId == eventId)
+            .Select(c => c.OccurrenceStartUtc)
+            .ToListAsync(cancellationToken);
 
-        return Result<CommunityEventDto>.Success(MapEvent(ev, goingCount, waitlistCount));
+        EventRsvpStatus? myStatus = null;
+        if (requestingUserId is not null)
+        {
+            var myRegistration = await _db.EventRegistrations
+                .Where(r => r.EventId == eventId && r.UserId == requestingUserId.Value && r.Status != EventRsvpStatus.Cancelled)
+                .Select(r => (EventRsvpStatus?)r.Status)
+                .FirstOrDefaultAsync(cancellationToken);
+            myStatus = myRegistration;
+        }
+
+        return Result<CommunityEventDto>.Success(MapEvent(ev, goingCount, waitlistCount, cancelledOccurrences, myStatus));
     }
 
     public async Task<Result<IReadOnlyList<CommunityEventDto>>> GetEventsAsync(
@@ -448,10 +495,17 @@ public sealed class CommunityService : ICommunityService
             .Select(g => new { EventId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(k => k.EventId, v => v.Count, cancellationToken);
 
+        var cancelledOccurrencesByEvent = await _db.EventOccurrenceCancellations
+            .Where(c => eventIds.Contains(c.EventId))
+            .GroupBy(c => c.EventId)
+            .Select(g => new { EventId = g.Key, Starts = g.Select(c => c.OccurrenceStartUtc).ToList() })
+            .ToDictionaryAsync(k => k.EventId, v => (IReadOnlyCollection<DateTimeOffset>)v.Starts, cancellationToken);
+
         var dtos = events.Select(e => MapEvent(
             e,
             goingCounts.GetValueOrDefault(e.Id, 0),
-            waitlistCounts.GetValueOrDefault(e.Id, 0))).ToList();
+            waitlistCounts.GetValueOrDefault(e.Id, 0),
+            cancelledOccurrencesByEvent.GetValueOrDefault(e.Id))).ToList();
 
         return Result<IReadOnlyList<CommunityEventDto>>.Success(dtos);
     }
@@ -499,8 +553,12 @@ public sealed class CommunityService : ICommunityService
             .CountAsync(r => r.EventId == eventId && r.Status == EventRsvpStatus.Going, cancellationToken);
         var waitlistCount = await _db.EventRegistrations
             .CountAsync(r => r.EventId == eventId && r.Status == EventRsvpStatus.Waitlisted, cancellationToken);
+        var cancelledOccurrences = await _db.EventOccurrenceCancellations
+            .Where(c => c.EventId == eventId)
+            .Select(c => c.OccurrenceStartUtc)
+            .ToListAsync(cancellationToken);
 
-        return Result<CommunityEventDto>.Success(MapEvent(ev, goingCount, waitlistCount));
+        return Result<CommunityEventDto>.Success(MapEvent(ev, goingCount, waitlistCount, cancelledOccurrences));
     }
 
     public async Task<Result> CancelEventAsync(
@@ -534,6 +592,69 @@ public sealed class CommunityService : ICommunityService
 
         await _db.SaveChangesAsync(cancellationToken);
         return Result.Success();
+    }
+
+    public async Task<Result<CommunityEventDto>> CancelEventOccurrenceAsync(
+        Guid eventId,
+        Guid userId,
+        CancelEventOccurrenceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var ev = await _db.CommunityEvents
+            .FirstOrDefaultAsync(e => e.Id == eventId && !e.IsDeleted, cancellationToken);
+
+        if (ev is null)
+        {
+            return Error.NotFound("CommunityEvent");
+        }
+
+        var authError = await RequireOrgStaffAsync(ev.OrganizationId, userId, cancellationToken);
+        if (authError is not null)
+        {
+            if (ev.OrganizationId is not null || ev.HostUserId != userId)
+            {
+                return authError;
+            }
+        }
+
+        if (ev.RecurrenceFrequency == EventRecurrenceFrequency.None)
+        {
+            return Error.Validation("This event has no individual occurrences — cancel the event itself instead.");
+        }
+
+        var validOccurrences = ev.ComputeOccurrenceStartsUtc();
+        if (!validOccurrences.Contains(request.OccurrenceStartUtc))
+        {
+            return Error.Validation("The given date is not an occurrence of this event's series.");
+        }
+
+        var alreadyCancelled = await _db.EventOccurrenceCancellations
+            .AnyAsync(c => c.EventId == eventId && c.OccurrenceStartUtc == request.OccurrenceStartUtc, cancellationToken);
+        if (alreadyCancelled)
+        {
+            return Error.Conflict("This occurrence is already cancelled.");
+        }
+
+        var cancellationResult = CommunityEventOccurrenceCancellation.Create(
+            eventId, request.OccurrenceStartUtc, request.Reason, userId);
+        if (cancellationResult.IsFailure)
+        {
+            return cancellationResult.Error!;
+        }
+
+        _db.EventOccurrenceCancellations.Add(cancellationResult.Value!);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var goingCount = await _db.EventRegistrations
+            .CountAsync(r => r.EventId == eventId && r.Status == EventRsvpStatus.Going, cancellationToken);
+        var waitlistCount = await _db.EventRegistrations
+            .CountAsync(r => r.EventId == eventId && r.Status == EventRsvpStatus.Waitlisted, cancellationToken);
+        var cancelledOccurrences = await _db.EventOccurrenceCancellations
+            .Where(c => c.EventId == eventId)
+            .Select(c => c.OccurrenceStartUtc)
+            .ToListAsync(cancellationToken);
+
+        return Result<CommunityEventDto>.Success(MapEvent(ev, goingCount, waitlistCount, cancelledOccurrences));
     }
 
     public async Task<Result<EventRegistrationDto>> RegisterForEventAsync(
@@ -688,6 +809,12 @@ public sealed class CommunityService : ICommunityService
         Guid userId,
         CancellationToken cancellationToken = default)
     {
+        var accessError = await RequireThreadAccessAsync(contextType, contextId, userId, cancellationToken);
+        if (accessError is not null)
+        {
+            return accessError;
+        }
+
         var thread = await _db.MessageThreads
             .FirstOrDefaultAsync(t => t.ContextType == contextType && t.ContextId == contextId, cancellationToken);
 
@@ -706,6 +833,20 @@ public sealed class CommunityService : ICommunityService
         Guid requestingUserId,
         CancellationToken cancellationToken = default)
     {
+        var thread = await _db.MessageThreads
+            .FirstOrDefaultAsync(t => t.Id == threadId, cancellationToken);
+
+        if (thread is null)
+        {
+            return Error.NotFound("MessageThread");
+        }
+
+        var accessError = await RequireThreadAccessAsync(thread.ContextType, thread.ContextId, requestingUserId, cancellationToken);
+        if (accessError is not null)
+        {
+            return accessError;
+        }
+
         var messages = await _db.ThreadMessages
             .Where(m => m.ThreadId == threadId && !m.IsDeleted)
             .OrderBy(m => m.CreatedAtUtc)
@@ -731,6 +872,12 @@ public sealed class CommunityService : ICommunityService
         if (thread is null)
         {
             return Error.NotFound("MessageThread");
+        }
+
+        var accessError = await RequireThreadAccessAsync(thread.ContextType, thread.ContextId, senderUserId, cancellationToken);
+        if (accessError is not null)
+        {
+            return accessError;
         }
 
         if (thread.IsClosed)
@@ -779,6 +926,15 @@ public sealed class CommunityService : ICommunityService
             return Error.Forbidden("You can only delete your own messages.");
         }
 
+        var thread = await _db.MessageThreads.FirstOrDefaultAsync(t => t.Id == threadId, cancellationToken);
+        var accessError = thread is null
+            ? Error.NotFound("MessageThread")
+            : await RequireThreadAccessAsync(thread.ContextType, thread.ContextId, userId, cancellationToken);
+        if (accessError is not null)
+        {
+            return accessError;
+        }
+
         message.SoftDelete();
         await _db.SaveChangesAsync(cancellationToken);
         return Result.Success();
@@ -802,6 +958,15 @@ public sealed class CommunityService : ICommunityService
         if (string.IsNullOrWhiteSpace(request.Reason))
         {
             return Error.Validation("Report reason cannot be empty.");
+        }
+
+        var thread = await _db.MessageThreads.FirstOrDefaultAsync(t => t.Id == threadId, cancellationToken);
+        var accessError = thread is null
+            ? Error.NotFound("MessageThread")
+            : await RequireThreadAccessAsync(thread.ContextType, thread.ContextId, reporterUserId, cancellationToken);
+        if (accessError is not null)
+        {
+            return accessError;
         }
 
         message.FlagForModeration(request.Reason.Trim());
@@ -834,26 +999,44 @@ public sealed class CommunityService : ICommunityService
         Status: m.Status,
         JoinedAtUtc: m.JoinedAtUtc);
 
-    private static CommunityEventDto MapEvent(CommunityEvent e, int goingCount, int waitlistCount) => new(
-        Id: e.Id,
-        HostUserId: e.HostUserId,
-        GroupId: e.GroupId,
-        OrganizationId: e.OrganizationId,
-        Title: e.Title,
-        Description: e.Description,
-        Category: e.Category,
-        LocationAddress: e.LocationAddress,
-        LocationPostalCode: e.LocationPostalCode,
-        StartsAtUtc: e.StartsAtUtc,
-        EndsAtUtc: e.EndsAtUtc,
-        RecurrenceFrequency: e.RecurrenceFrequency,
-        RecurrenceUntilUtc: e.RecurrenceUntilUtc,
-        Capacity: e.Capacity,
-        GoingCount: goingCount,
-        WaitlistCount: waitlistCount,
-        IsCancelled: e.IsCancelled,
-        CancellationReason: e.CancellationReason,
-        CreatedAtUtc: e.CreatedAtUtc);
+    private static CommunityEventDto MapEvent(
+        CommunityEvent e,
+        int goingCount,
+        int waitlistCount,
+        IReadOnlyCollection<DateTimeOffset>? cancelledOccurrences = null,
+        EventRsvpStatus? myRegistrationStatus = null)
+    {
+        var cancelledSet = cancelledOccurrences is null
+            ? []
+            : new HashSet<DateTimeOffset>(cancelledOccurrences);
+
+        var occurrences = e.ComputeOccurrenceStartsUtc()
+            .Select(start => new EventOccurrenceDto(start, cancelledSet.Contains(start)))
+            .ToList();
+
+        return new(
+            Id: e.Id,
+            HostUserId: e.HostUserId,
+            GroupId: e.GroupId,
+            OrganizationId: e.OrganizationId,
+            Title: e.Title,
+            Description: e.Description,
+            Category: e.Category,
+            LocationAddress: e.LocationAddress,
+            LocationPostalCode: e.LocationPostalCode,
+            StartsAtUtc: e.StartsAtUtc,
+            EndsAtUtc: e.EndsAtUtc,
+            RecurrenceFrequency: e.RecurrenceFrequency,
+            RecurrenceUntilUtc: e.RecurrenceUntilUtc,
+            Capacity: e.Capacity,
+            GoingCount: goingCount,
+            WaitlistCount: waitlistCount,
+            IsCancelled: e.IsCancelled,
+            CancellationReason: e.CancellationReason,
+            CreatedAtUtc: e.CreatedAtUtc,
+            Occurrences: occurrences,
+            MyRegistrationStatus: myRegistrationStatus);
+    }
 
     private static EventRegistrationDto MapRegistration(EventRegistration r) => new(
         Id: r.Id,

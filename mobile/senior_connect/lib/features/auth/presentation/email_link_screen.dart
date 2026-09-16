@@ -3,35 +3,29 @@
 // P1-11: Email magic-link (OTP-style) passwordless sign-in — for users with
 // no phone number and no password. Two steps: request code -> enter code.
 
-import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
-import '../data/auth_repository.dart';
+import '../application/email_link_notifier.dart';
 
-class EmailLinkScreen extends StatefulWidget {
+class EmailLinkScreen extends ConsumerStatefulWidget {
   const EmailLinkScreen({super.key, required this.apiClient});
 
   final ApiClient apiClient;
 
   @override
-  State<EmailLinkScreen> createState() => _EmailLinkScreenState();
+  ConsumerState<EmailLinkScreen> createState() => _EmailLinkScreenState();
 }
 
-class _EmailLinkScreenState extends State<EmailLinkScreen> {
-  late final AuthRepository _authRepository = AuthRepositoryImpl(widget.apiClient);
-
+class _EmailLinkScreenState extends ConsumerState<EmailLinkScreen> {
   final _emailFormKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
-
-  bool _codeSent = false;
-  bool _isLoading = false;
-  String? _errorKey;
 
   @override
   void dispose() {
@@ -40,40 +34,18 @@ class _EmailLinkScreenState extends State<EmailLinkScreen> {
     super.dispose();
   }
 
-  String _errorKeyFor(Object error) =>
-      error is DioException ? mapDioError(error).l10nKey : 'errors.generic';
-
   Future<void> _requestCode() async {
     if (!_emailFormKey.currentState!.validate()) return;
-    setState(() {
-      _isLoading = true;
-      _errorKey = null;
-    });
-
-    try {
-      await _authRepository.requestEmailMagicLink(_emailController.text.trim());
-      if (mounted) setState(() => _codeSent = true);
-    } catch (e) {
-      setState(() => _errorKey = _errorKeyFor(e));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    final notifier = ref.read(emailLinkProvider(widget.apiClient).notifier);
+    await notifier.requestCode(_emailController.text.trim());
   }
 
   Future<void> _verifyCode(String code) async {
-    if (code.length != 6 || _isLoading) return;
-    setState(() {
-      _isLoading = true;
-      _errorKey = null;
-    });
-
-    try {
-      await _authRepository.verifyEmailMagicLink(_emailController.text.trim(), code);
-      if (mounted) context.go(AppRoutes.home);
-    } catch (e) {
-      setState(() => _errorKey = _errorKeyFor(e));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (code.length != 6) return;
+    final notifier = ref.read(emailLinkProvider(widget.apiClient).notifier);
+    final success = await notifier.verifyCode(_emailController.text.trim(), code);
+    if (success && mounted) {
+      context.go(AppRoutes.home);
     }
   }
 
@@ -82,6 +54,7 @@ class _EmailLinkScreenState extends State<EmailLinkScreen> {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
+    final emailState = ref.watch(emailLinkProvider(widget.apiClient));
 
     return Scaffold(
       appBar: AppBar(
@@ -98,7 +71,9 @@ class _EmailLinkScreenState extends State<EmailLinkScreen> {
             constraints: const BoxConstraints(maxWidth: 480),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              child: _codeSent ? _buildCodeStep(textTheme, colorScheme) : _buildEmailStep(textTheme, colorScheme),
+              child: emailState.codeSent
+                  ? _buildCodeStep(textTheme, colorScheme, emailState)
+                  : _buildEmailStep(textTheme, colorScheme, emailState),
             ),
           ),
         ),
@@ -106,7 +81,11 @@ class _EmailLinkScreenState extends State<EmailLinkScreen> {
     );
   }
 
-  Widget _buildEmailStep(TextTheme textTheme, ColorScheme colorScheme) {
+  Widget _buildEmailStep(
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+    EmailLinkState emailState,
+  ) {
     return Form(
       key: _emailFormKey,
       child: Column(
@@ -133,17 +112,18 @@ class _EmailLinkScreenState extends State<EmailLinkScreen> {
               if (value == null || value.trim().isEmpty) {
                 return 'auth.email_link.email_label'.tr();
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                  .hasMatch(value.trim())) {
                 return 'auth.register.email_invalid'.tr();
               }
               return null;
             },
             onFieldSubmitted: (_) => _requestCode(),
           ),
-          if (_errorKey != null) ...[
+          if (emailState.errorKey != null) ...[
             const SizedBox(height: 12),
             Text(
-              _errorKey!.tr(),
+              emailState.errorKey!.tr(),
               style: TextStyle(color: colorScheme.error),
               textAlign: TextAlign.center,
             ),
@@ -152,8 +132,8 @@ class _EmailLinkScreenState extends State<EmailLinkScreen> {
           SizedBox(
             height: 64,
             child: FilledButton(
-              onPressed: _isLoading ? null : _requestCode,
-              child: _isLoading
+              onPressed: emailState.isLoading ? null : _requestCode,
+              child: emailState.isLoading
                   ? const CircularProgressIndicator()
                   : Text('auth.email_link.request'.tr()),
             ),
@@ -163,7 +143,11 @@ class _EmailLinkScreenState extends State<EmailLinkScreen> {
     );
   }
 
-  Widget _buildCodeStep(TextTheme textTheme, ColorScheme colorScheme) {
+  Widget _buildCodeStep(
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+    EmailLinkState emailState,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -181,31 +165,41 @@ class _EmailLinkScreenState extends State<EmailLinkScreen> {
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
             maxLength: 6,
-            style: textTheme.headlineMedium?.copyWith(letterSpacing: 8, fontWeight: FontWeight.w700),
+            style: textTheme.headlineMedium?.copyWith(
+              letterSpacing: 8,
+              fontWeight: FontWeight.w700,
+            ),
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(counterText: '', hintText: '------', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              counterText: '',
+              hintText: '------',
+              border: OutlineInputBorder(),
+            ),
             onChanged: (value) {
               if (value.length == 6) _verifyCode(value);
             },
           ),
         ),
-        if (_errorKey != null) ...[
+        if (emailState.errorKey != null) ...[
           const SizedBox(height: 12),
           Text(
-            _errorKey!.tr(),
+            emailState.errorKey!.tr(),
             style: TextStyle(color: colorScheme.error),
             textAlign: TextAlign.center,
           ),
         ],
         const SizedBox(height: 24),
-        if (_isLoading) const Center(child: CircularProgressIndicator()),
+        if (emailState.isLoading)
+          const Center(child: CircularProgressIndicator()),
         TextButton(
-          onPressed: _isLoading
+          onPressed: emailState.isLoading
               ? null
-              : () => setState(() {
-                    _codeSent = false;
-                    _codeController.clear();
-                  }),
+              : () {
+                  ref
+                      .read(emailLinkProvider(widget.apiClient).notifier)
+                      .requestCode(_emailController.text.trim());
+                  _codeController.clear();
+                },
           child: Text('auth.verify_phone.resend'.tr()),
         ),
       ],

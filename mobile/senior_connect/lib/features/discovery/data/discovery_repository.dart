@@ -62,6 +62,33 @@ class ProximityResult {
   }
 }
 
+/// A nearby community event (`CommunityEventDiscoveryResult` on the
+/// backend) — P5-06. Distance-only projection, no address.
+class CommunityEventDiscoveryResult {
+  const CommunityEventDiscoveryResult({
+    required this.eventId,
+    required this.title,
+    required this.category,
+    required this.startsAtUtc,
+    required this.distanceKm,
+  });
+
+  factory CommunityEventDiscoveryResult.fromJson(Map<String, dynamic> json) =>
+      CommunityEventDiscoveryResult(
+        eventId: json['eventId'] as String,
+        title: json['title'] as String? ?? '',
+        category: json['category'] as String? ?? 'general',
+        startsAtUtc: DateTime.parse(json['startsAtUtc'] as String),
+        distanceKm: (json['distanceKm'] as num).toDouble(),
+      );
+
+  final String eventId;
+  final String title;
+  final String category;
+  final DateTime startsAtUtc;
+  final double distanceKm;
+}
+
 /// A municipality near a point (`NearbyTownDto` on the backend).
 class NearbyTown {
   const NearbyTown({
@@ -120,6 +147,13 @@ abstract class DiscoveryRepository {
     double longitude, {
     double? maxDistanceKm,
     int? maxResults,
+  });
+
+  Future<List<CommunityEventDiscoveryResult>> getNearbyCommunityEvents(
+    double latitude,
+    double longitude,
+    double radiusKm, {
+    bool matchMyInterests,
   });
 }
 
@@ -215,6 +249,28 @@ class DiscoveryRepositoryImpl implements DiscoveryRepository {
     );
     return response
         .map((e) => NearbyTown.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<CommunityEventDiscoveryResult>> getNearbyCommunityEvents(
+    double latitude,
+    double longitude,
+    double radiusKm, {
+    bool matchMyInterests = false,
+  }) async {
+    final response = await _apiClient.get<List<dynamic>>(
+      '/api/v1/discovery/nearby-community-events',
+      queryParameters: {
+        'latitude': latitude,
+        'longitude': longitude,
+        'radiusKm': radiusKm,
+        'matchMyInterests': matchMyInterests,
+      },
+    );
+    return response
+        .map((e) =>
+            CommunityEventDiscoveryResult.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 }

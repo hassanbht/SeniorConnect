@@ -57,6 +57,7 @@ public interface ICommunityService
 
     Task<Result<CommunityEventDto>> GetEventByIdAsync(
         Guid eventId,
+        Guid? requestingUserId = null,
         CancellationToken cancellationToken = default);
 
     Task<Result<IReadOnlyList<CommunityEventDto>>> GetEventsAsync(
@@ -78,6 +79,12 @@ public interface ICommunityService
         Guid eventId,
         Guid userId,
         string reason,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<CommunityEventDto>> CancelEventOccurrenceAsync(
+        Guid eventId,
+        Guid userId,
+        CancelEventOccurrenceRequest request,
         CancellationToken cancellationToken = default);
 
     Task<Result<EventRegistrationDto>> RegisterForEventAsync(

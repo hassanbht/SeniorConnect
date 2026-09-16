@@ -19,12 +19,12 @@ import '../../features/auth/presentation/otp_verify_screen.dart';
 import '../../features/auth/presentation/staff_login_screen.dart';
 import '../../features/auth/presentation/totp_enrollment_screen.dart';
 import '../../features/community/presentation/community_feed_screen.dart';
-import '../../features/community/presentation/event_detail_screen.dart';
 import '../../features/community/presentation/my_appointments_screen.dart';
 import '../../features/discovery/presentation/discovery_screen.dart';
 import '../../features/family/presentation/family_dashboard_screen.dart';
 import '../../features/family/presentation/senior_access_log_screen.dart';
 import '../../features/help_requests/presentation/active_assignment_screen.dart';
+import '../../features/help_requests/presentation/my_request_status_screen.dart';
 import '../../features/help_requests/presentation/emergency_screen.dart';
 import '../../features/help_requests/presentation/senior_request_flow_screen.dart';
 import '../../features/help_requests/presentation/volunteer_feed_screen.dart';
@@ -59,6 +59,7 @@ abstract final class AppRoutes {
   static const helpRequestCreate = '/help-requests/create';
   static const volunteerFeed = '/help-requests/feed';
   static const activeAssignment = '/help-requests/active';
+  static const myRequestStatus = '/help-requests/status';
   static const emergency = '/emergency';
   static const logActivity = '/activities/log';
   static const community = '/community';
@@ -158,6 +159,14 @@ GoRouter buildRouter({required ApiClient apiClient}) {
             builder: (context, state) => ActiveAssignmentScreen(
               apiClient: apiClient,
               assignmentId: state.pathParameters['id'],
+            ),
+          ),
+          GoRoute(
+            path: '${AppRoutes.myRequestStatus}/:id',
+            name: 'my-request-status',
+            builder: (context, state) => MyRequestStatusScreen(
+              apiClient: apiClient,
+              requestId: state.pathParameters['id'],
             ),
           ),
           GoRoute(

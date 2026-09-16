@@ -25,7 +25,9 @@ public sealed record ApplicationStepDto(
     DateTimeOffset? OpenedAtUtc,
     DateTimeOffset? CompletedAtUtc,
     Guid? CompletedByUserId,
-    string? Note);
+    string? Note,
+    int? DaysOpen,
+    bool IsOverdue);
 
 public sealed record ApplyVolunteerRequest(
     Guid OrganizationId,

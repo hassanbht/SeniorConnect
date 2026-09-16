@@ -8,15 +8,15 @@
 // UX goal: phone → code → in, under 30 seconds.
 // The code field auto-submits when 6 digits are entered.
 
-import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/router/app_router.dart';
-import '../data/auth_repository.dart';
+import '../application/otp_notifier.dart';
 
 /// Which flow this OTP screen is completing.
 enum OtpPurpose {
@@ -33,7 +33,7 @@ enum OtpPurpose {
   phoneChange,
 }
 
-class OtpVerifyScreen extends StatefulWidget {
+class OtpVerifyScreen extends ConsumerStatefulWidget {
   const OtpVerifyScreen({
     super.key,
     required this.phone,
@@ -46,33 +46,17 @@ class OtpVerifyScreen extends StatefulWidget {
   final OtpPurpose purpose;
 
   @override
-  State<OtpVerifyScreen> createState() => _OtpVerifyScreenState();
+  ConsumerState<OtpVerifyScreen> createState() => _OtpVerifyScreenState();
 }
 
-class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
-  late final AuthRepository _authRepository = AuthRepositoryImpl(widget.apiClient);
-
+class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
   final _codeController = TextEditingController();
-  bool _isLoading = false;
-  String? _errorKey;
-  int _remainingAttempts = 5;
-  int _secondsLeft = 300; // 5 minutes
 
-  @override
-  void initState() {
-    super.initState();
-    _startCountdown();
-  }
-
-  void _startCountdown() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (!mounted) return;
-      if (_secondsLeft > 0) {
-        setState(() => _secondsLeft--);
-        _startCountdown();
-      }
-    });
-  }
+  OtpParams get _params => OtpParams(
+        apiClient: widget.apiClient,
+        phone: widget.phone,
+        purpose: widget.purpose,
+      );
 
   @override
   void dispose() {
@@ -80,71 +64,27 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
     super.dispose();
   }
 
-  Future<void> _verify(String code) async {
-    if (code.length != 6 || _isLoading) return;
-    setState(() {
-      _isLoading = true;
-      _errorKey = null;
-    });
+  Future<void> _handleVerify(String code) async {
+    final notifier = ref.read(otpProvider(_params).notifier);
+    final success = await notifier.verify(code);
+    if (!mounted || !success) return;
 
-    try {
-      switch (widget.purpose) {
-        case OtpPurpose.login:
-          await _authRepository.verifyPhoneOtp(widget.phone, code);
-          if (mounted) context.go(AppRoutes.home);
-        case OtpPurpose.phoneVerification:
-          await _authRepository.verifyProfilePhone(widget.phone, code);
-          if (mounted) context.pop(true);
-        case OtpPurpose.phoneChange:
-          await _authRepository.verifyPhoneChange(widget.phone, code);
-          // BR-AUTH-06: the backend just revoked every session, including
-          // this one's refresh token — clear local tokens and sign in fresh.
-          await widget.apiClient.clearTokens();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('auth.phone_change.signed_out_notice'.tr())),
-            );
-            context.go(AppRoutes.phoneEntry);
-          }
-      }
-    } catch (e) {
-      setState(() {
-        _errorKey = e is DioException ? mapDioError(e).l10nKey : 'errors.generic';
-        if (_remainingAttempts > 0) _remainingAttempts--;
-        _isLoading = false;
-      });
+    switch (widget.purpose) {
+      case OtpPurpose.login:
+        context.go(AppRoutes.home);
+      case OtpPurpose.phoneVerification:
+        context.pop(true);
+      case OtpPurpose.phoneChange:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('auth.phone_change.signed_out_notice'.tr())),
+        );
+        context.go(AppRoutes.phoneEntry);
     }
   }
 
-  Future<void> _resend() async {
-    setState(() {
-      _secondsLeft = 300;
-      _remainingAttempts = 5;
-      _codeController.clear();
-      _errorKey = null;
-    });
-
-    try {
-      switch (widget.purpose) {
-        case OtpPurpose.login:
-          await _authRepository.requestPhoneOtp(widget.phone);
-        case OtpPurpose.phoneVerification:
-          await _authRepository.requestProfilePhoneVerification(widget.phone);
-        case OtpPurpose.phoneChange:
-          await _authRepository.initiatePhoneChange(widget.phone);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorKey = e is DioException ? mapDioError(e).l10nKey : 'errors.generic';
-        });
-      }
-    }
-  }
-
-  String get _timerText {
-    final m = _secondsLeft ~/ 60;
-    final s = _secondsLeft % 60;
+  String _formatTimerText(int secondsLeft) {
+    final m = secondsLeft ~/ 60;
+    final s = secondsLeft % 60;
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
@@ -153,7 +93,10 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
-    final expired = _secondsLeft == 0;
+
+    final otpState = ref.watch(otpProvider(_params));
+    final notifier = ref.read(otpProvider(_params).notifier);
+    final expired = otpState.secondsLeft == 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -202,97 +145,99 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                       controller: _codeController,
                       autofocus: true,
                       keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.done,
                       textAlign: TextAlign.center,
-                      maxLength: 6,
                       style: textTheme.headlineMedium?.copyWith(
-                        letterSpacing: 8,
-                        fontWeight: FontWeight.w700,
+                        letterSpacing: 12,
+                        fontWeight: FontWeight.bold,
                       ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      maxLength: 6,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
-                        counterText: '',
                         hintText: '------',
+                        counterText: '',
                         border: const OutlineInputBorder(),
-                        enabled: !expired && _remainingAttempts > 0,
+                        errorText: otpState.errorKey?.tr(),
                       ),
                       onChanged: (value) {
-                        if (value.length == 6) _verify(value);
+                        if (value.length == 6) {
+                          _handleVerify(value);
+                        }
                       },
                     ),
                   ),
 
                   const SizedBox(height: 16),
 
-                  // Timer + attempts
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _timerText,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: expired
-                              ? colorScheme.error
-                              : colorScheme.onSurfaceVariant,
-                          fontVariations: const [FontVariation('wght', 600)],
-                        ),
-                      ),
-                      if (_remainingAttempts < 5)
-                        Text(
-                          'auth.otp_attempts_left'
-                              .tr(namedArgs: {'n': '$_remainingAttempts'}),
-                          style: TextStyle(color: colorScheme.error),
-                        ),
-                    ],
-                  ),
-
-                  if (_errorKey != null) ...[
-                    const SizedBox(height: 12),
+                  // Attempts remaining indicator
+                  if (otpState.remainingAttempts < 5)
                     Text(
-                      _errorKey!.tr(),
-                      style: TextStyle(color: colorScheme.error),
+                      'auth.attempts_remaining'.tr(namedArgs: {'count': '${otpState.remainingAttempts}'}),
+                      style: textTheme.bodySmall?.copyWith(color: colorScheme.error),
                       textAlign: TextAlign.center,
                     ),
-                  ],
 
                   const SizedBox(height: 24),
 
-                  // Submit button (also available for users who don't auto-submit)
-                  if (!expired && _remainingAttempts > 0)
-                    Semantics(
-                      button: true,
-                      label: 'auth.verify_semantic'.tr(),
-                      child: SizedBox(
-                        height: 64,
-                        child: FilledButton(
-                          onPressed:
-                              _isLoading ? null : () => _verify(_codeController.text),
-                          child: _isLoading
-                              ? const CircularProgressIndicator()
-                              : Text('auth.verify_phone.submit'.tr()),
-                        ),
+                  // Submit button
+                  Semantics(
+                    button: true,
+                    label: 'auth.verify_button_semantic'.tr(),
+                    child: SizedBox(
+                      height: 48,
+                      child: FilledButton(
+                        onPressed: otpState.isLoading || expired
+                            ? null
+                            : () => _handleVerify(_codeController.text),
+                        child: otpState.isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text('auth.verify_button'.tr()),
                       ),
                     ),
-
-                  const SizedBox(height: 16),
-
-                  // Resend
-                  TextButton(
-                    onPressed: expired ? _resend : null,
-                    child: Text('auth.verify_phone.resend'.tr()),
                   ),
 
-                  if (_remainingAttempts == 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Text(
-                        'auth.otp_too_many_attempts'.tr(),
-                        style: TextStyle(color: colorScheme.error),
-                        textAlign: TextAlign.center,
+                  const SizedBox(height: 24),
+
+                  // Countdown timer and resend
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (!expired) ...[
+                        Icon(Icons.timer_outlined, size: 16, color: colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatTimerText(otpState.secondsLeft),
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                      ],
+                      Semantics(
+                        button: true,
+                        label: 'auth.resend_code_semantic'.tr(),
+                        child: TextButton(
+                          onPressed: (expired || otpState.secondsLeft < 240) && !otpState.isResending
+                              ? () {
+                                  _codeController.clear();
+                                  notifier.resend();
+                                }
+                              : null,
+                          child: otpState.isResending
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Text('auth.resend_code'.tr()),
+                        ),
                       ),
-                    ),
+                    ],
+                  ),
                 ],
               ),
             ),

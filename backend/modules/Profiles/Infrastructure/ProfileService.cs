@@ -263,7 +263,7 @@ public sealed class ProfileService : IProfileService
         MaxHoursPerWeek: p.MaxActivitiesPerWeek,
         HasCar: p.HasCar,
         HasDrivingLicense: p.HasCar,
-        ReliabilityScore: (double)(p.ReliabilityScore ?? 1.0m),
+        ReliabilityLabel: p.ReliabilityLabel,
         IsCurrentlyAvailable: p.IsAcceptingRequests,
         Latitude: p.Latitude,
         Longitude: p.Longitude,

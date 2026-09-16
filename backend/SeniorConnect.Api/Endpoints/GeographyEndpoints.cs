@@ -209,6 +209,30 @@ public static class GeographyEndpoints
         .Produces<IReadOnlyList<NearbyTownDto>>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status401Unauthorized);
 
+        discoveryGroup.MapGet("/nearby-community-events", async (
+            double latitude,
+            double longitude,
+            double radiusKm,
+            bool? matchMyInterests,
+            ClaimsPrincipal user,
+            IProximityService proximityService,
+            CancellationToken ct) =>
+        {
+            if (radiusKm <= 0 || radiusKm > 100)
+            {
+                return Results.BadRequest("radiusKm must be between 0 and 100");
+            }
+
+            var userId = user.GetUserId();
+            var result = await proximityService.FindNearbyCommunityEventsAsync(
+                latitude, longitude, radiusKm, userId, matchMyInterests ?? false, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("FindNearbyCommunityEvents")
+        .Produces<IReadOnlyList<CommunityEventDiscoveryResult>>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
         return app;
     }
 }

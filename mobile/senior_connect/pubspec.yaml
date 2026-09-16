@@ -45,9 +45,10 @@ dependencies:
   dio: ^5.7.0
   flutter_secure_storage: ^9.2.2
 
-  # Dependency injection
+  # Dependency injection & State management
   get_it: ^8.0.3
   injectable: ^2.5.0
+  flutter_riverpod: ^2.6.1
 
   # P1-28: profile photo picker
   image_picker: ^1.1.2
