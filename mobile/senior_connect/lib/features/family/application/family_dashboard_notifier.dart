@@ -29,7 +29,7 @@ class FamilyDashboardState {
 
 class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
   FamilyDashboardNotifier({required this.apiClient})
-      : super(const FamilyDashboardState()) {
+    : super(const FamilyDashboardState()) {
     loadRelationships();
   }
 
@@ -43,19 +43,17 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
         '/api/v1/family/my-seniors',
       );
 
-      final rels =
-          response.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      final rels = response
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
       state = state.copyWith(relationships: rels, isLoading: false);
     } catch (_) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'errors.generic'.tr(),
-      );
+      state = state.copyWith(isLoading: false, error: 'errors.generic'.tr());
     }
   }
 }
 
 final familyDashboardProvider = StateNotifierProvider.autoDispose
     .family<FamilyDashboardNotifier, FamilyDashboardState, ApiClient>(
-  (ref, apiClient) => FamilyDashboardNotifier(apiClient: apiClient),
-);
+      (ref, apiClient) => FamilyDashboardNotifier(apiClient: apiClient),
+    );

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Routing;
 using SeniorConnect.Api.Common;
 using SeniorConnect.Modules.Organizations.Application;
 using SeniorConnect.Modules.Organizations.Domain;
+using SeniorConnect.Modules.Organizations.Domain;
 
 namespace SeniorConnect.Api.Endpoints;
 

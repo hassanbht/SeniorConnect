@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using SeniorConnect.Modules.Profiles.Application;
 using SeniorConnect.Modules.Profiles.Contracts;
+using SeniorConnect.Modules.Profiles.Contracts;
 
 namespace SeniorConnect.Modules.Profiles.Infrastructure;
 

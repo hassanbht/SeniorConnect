@@ -175,6 +175,10 @@
       "title": "Meine Anfrage",
       "waiting_for_volunteer": "Wir suchen noch jemanden für Sie. Sie werden benachrichtigt, sobald sich jemand meldet."
     },
+    "my_request": {
+      "title": "Meine Anfrage",
+      "waiting_for_volunteer": "Wir suchen noch jemanden für Sie. Sie werden benachrichtigt, sobald sich jemand meldet."
+    },
     "category": {
       "shopping": "Einkaufen",
       "doctor": "Arzttermin",
@@ -338,6 +342,7 @@
     "family_member": "Angehöriger",
     "status_active": "Aktiv verbunden",
     "request_for_senior": "Hilfe anfragen",
+    "request_for_senior": "Hilfe anfragen",
     "manage_permissions": "Berechtigungen anpassen",
     "permissions_for": "Berechtigungen für {}",
     "permissions_saved": "Berechtigungen erfolgreich aktualisiert.",
@@ -347,7 +352,9 @@
     "transparency_section": "Transparenz & Datenschutz",
     "perm_view_activities": "Aktivitäten einsehen",
     "perm_view_activities_hint": "Darf Termine und Hilfeanfragen der unterstützten Person sehen.",
+    "perm_view_activities_hint": "Darf Termine und Hilfeanfragen der unterstützten Person sehen.",
     "perm_create_requests": "Hilfeanfragen erstellen",
+    "perm_create_requests_hint": "Darf im Namen der unterstützten Person Unterstützung organisieren.",
     "perm_create_requests_hint": "Darf im Namen der unterstützten Person Unterstützung organisieren.",
     "perm_view_emergency": "Notfallkontakte einsehen",
     "perm_view_emergency_hint": "Darf hinterlegte Notfallkontakte einsehen.",

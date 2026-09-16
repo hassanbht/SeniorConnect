@@ -28,10 +28,8 @@ class SeniorAccessLogState {
 }
 
 class SeniorAccessLogNotifier extends StateNotifier<SeniorAccessLogState> {
-  SeniorAccessLogNotifier({
-    required this.apiClient,
-    this.seniorUserId,
-  }) : super(const SeniorAccessLogState()) {
+  SeniorAccessLogNotifier({required this.apiClient, this.seniorUserId})
+    : super(const SeniorAccessLogState()) {
     loadAccessLogs();
   }
 
@@ -54,23 +52,18 @@ class SeniorAccessLogNotifier extends StateNotifier<SeniorAccessLogState> {
         queryParameters: {'days': 30},
       );
 
-      final logs =
-          response.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      final logs = response
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
       state = state.copyWith(logs: logs, isLoading: false);
     } catch (_) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'errors.generic'.tr(),
-      );
+      state = state.copyWith(isLoading: false, error: 'errors.generic'.tr());
     }
   }
 }
 
 class SeniorAccessLogParams {
-  const SeniorAccessLogParams({
-    required this.apiClient,
-    this.seniorUserId,
-  });
+  const SeniorAccessLogParams({required this.apiClient, this.seniorUserId});
 
   final ApiClient apiClient;
   final String? seniorUserId;
@@ -86,12 +79,14 @@ class SeniorAccessLogParams {
   int get hashCode => Object.hash(apiClient, seniorUserId);
 }
 
-final seniorAccessLogProvider = StateNotifierProvider.autoDispose.family<
-    SeniorAccessLogNotifier,
-    SeniorAccessLogState,
-    SeniorAccessLogParams>(
-  (ref, params) => SeniorAccessLogNotifier(
-    apiClient: params.apiClient,
-    seniorUserId: params.seniorUserId,
-  ),
-);
+final seniorAccessLogProvider = StateNotifierProvider.autoDispose
+    .family<
+      SeniorAccessLogNotifier,
+      SeniorAccessLogState,
+      SeniorAccessLogParams
+    >(
+      (ref, params) => SeniorAccessLogNotifier(
+        apiClient: params.apiClient,
+        seniorUserId: params.seniorUserId,
+      ),
+    );

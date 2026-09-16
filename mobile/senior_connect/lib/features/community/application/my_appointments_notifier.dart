@@ -28,7 +28,7 @@ class MyAppointmentsState {
 
 class MyAppointmentsNotifier extends StateNotifier<MyAppointmentsState> {
   MyAppointmentsNotifier({required this.apiClient})
-      : super(const MyAppointmentsState()) {
+    : super(const MyAppointmentsState()) {
     loadAppointments();
   }
 
@@ -38,10 +38,12 @@ class MyAppointmentsNotifier extends StateNotifier<MyAppointmentsState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final response =
-          await apiClient.get<List<dynamic>>('/api/v1/community/my-schedule');
-      final list =
-          response.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      final response = await apiClient.get<List<dynamic>>(
+        '/api/v1/community/my-schedule',
+      );
+      final list = response
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
       state = state.copyWith(appointments: list, isLoading: false);
     } catch (_) {
       // Fallback demo items for offline/testing
@@ -50,8 +52,9 @@ class MyAppointmentsNotifier extends StateNotifier<MyAppointmentsState> {
           'eventId': 'ev-1',
           'title': 'Senioren-Schachtreff',
           'category': 'sports',
-          'startsAtUtc':
-              DateTime.now().add(const Duration(days: 1, hours: 3)).toIso8601String(),
+          'startsAtUtc': DateTime.now()
+              .add(const Duration(days: 1, hours: 3))
+              .toIso8601String(),
           'locationAddress': 'Gemeindezentrum Mitte, Raum 2',
           'locationPostalCode': '1010',
           'myStatus': 'Going',
@@ -61,8 +64,9 @@ class MyAppointmentsNotifier extends StateNotifier<MyAppointmentsState> {
           'eventId': 'ev-2',
           'title': 'Gemeinsames Kaffeetrinken & Plaudern',
           'category': 'general',
-          'startsAtUtc':
-              DateTime.now().add(const Duration(days: 3, hours: 2)).toIso8601String(),
+          'startsAtUtc': DateTime.now()
+              .add(const Duration(days: 3, hours: 2))
+              .toIso8601String(),
           'locationAddress': 'Café Sonnenschein, Hauptstraße 12',
           'locationPostalCode': '1010',
           'myStatus': 'Waitlisted',
@@ -77,7 +81,8 @@ class MyAppointmentsNotifier extends StateNotifier<MyAppointmentsState> {
   Future<void> cancelAppointment(String eventId) async {
     try {
       await apiClient.post<dynamic>(
-          '/api/v1/community/events/$eventId/register:cancel');
+        '/api/v1/community/events/$eventId/register:cancel',
+      );
       await loadAppointments();
     } catch (_) {
       // Leave state as-is — don't pretend the cancellation succeeded when
@@ -88,5 +93,5 @@ class MyAppointmentsNotifier extends StateNotifier<MyAppointmentsState> {
 
 final myAppointmentsProvider = StateNotifierProvider.autoDispose
     .family<MyAppointmentsNotifier, MyAppointmentsState, ApiClient>(
-  (ref, apiClient) => MyAppointmentsNotifier(apiClient: apiClient),
-);
+      (ref, apiClient) => MyAppointmentsNotifier(apiClient: apiClient),
+    );

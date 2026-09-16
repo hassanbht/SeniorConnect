@@ -7,6 +7,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design_system/app_colors.dart';
@@ -16,8 +17,10 @@ import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
 import '../application/family_dashboard_notifier.dart';
+import '../application/family_dashboard_notifier.dart';
 import 'delegation_permissions_dialog.dart';
 
+class FamilyDashboardScreen extends ConsumerWidget {
 class FamilyDashboardScreen extends ConsumerWidget {
   const FamilyDashboardScreen({
     super.key,
@@ -104,7 +107,10 @@ class FamilyDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final state = ref.watch(familyDashboardProvider(apiClient));
+    final notifier = ref.read(familyDashboardProvider(apiClient).notifier);
     final state = ref.watch(familyDashboardProvider(apiClient));
     final notifier = ref.read(familyDashboardProvider(apiClient).notifier);
 
@@ -114,14 +120,19 @@ class FamilyDashboardScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: state.isLoading
+        child: state.isLoading
             ? AppLoading(message: 'common.loading'.tr())
+            : state.error != null
             : state.error != null
                 ? AppErrorView(
                     message: state.error!,
+                    message: state.error!,
                     retryLabel: 'common.retry'.tr(),
+                    onRetry: () => notifier.loadRelationships(),
                     onRetry: () => notifier.loadRelationships(),
                   )
                 : RefreshIndicator(
+                    onRefresh: () => notifier.loadRelationships(),
                     onRefresh: () => notifier.loadRelationships(),
                     child: SingleChildScrollView(
                       padding: const EdgeInsetsDirectional.all(AppSpacing.md),
@@ -135,8 +146,14 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                   BorderRadius.circular(AppRadius.md),
                               side: BorderSide(
                                   color: theme.colorScheme.outlineVariant),
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.md),
+                              side: BorderSide(
+                                  color: theme.colorScheme.outlineVariant),
                             ),
                             child: Padding(
+                              padding: const EdgeInsetsDirectional.all(
+                                  AppSpacing.md),
                               padding: const EdgeInsetsDirectional.all(
                                   AppSpacing.md),
                               child: Column(
@@ -149,6 +166,8 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                         size: 28,
                                         color: theme
                                             .colorScheme.onPrimaryContainer,
+                                        color: theme
+                                            .colorScheme.onPrimaryContainer,
                                       ),
                                       const SizedBox(width: AppSpacing.sm),
                                       Expanded(
@@ -157,7 +176,13 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                               .tr(),
                                           style: theme.textTheme.titleMedium
                                               ?.copyWith(
+                                          'family.zugangskarte_banner_title'
+                                              .tr(),
+                                          style: theme.textTheme.titleMedium
+                                              ?.copyWith(
                                             fontWeight: FontWeight.bold,
+                                            color: theme.colorScheme
+                                                .onPrimaryContainer,
                                             color: theme.colorScheme
                                                 .onPrimaryContainer,
                                           ),
@@ -191,11 +216,19 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                     BorderRadius.circular(AppRadius.md),
                                 side: BorderSide(
                                     color: theme.colorScheme.outlineVariant),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.md),
+                                side: BorderSide(
+                                    color: theme.colorScheme.outlineVariant),
                               ),
                               child: Padding(
                                 padding: const EdgeInsetsDirectional.all(
                                     AppSpacing.md),
+                                padding: const EdgeInsetsDirectional.all(
+                                    AppSpacing.md),
                                 child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   crossAxisAlignment:
                                       CrossAxisAlignment.start,
                                   children: [
@@ -208,10 +241,18 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                           child: Icon(Icons.person,
                                               color:
                                                   theme.colorScheme.primary),
+                                          backgroundColor: theme
+                                              .colorScheme.primary
+                                              .withAlpha(30),
+                                          child: Icon(Icons.person,
+                                              color:
+                                                  theme.colorScheme.primary),
                                         ),
                                         const SizedBox(width: AppSpacing.md),
                                         Expanded(
                                           child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
@@ -222,10 +263,20 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                                     ?.copyWith(
                                                   fontWeight:
                                                       FontWeight.bold,
+                                                style: theme
+                                                    .textTheme.titleMedium
+                                                    ?.copyWith(
+                                                  fontWeight:
+                                                      FontWeight.bold,
                                                 ),
                                               ),
                                               Text(
                                                 'family.status_active'.tr(),
+                                                style: theme
+                                                    .textTheme.bodySmall
+                                                    ?.copyWith(
+                                                  color:
+                                                      context.appColors.success,
                                                 style: theme
                                                     .textTheme.bodySmall
                                                     ?.copyWith(
@@ -247,6 +298,8 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                         AppButton(
                                           label:
                                               'family.request_for_senior'.tr(),
+                                          label:
+                                              'family.request_for_senior'.tr(),
                                           variant: AppButtonVariant.primary,
                                           icon: Icons.add_circle_outline,
                                           onPressed: () => context.push(
@@ -255,6 +308,8 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                           ),
                                         ),
                                         AppButton(
+                                          label:
+                                              'family.manage_permissions'.tr(),
                                           label:
                                               'family.manage_permissions'.tr(),
                                           variant: AppButtonVariant.outlined,
@@ -284,6 +339,10 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                   BorderRadius.circular(AppRadius.md),
                               side: BorderSide(
                                   color: theme.colorScheme.outlineVariant),
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.md),
+                              side: BorderSide(
+                                  color: theme.colorScheme.outlineVariant),
                             ),
                             child: ListTile(
                               leading: Icon(
@@ -294,7 +353,13 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                   'family.access_log_link_title'.tr()),
                               subtitle: Text(
                                   'family.access_log_link_subtitle'.tr()),
+                              title: Text(
+                                  'family.access_log_link_title'.tr()),
+                              subtitle: Text(
+                                  'family.access_log_link_subtitle'.tr()),
                               trailing: const Icon(Icons.chevron_right),
+                              onTap: () =>
+                                  context.push(AppRoutes.familyAccessLog),
                               onTap: () =>
                                   context.push(AppRoutes.familyAccessLog),
                             ),

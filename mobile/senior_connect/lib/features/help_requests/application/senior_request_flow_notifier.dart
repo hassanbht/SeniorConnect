@@ -65,21 +65,22 @@ class SeniorRequestFlowState {
           : selectedCategory as HelpCategoryItem?,
       selectedTiming: selectedTiming ?? this.selectedTiming,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      errorMessage:
-          errorMessage == _sentinel ? this.errorMessage : errorMessage as String?,
+      errorMessage: errorMessage == _sentinel
+          ? this.errorMessage
+          : errorMessage as String?,
       createdRequestId: createdRequestId == _sentinel
           ? this.createdRequestId
           : createdRequestId as String?,
       categoryIdsByCode: categoryIdsByCode ?? this.categoryIdsByCode,
-      categoryBlockedByCode: categoryBlockedByCode ?? this.categoryBlockedByCode,
+      categoryBlockedByCode:
+          categoryBlockedByCode ?? this.categoryBlockedByCode,
     );
   }
 }
 
 const _sentinel = Object();
 
-class SeniorRequestFlowNotifier
-    extends StateNotifier<SeniorRequestFlowState> {
+class SeniorRequestFlowNotifier extends StateNotifier<SeniorRequestFlowState> {
   SeniorRequestFlowNotifier({
     required this.apiClient,
     this.initialCategories,
@@ -156,7 +157,9 @@ class SeniorRequestFlowNotifier
 
     state = state.copyWith(currentStep: SeniorRequestStep.loadingCategories);
     try {
-      final data = await apiClient.get<dynamic>('/api/v1/activities/categories');
+      final data = await apiClient.get<dynamic>(
+        '/api/v1/activities/categories',
+      );
       if (data is! List) throw const FormatException('Bad response shape');
 
       final ids = <String, String>{};
@@ -279,12 +282,14 @@ class SeniorRequestParams {
 }
 
 final seniorRequestFlowProvider = StateNotifierProvider.autoDispose
-    .family<SeniorRequestFlowNotifier, SeniorRequestFlowState, SeniorRequestParams>(
-  (ref, params) {
-    return SeniorRequestFlowNotifier(
-      apiClient: params.apiClient,
-      initialCategories: params.initialCategories,
-      seniorUserId: params.seniorUserId,
-    );
-  },
-);
+    .family<
+      SeniorRequestFlowNotifier,
+      SeniorRequestFlowState,
+      SeniorRequestParams
+    >((ref, params) {
+      return SeniorRequestFlowNotifier(
+        apiClient: params.apiClient,
+        initialCategories: params.initialCategories,
+        seniorUserId: params.seniorUserId,
+      );
+    });

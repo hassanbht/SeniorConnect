@@ -175,6 +175,10 @@
       "title": "My Request",
       "waiting_for_volunteer": "We are still looking for someone for you. You will be notified as soon as someone responds."
     },
+    "my_request": {
+      "title": "My Request",
+      "waiting_for_volunteer": "We are still looking for someone for you. You will be notified as soon as someone responds."
+    },
     "category": {
       "shopping": "Shopping",
       "doctor": "Doctor's appointment",
@@ -347,7 +351,9 @@
     "transparency_section": "Transparency & Privacy",
     "perm_view_activities": "View Activities",
     "perm_view_activities_hint": "Can see the supported person's upcoming appointments and help requests.",
+    "perm_view_activities_hint": "Can see the supported person's upcoming appointments and help requests.",
     "perm_create_requests": "Create Help Requests",
+    "perm_create_requests_hint": "Can organize support on behalf of the supported person.",
     "perm_create_requests_hint": "Can organize support on behalf of the supported person.",
     "perm_view_emergency": "View Emergency Contacts",
     "perm_view_emergency_hint": "Can view registered emergency contacts.",

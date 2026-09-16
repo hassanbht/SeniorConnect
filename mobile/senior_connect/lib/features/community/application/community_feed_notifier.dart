@@ -42,11 +42,13 @@ class CommunityFeedState {
 const _sentinel = Object();
 
 class CommunityFeedNotifier extends StateNotifier<CommunityFeedState> {
-  CommunityFeedNotifier({this.apiClient, DiscoveryRepository? discoveryRepository})
-      : _discoveryRepository = apiClient != null
-            ? (discoveryRepository ?? DiscoveryRepositoryImpl(apiClient))
-            : null,
-        super(const CommunityFeedState()) {
+  CommunityFeedNotifier({
+    this.apiClient,
+    DiscoveryRepository? discoveryRepository,
+  }) : _discoveryRepository = apiClient != null
+           ? (discoveryRepository ?? DiscoveryRepositoryImpl(apiClient))
+           : null,
+       super(const CommunityFeedState()) {
     loadEvents();
   }
 
@@ -70,7 +72,10 @@ class CommunityFeedNotifier extends StateNotifier<CommunityFeedState> {
     }
 
     state = state.copyWith(
-        isNearbyMode: true, isLoading: true, nearbyUnavailable: false);
+      isNearbyMode: true,
+      isLoading: true,
+      nearbyUnavailable: false,
+    );
 
     final repository = _discoveryRepository;
     if (repository == null) {
@@ -91,13 +96,15 @@ class CommunityFeedNotifier extends StateNotifier<CommunityFeedState> {
         25,
       );
       final events = nearby
-          .map((e) => {
-                'id': e.eventId,
-                'title': e.title,
-                'category': e.category,
-                'startsAtUtc': e.startsAtUtc.toIso8601String(),
-                'distanceKm': e.distanceKm,
-              })
+          .map(
+            (e) => {
+              'id': e.eventId,
+              'title': e.title,
+              'category': e.category,
+              'startsAtUtc': e.startsAtUtc.toIso8601String(),
+              'distanceKm': e.distanceKm,
+            },
+          )
           .toList();
       state = state.copyWith(events: events, isLoading: false);
     } catch (_) {
@@ -111,12 +118,13 @@ class CommunityFeedNotifier extends StateNotifier<CommunityFeedState> {
     try {
       if (apiClient != null) {
         final cat = state.selectedCategory;
-        final query =
-            cat != null && cat != 'all' ? '?category=$cat' : '';
-        final response =
-            await apiClient!.get<List<dynamic>>('/api/v1/community/events$query');
-        final events =
-            response.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        final query = cat != null && cat != 'all' ? '?category=$cat' : '';
+        final response = await apiClient!.get<List<dynamic>>(
+          '/api/v1/community/events$query',
+        );
+        final events = response
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
         state = state.copyWith(events: events, isLoading: false);
         return;
       }
@@ -129,8 +137,9 @@ class CommunityFeedNotifier extends StateNotifier<CommunityFeedState> {
         'id': 'ev-1',
         'title': 'Senioren-Schachtreff',
         'category': 'sports',
-        'startsAtUtc':
-            DateTime.now().add(const Duration(days: 2, hours: 15)).toIso8601String(),
+        'startsAtUtc': DateTime.now()
+            .add(const Duration(days: 2, hours: 15))
+            .toIso8601String(),
         'locationAddress': 'Gemeindezentrum Mitte',
         'capacity': 8,
         'goingCount': 5,
@@ -139,8 +148,9 @@ class CommunityFeedNotifier extends StateNotifier<CommunityFeedState> {
         'id': 'ev-2',
         'title': 'Gemeinsames Kaffeetrinken & Plaudern',
         'category': 'general',
-        'startsAtUtc':
-            DateTime.now().add(const Duration(days: 4, hours: 14)).toIso8601String(),
+        'startsAtUtc': DateTime.now()
+            .add(const Duration(days: 4, hours: 14))
+            .toIso8601String(),
         'locationAddress': 'Café Sonnenschein',
         'capacity': 6,
         'goingCount': 6,
@@ -150,8 +160,9 @@ class CommunityFeedNotifier extends StateNotifier<CommunityFeedState> {
         'id': 'ev-3',
         'title': 'Gedächtnistraining & Rätselspaß',
         'category': 'culture',
-        'startsAtUtc':
-            DateTime.now().add(const Duration(days: 6, hours: 10)).toIso8601String(),
+        'startsAtUtc': DateTime.now()
+            .add(const Duration(days: 6, hours: 10))
+            .toIso8601String(),
         'locationAddress': 'Stadtbibliothek',
         'capacity': 10,
         'goingCount': 5,
@@ -173,5 +184,5 @@ class CommunityFeedNotifier extends StateNotifier<CommunityFeedState> {
 
 final communityFeedProvider = StateNotifierProvider.autoDispose
     .family<CommunityFeedNotifier, CommunityFeedState, ApiClient?>(
-  (ref, apiClient) => CommunityFeedNotifier(apiClient: apiClient),
-);
+      (ref, apiClient) => CommunityFeedNotifier(apiClient: apiClient),
+    );

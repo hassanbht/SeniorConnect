@@ -5,6 +5,7 @@ using SeniorConnect.Modules.HelpRequests.Domain;
 using SeniorConnect.Modules.Family.Contracts;
 using SeniorConnect.Modules.Identity.Contracts;
 using SeniorConnect.Modules.Profiles.Contracts;
+using SeniorConnect.Modules.Profiles.Contracts;
 using SeniorConnect.Modules.TrustSafety.Contracts;
 
 namespace SeniorConnect.Modules.HelpRequests.Infrastructure;
@@ -150,7 +151,11 @@ public sealed class HelpRequestService : IHelpRequestService
         var volunteerContact = helpRequest.AssignedVolunteerUserId is { } assignedVolunteerId
             ? await _userContactReader.GetContactAsync(assignedVolunteerId, cancellationToken)
             : null;
+        var volunteerContact = helpRequest.AssignedVolunteerUserId is { } assignedVolunteerId
+            ? await _userContactReader.GetContactAsync(assignedVolunteerId, cancellationToken)
+            : null;
 
+        return Result<HelpRequestDto>.Success(MapRequest(helpRequest, requestingUserId, contact, volunteerContact));
         return Result<HelpRequestDto>.Success(MapRequest(helpRequest, requestingUserId, contact, volunteerContact));
     }
 
@@ -163,6 +168,14 @@ public sealed class HelpRequestService : IHelpRequestService
             .OrderByDescending(r => r.ScheduledStartUtc)
             .ToListAsync(cancellationToken);
 
+        var dtos = new List<HelpRequestDto>(requests.Count);
+        foreach (var r in requests)
+        {
+            var volunteerContact = r.AssignedVolunteerUserId is { } assignedVolunteerId
+                ? await _userContactReader.GetContactAsync(assignedVolunteerId, cancellationToken)
+                : null;
+            dtos.Add(MapRequest(r, seniorUserId, volunteerContact: volunteerContact));
+        }
         var dtos = new List<HelpRequestDto>(requests.Count);
         foreach (var r in requests)
         {
@@ -377,6 +390,9 @@ public sealed class HelpRequestService : IHelpRequestService
         // P3-20: a completed assignment nudges reliability toward reliable.
         await _reliabilityUpdater.RecordOutcomeAsync(volunteerUserId, wasReliable: true, cancellationToken);
 
+        // P3-20: a completed assignment nudges reliability toward reliable.
+        await _reliabilityUpdater.RecordOutcomeAsync(volunteerUserId, wasReliable: true, cancellationToken);
+
         return Result<HelpRequestDto>.Success(MapRequest(helpRequest, requestingUserId: volunteerUserId));
     }
 
@@ -443,6 +459,14 @@ public sealed class HelpRequestService : IHelpRequestService
             helpRequest.RecordPreNoShowReliabilityScore(previousScore);
         }
 
+        // P3-20/P3-19: nudge reliability down, but snapshot the prior value
+        // first so a later successful dispute can restore it exactly.
+        if (helpRequest.AssignedVolunteerUserId is { } volunteerUserId)
+        {
+            var previousScore = await _reliabilityUpdater.RecordOutcomeAsync(volunteerUserId, wasReliable: false, cancellationToken);
+            helpRequest.RecordPreNoShowReliabilityScore(previousScore);
+        }
+
         var history = HelpRequestStatusHistory.Create(
             helpRequestId: helpRequest.Id,
             fromStatus: fromStatus,
@@ -454,6 +478,47 @@ public sealed class HelpRequestService : IHelpRequestService
         await _db.SaveChangesAsync(cancellationToken);
 
         return Result<HelpRequestDto>.Success(MapRequest(helpRequest, requestingUserId: reportedByUserId));
+    }
+
+    public async Task<Result<HelpRequestDto>> DisputeNoShowAsync(
+        Guid helpRequestId,
+        Guid disputedByUserId,
+        DisputeNoShowRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var helpRequest = await _db.HelpRequests
+            .FirstOrDefaultAsync(r => r.Id == helpRequestId && !r.IsDeleted, cancellationToken);
+
+        if (helpRequest is null)
+        {
+            return Error.NotFound("HelpRequest");
+        }
+
+        var fromStatus = helpRequest.Status;
+        var disputeResult = helpRequest.DisputeNoShow(disputedByUserId, request.Reason);
+        if (disputeResult.IsFailure)
+        {
+            return disputeResult.Error!;
+        }
+
+        // BR-HELP-06: a successful dispute REVERTS the score, not just
+        // nudges it back — restore the exact pre-no-show snapshot.
+        if (helpRequest.AssignedVolunteerUserId is { } volunteerUserId)
+        {
+            await _reliabilityUpdater.RestoreScoreAsync(volunteerUserId, helpRequest.PreNoShowReliabilityScore, cancellationToken);
+        }
+
+        var history = HelpRequestStatusHistory.Create(
+            helpRequestId: helpRequest.Id,
+            fromStatus: fromStatus,
+            toStatus: fromStatus, // dispute doesn't change the status, only the record
+            changedByUserId: disputedByUserId,
+            reason: $"No-show disputed: {request.Reason}");
+
+        _db.HelpRequestStatusHistories.Add(history);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Result<HelpRequestDto>.Success(MapRequest(helpRequest, requestingUserId: disputedByUserId));
     }
 
     public async Task<Result<HelpRequestDto>> DisputeNoShowAsync(
@@ -523,12 +588,21 @@ public sealed class HelpRequestService : IHelpRequestService
         Guid requestingUserId,
         UserContact? seniorContact = null,
         UserContact? volunteerContact = null)
+    private static HelpRequestDto MapRequest(
+        HelpRequest r,
+        Guid requestingUserId,
+        UserContact? seniorContact = null,
+        UserContact? volunteerContact = null)
     {
         // Contact details mask rule (BR-COMM-04): Address and precise contact info are only revealed
         // once assigned to the volunteer, or for the senior/creator themselves.
         var isAuthorizedToSeeAddress = requestingUserId == r.SeniorUserId
             || requestingUserId == r.CreatedByUserId
             || (r.AssignedVolunteerUserId.HasValue && r.AssignedVolunteerUserId.Value == requestingUserId);
+
+        // Symmetric to seniorContact: once assigned, the senior/creator sees
+        // WHO is coming — same BR-COMM-04 gate, the other direction.
+        var isSeniorOrCreator = requestingUserId == r.SeniorUserId || requestingUserId == r.CreatedByUserId;
 
         // Symmetric to seniorContact: once assigned, the senior/creator sees
         // WHO is coming — same BR-COMM-04 gate, the other direction.
