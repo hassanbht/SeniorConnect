@@ -27,10 +27,12 @@ class SeniorRequestFlowScreen extends ConsumerStatefulWidget {
     super.key,
     required this.apiClient,
     this.initialCategories,
+    this.seniorUserId,
   });
 
   final ApiClient apiClient;
   final List<Map<String, dynamic>>? initialCategories;
+  final String? seniorUserId;
 
   @override
   ConsumerState<SeniorRequestFlowScreen> createState() =>
@@ -44,6 +46,7 @@ class _SeniorRequestFlowScreenState
   SeniorRequestParams get _params => SeniorRequestParams(
         apiClient: widget.apiClient,
         initialCategories: widget.initialCategories,
+        seniorUserId: widget.seniorUserId,
       );
 
   @override

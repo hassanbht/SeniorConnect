@@ -26,22 +26,77 @@ class FamilyDashboardScreen extends ConsumerWidget {
 
   final ApiClient apiClient;
 
-  void _openPermissionsDialog(BuildContext context, String caregiverName) {
+  // Uses the senior's actual provisioned display name when available,
+  // falling back to the relationship type label.
+  String _seniorDisplayName(Map<String, dynamic> rel) {
+    final name = rel['seniorDisplayName'] as String?;
+    if (name != null && name.trim().isNotEmpty) {
+      return name;
+    }
+    return _relationshipTypeLabel(rel);
+  }
+
+  String _relationshipTypeLabel(Map<String, dynamic> rel) {
+    final type = rel['relationshipType'];
+    final key = switch (type) {
+      0 || 'Child' => 'family.reltype_child',
+      1 || 'Spouse' => 'family.reltype_spouse',
+      2 || 'Sibling' => 'family.reltype_sibling',
+      3 || 'Neighbor' => 'family.reltype_neighbor',
+      4 || 'LegalGuardian' => 'family.reltype_legal_guardian',
+      _ => 'family.reltype_other',
+    };
+    return key.tr();
+  }
+
+  void _openPermissionsDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> rel,
+  ) {
+    final relationshipId = rel['id'] as String;
+    final currentPermissions = <String, bool>{
+      'ViewActivities': false,
+      'CreateHelpRequestsOnBehalf': false,
+      'ViewEmergencyContacts': false,
+      'ReceiveSafetyAlerts': false,
+      'ManageSettings': false,
+    };
+    final rawPermissions = rel['permissions'] as List<dynamic>? ?? [];
+    for (final p in rawPermissions) {
+      final map = p as Map<String, dynamic>;
+      final type = map['permissionType'] as String?;
+      if (type != null && currentPermissions.containsKey(type)) {
+        currentPermissions[type] = map['isGranted'] as bool? ?? false;
+      }
+    }
+
     showDialog<void>(
       context: context,
-      builder: (context) => DelegationPermissionsDialog(
-        caregiverName: caregiverName,
-        currentPermissions: const {
-          'ViewActivities': true,
-          'CreateHelpRequestsOnBehalf': true,
-          'ViewEmergencyContacts': true,
-          'ReceiveSafetyAlerts': true,
-          'ManageSettings': false,
-        },
-        onSave: (updated) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('family.permissions_saved'.tr())),
-          );
+      builder: (dialogContext) => DelegationPermissionsDialog(
+        caregiverName: _seniorDisplayName(rel),
+        currentPermissions: currentPermissions,
+        onSave: (updated) async {
+          try {
+            await apiClient.put<dynamic>(
+              '/api/v1/family/relationships/$relationshipId/permissions',
+              data: {'permissions': updated},
+            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('family.permissions_saved'.tr())),
+              );
+            }
+            ref
+                .read(familyDashboardProvider(apiClient).notifier)
+                .loadRelationships();
+          } catch (_) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('errors.generic'.tr())),
+              );
+            }
+          }
         },
       ),
     );
@@ -128,8 +183,7 @@ class FamilyDashboardScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: AppSpacing.sm),
                           ...state.relationships.map((rel) {
-                            final seniorName =
-                                rel['seniorName'] as String? ?? 'Oma Gerda';
+                            final seniorName = _seniorDisplayName(rel);
                             return Card(
                               elevation: 1,
                               shape: RoundedRectangleBorder(
@@ -195,8 +249,10 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                               'family.request_for_senior'.tr(),
                                           variant: AppButtonVariant.primary,
                                           icon: Icons.add_circle_outline,
-                                          onPressed: () => context
-                                              .push(AppRoutes.helpRequestCreate),
+                                          onPressed: () => context.push(
+                                            AppRoutes.helpRequestCreate,
+                                            extra: {'seniorUserId': rel['seniorUserId']},
+                                          ),
                                         ),
                                         AppButton(
                                           label:
@@ -205,7 +261,7 @@ class FamilyDashboardScreen extends ConsumerWidget {
                                           icon: Icons.tune,
                                           onPressed: () =>
                                               _openPermissionsDialog(
-                                                  context, seniorName),
+                                                  context, ref, rel),
                                         ),
                                       ],
                                     ),

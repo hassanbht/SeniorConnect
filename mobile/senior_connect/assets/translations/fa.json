@@ -356,7 +356,13 @@
     "perm_manage_settings": "مدیریت تنظیمات",
     "perm_manage_settings_hint": "امکان تغییر تنظیمات حساب کاربری.",
     "log_viewed_activities": "درخواست‌های جاری را مشاهده کرد.",
-    "log_created_request": "یک درخواست کمک جدید برای فرد تحت پشتیبانی ثبت کرد."
+    "log_created_request": "یک درخواست کمک جدید برای فرد تحت پشتیبانی ثبت کرد.",
+    "reltype_child": "پروفایل متصل (فرزند)",
+    "reltype_spouse": "پروفایل متصل (همسر)",
+    "reltype_sibling": "پروفایل متصل (خواهر/برادر)",
+    "reltype_neighbor": "پروفایل متصل (همسایه)",
+    "reltype_legal_guardian": "پروفایل متصل (سرپرست قانونی)",
+    "reltype_other": "پروفایل متصل"
   },
   "safeguarding": {
     "report": "گزارش موارد نگران‌کننده",

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SeniorConnect.Domain;
 using SeniorConnect.Modules.HelpRequests.Application;
 using SeniorConnect.Modules.HelpRequests.Domain;
+using SeniorConnect.Modules.Family.Contracts;
 using SeniorConnect.Modules.Identity.Contracts;
 using SeniorConnect.Modules.Profiles.Contracts;
 using SeniorConnect.Modules.TrustSafety.Contracts;
@@ -16,6 +17,7 @@ public sealed class HelpRequestService : IHelpRequestService
     private readonly ISafetyBoundaryReader _safetyBoundaryReader;
     private readonly IUserContactReader _userContactReader;
     private readonly IVolunteerReliabilityUpdater _reliabilityUpdater;
+    private readonly IFamilyPermissionReader _familyPermissionReader;
 
     public HelpRequestService(
         IHelpRequestsDbContext db,
@@ -23,7 +25,8 @@ public sealed class HelpRequestService : IHelpRequestService
         ITrustLevelReader trustLevelReader,
         ISafetyBoundaryReader safetyBoundaryReader,
         IUserContactReader userContactReader,
-        IVolunteerReliabilityUpdater reliabilityUpdater)
+        IVolunteerReliabilityUpdater reliabilityUpdater,
+        IFamilyPermissionReader? familyPermissionReader = null)
     {
         _db = db;
         _safetyPolicy = safetyPolicy;
@@ -31,6 +34,7 @@ public sealed class HelpRequestService : IHelpRequestService
         _safetyBoundaryReader = safetyBoundaryReader;
         _userContactReader = userContactReader;
         _reliabilityUpdater = reliabilityUpdater;
+        _familyPermissionReader = familyPermissionReader ?? new NoopFamilyPermissionReader();
     }
 
     public async Task<Result<HelpRequestDto>> CreateHelpRequestAsync(
@@ -39,6 +43,21 @@ public sealed class HelpRequestService : IHelpRequestService
         CreateHelpRequestRequest request,
         CancellationToken cancellationToken = default)
     {
+        // 0. Acting on behalf of senior permission check (BR-HELP-04)
+        if (seniorUserId != createdByUserId)
+        {
+            var hasPermission = await _familyPermissionReader.HasPermissionAsync(
+                caregiverUserId: createdByUserId,
+                seniorUserId: seniorUserId,
+                permissionType: "CreateHelpRequestsOnBehalf",
+                ct: cancellationToken);
+
+            if (!hasPermission)
+            {
+                return Error.Forbidden("You do not have permission to create help requests on behalf of this senior.");
+            }
+        }
+
         // 1. Emergency Detection (BR-SCOPE-04)
         if (EmergencyDetector.IsEmergency(request.Notes))
         {
@@ -547,5 +566,11 @@ public sealed class HelpRequestService : IHelpRequestService
             SeniorPhone: isAuthorizedToSeeAddress ? seniorContact?.Phone : null,
             VolunteerDisplayName: isSeniorOrCreator ? volunteerContact?.DisplayName : null,
             VolunteerPhone: isSeniorOrCreator ? volunteerContact?.Phone : null);
+    }
+
+    private sealed class NoopFamilyPermissionReader : IFamilyPermissionReader
+    {
+        public Task<bool> HasPermissionAsync(Guid caregiverUserId, Guid seniorUserId, string permissionType, CancellationToken ct = default)
+            => Task.FromResult(true);
     }
 }

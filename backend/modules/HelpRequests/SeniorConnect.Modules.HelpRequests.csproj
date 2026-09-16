@@ -13,5 +13,6 @@
     <ProjectReference Include="..\Identity\SeniorConnect.Modules.Identity.csproj" />
     <ProjectReference Include="..\TrustSafety\SeniorConnect.Modules.TrustSafety.csproj" />
     <ProjectReference Include="..\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+    <ProjectReference Include="..\Family\SeniorConnect.Modules.Family.csproj" />
   </ItemGroup>
 </Project>

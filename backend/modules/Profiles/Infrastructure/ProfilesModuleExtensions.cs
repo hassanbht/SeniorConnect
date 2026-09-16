@@ -11,6 +11,7 @@ public static class ProfilesModuleExtensions
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IReferenceDataService, ReferenceDataService>();
         services.AddScoped<IVolunteerReliabilityUpdater, VolunteerReliabilityUpdater>();
+        services.AddScoped<ISupportProfileProvisioner, SupportProfileProvisioner>();
 
         return services;
     }

@@ -83,12 +83,14 @@ class SeniorRequestFlowNotifier
   SeniorRequestFlowNotifier({
     required this.apiClient,
     this.initialCategories,
+    this.seniorUserId,
   }) : super(const SeniorRequestFlowState()) {
     loadCategories();
   }
 
   final ApiClient apiClient;
   final List<Map<String, dynamic>>? initialCategories;
+  final String? seniorUserId;
 
   static const List<HelpCategoryItem> categories = [
     HelpCategoryItem(
@@ -223,14 +225,19 @@ class SeniorRequestFlowNotifier
     };
 
     try {
+      final body = <String, dynamic>{
+        'categoryId': categoryId,
+        'notes': details,
+        'scheduledStartUtc': startUtc.toIso8601String(),
+        'durationMinutes': 60,
+      };
+      if (seniorUserId != null) {
+        body['seniorUserId'] = seniorUserId;
+      }
+
       final response = await apiClient.post<Map<String, dynamic>>(
         '/api/v1/help-requests',
-        data: {
-          'categoryId': categoryId,
-          'notes': details,
-          'scheduledStartUtc': startUtc.toIso8601String(),
-          'durationMinutes': 60,
-        },
+        data: body,
       );
 
       final newId = response['id'] as String? ?? '';
@@ -252,20 +259,23 @@ class SeniorRequestParams {
   const SeniorRequestParams({
     required this.apiClient,
     this.initialCategories,
+    this.seniorUserId,
   });
 
   final ApiClient apiClient;
   final List<Map<String, dynamic>>? initialCategories;
+  final String? seniorUserId;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SeniorRequestParams &&
           identical(other.apiClient, apiClient) &&
-          other.initialCategories == initialCategories);
+          other.initialCategories == initialCategories &&
+          other.seniorUserId == seniorUserId);
 
   @override
-  int get hashCode => Object.hash(apiClient, initialCategories);
+  int get hashCode => Object.hash(apiClient, initialCategories, seniorUserId);
 }
 
 final seniorRequestFlowProvider = StateNotifierProvider.autoDispose
@@ -274,6 +284,7 @@ final seniorRequestFlowProvider = StateNotifierProvider.autoDispose
     return SeniorRequestFlowNotifier(
       apiClient: params.apiClient,
       initialCategories: params.initialCategories,
+      seniorUserId: params.seniorUserId,
     );
   },
 );

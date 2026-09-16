@@ -25,6 +25,8 @@ public static class IdentityModuleExtensions
         services.AddScoped<IIdAustriaClient, IdAustriaClientStub>();
         services.AddScoped<SeniorConnect.Modules.Identity.Contracts.ITrustLevelReader, TrustLevelReader>();
         services.AddScoped<SeniorConnect.Modules.Identity.Contracts.IUserContactReader, UserContactReader>();
+        services.AddScoped<SeniorConnect.Modules.Identity.Contracts.ISeniorAccountProvisioner, SeniorAccountProvisioner>();
+        services.AddScoped<SeniorConnect.Modules.Identity.Contracts.IUserSessionIssuer, SeniorAccountProvisioner>();
 
         return services;
     }

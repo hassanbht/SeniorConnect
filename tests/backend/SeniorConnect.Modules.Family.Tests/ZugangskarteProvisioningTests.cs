@@ -106,7 +106,8 @@ public sealed class ZugangskarteProvisioningTests
 
         // Assert
         claimResult.IsSuccess.Should().BeTrue();
-        claimResult.Value!.IsClaimed.Should().BeTrue();
+        claimResult.Value!.Zugangskarte.IsClaimed.Should().BeTrue();
+        claimResult.Value.Session.Should().NotBeNull();
 
         var karteInDb = await db.Zugangskarten.FirstAsync(z => z.PairingCode == code);
         karteInDb.IsClaimed.Should().BeTrue();

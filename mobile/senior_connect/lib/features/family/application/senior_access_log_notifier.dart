@@ -42,9 +42,15 @@ class SeniorAccessLogNotifier extends StateNotifier<SeniorAccessLogState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final seniorId = seniorUserId ?? 'me';
+      // This app never stores the caller's own userId client-side
+      // (server-side-only authorization) — viewing your own log goes
+      // through /me/access-logs; viewing a specific senior's log (as an
+      // authorized caregiver) uses the id-addressed route.
+      final path = seniorUserId == null
+          ? '/api/v1/family/me/access-logs'
+          : '/api/v1/family/seniors/$seniorUserId/access-logs';
       final response = await apiClient.get<List<dynamic>>(
-        '/api/v1/family/seniors/$seniorId/access-log',
+        path,
         queryParameters: {'days': 30},
       );
 
@@ -52,28 +58,10 @@ class SeniorAccessLogNotifier extends StateNotifier<SeniorAccessLogState> {
           response.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       state = state.copyWith(logs: logs, isLoading: false);
     } catch (_) {
-      // Provide default mock logs for test / offline view
-      final mockLogs = [
-        {
-          'id': 'log-1',
-          'accessedByUserName': 'Anna Meier (Tochter)',
-          'action': 'VIEW_ACTIVITIES',
-          'plainLanguageDescription': 'family.log_viewed_activities'.tr(),
-          'timestampUtc': DateTime.now()
-              .subtract(const Duration(hours: 3))
-              .toIso8601String(),
-        },
-        {
-          'id': 'log-2',
-          'accessedByUserName': 'Thomas Meier (Sohn)',
-          'action': 'CREATE_REQUEST_PROXY',
-          'plainLanguageDescription': 'family.log_created_request'.tr(),
-          'timestampUtc': DateTime.now()
-              .subtract(const Duration(days: 1))
-              .toIso8601String(),
-        },
-      ];
-      state = state.copyWith(logs: mockLogs, isLoading: false);
+      state = state.copyWith(
+        isLoading: false,
+        error: 'errors.generic'.tr(),
+      );
     }
   }
 }

@@ -21,7 +21,7 @@ class DelegationPermissionsDialog extends ConsumerWidget {
 
   final String caregiverName;
   final Map<String, bool> currentPermissions;
-  final void Function(Map<String, bool> updated) onSave;
+  final Future<void> Function(Map<String, bool> updated) onSave;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

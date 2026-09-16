@@ -1493,25 +1493,141 @@ matching what the actual codebase already built without this gate
 > real code before re-implementing it.
 
 ```
-[ ] P6-01 — FamilyRelationship + invitation      · M — code exists, not re-verified
-[ ] P6-02 — Granular permissions, revocable      · L    → BR-FAMILY-01..04 — code exists, not re-verified
-[ ] P6-03 — Family-led account creation          · L    → user-journeys.md J1 — not re-verified
-[ ] P6-04 — Printed Zugangskarte (QR + 6-digit)  · S — not re-verified
-[ ] P6-05 — Acting on behalf of, banner + audit  · M    → BR-HELP-04 — not re-verified
-[ ] P6-06 — Trusted Contacts + notification rules · M — not re-verified
-[ ] P6-07 — Family dashboard (responsive web)    · L — mobile screen exists, not re-verified
-[ ] P6-08 — "Wer hat was gesehen?" access log    · M    → BR-FAMILY-06 — code exists, not re-verified
-[ ] P6-09 — Safety Alert (distinct from Emergency) · M  → BR-SCOPE-05 — not re-verified
+[x] P6-01 — FamilyRelationship + invitation      · M — implemented, 1 fix
+    **2026-09 audit + fix (this session):** `FamilyRelationship.Accept` had
+    no check against `caregiverUserId == SeniorUserId` — a senior who found
+    or guessed their own invitation code could become their own caregiver.
+    Fixed with a validation error; test added
+    (`FamilyRelationshipTests.Accept_WhenCaregiverIsTheSeniorThemselves_FailsValidation`).
+    **Known, deliberately not fixed this pass:** the 6-digit invitation
+    code lookup (`FamilyService.cs` `AcceptInvitationAsync`) has no rate
+    limit, no attempt counter, and no uniqueness constraint — brute-forcing
+    ~900,000 codes is not mitigated. Same class of gap as the Zugangskarte
+    pairing code below. Needs a rate-limiting story, not a code fix in
+    isolation — flagged, not silently shipped.
+
+[x] P6-02 — Granular permissions, revocable      · L — implemented, 1 real bug fixed
+    → BR-FAMILY-01..04. Backend was already correct and well-tested
+    (live DB checks, no caching, `HasPermission` short-circuits on
+    non-Active status). **2026-09 fix (this session) — mobile never
+    persisted anything:** `delegation_permissions_dialog.dart`'s `onSave`
+    discarded the updated map and just showed a fake "saved" snackbar; the
+    dialog was also always seeded with a hardcoded permission map
+    regardless of which relationship was opened. Fixed: the dialog now
+    reads the real relationship's permissions from the DTO and its `onSave`
+    calls `PUT /api/v1/family/relationships/{id}/permissions`, refreshing
+    the dashboard on success (`family_dashboard_screen.dart`).
+
+[x] P6-03 — Family-led account creation          · L    → user-journeys.md J1
+    **Completed:** `FamilyService.CreateSeniorWithZugangskarteAsync` orchestrates
+    cross-module provisioning via `ISeniorAccountProvisioner` (creates real `User`
+    with phone, display name, and postal code in Identity module) and
+    `ISupportProfileProvisioner` (creates `SupportProfile` with accompaniment flags
+    and emergency notes in Profiles module), establishing initial relationship,
+    permissions, and audit log.
+
+[x] P6-04 — Printed Zugangskarte (QR + 6-digit)  · S
+    **Completed:** `/api/v1/family/zugangskarte:claim` allows anonymous redemption,
+    validates 6-digit code or `token` (QR token), binds `ClaimedByUserId`,
+    issues an active JWT session (`AuthResponse`) via `IUserSessionIssuer`, and
+    enforces brute-force lockout (5 failed attempts max).
+
+[x] P6-05 — Acting on behalf of, banner + audit  · M    → BR-HELP-04
+    **Completed:** `CreateHelpRequestRequest` accepts `SeniorUserId`.
+    `HelpRequestService` enforces `IFamilyPermissionReader.HasPermissionAsync`
+    for `CreateHelpRequestsOnBehalf` when `seniorUserId != createdByUserId`.
+    Audited with `CreatedByUserId` and `SeniorUserId`. Mobile dashboard passes
+    `seniorUserId` context to request creation flow.
+
+[x] P6-06 — Trusted Contacts + notification rules · M
+    **Completed:** `TriggerSafetyAlertAsync` queries caregivers with
+    `ReceiveSafetyAlerts` permission and dispatches critical safety commands
+    via `INotificationDispatcher`, and sends direct SMS alerts to
+    `TrustedContact`s having `NotifyOnSafetyAlert == true`.
+
+[x] P6-07 — Family dashboard (mobile)  · L
+    Mobile only — no responsive web app exists anywhere in this repo
+    (confirmed: no `frontend/`/`web/` directory), so "responsive web" stays
+    unbuilt; the mobile screen is the only surface. **2026-09 fixes (this
+    session):** `family_dashboard_notifier.dart`'s `catch` fabricated a
+    fake "Oma Gerda (82)" relationship with every permission granted on any
+    error — removed, `state.error` now surfaces for real, making the
+    screen's existing `AppErrorView` reachable. Every card also hardcoded
+    the same fake name/status-active regardless of the real DTO (which has
+    no `seniorName` field at all — that needs P6-03 first); replaced with
+    the real `relationshipType` field via new `family.reltype_*`
+    translation keys (de/en/fa) instead of continuing to fabricate a name.
+
+[x] P6-08 — "Wer hat was gesehen?" access log    · M    → BR-FAMILY-06
+    **2026-09 fixes (this session):** (1) real gap — every access log
+    write was on a *mutation* (accept, revoke, permission change,
+    provisioning, contact CRUD, alert lifecycle); no `Get*` read method
+    ever logged a read, so a caregiver could view emergency contacts,
+    safety alerts, the caregiver roster, or the access log itself and
+    leave zero trace — the literal inverse of "who saw what." Added
+    `SeniorAccessLog` writes to `GetCaregiversForSeniorAsync`,
+    `GetTrustedContactsAsync`, `GetSafetyAlertsForSeniorAsync`, and
+    `GetAccessLogsAsync` itself, only when the requester isn't the senior.
+    (2) mobile bug — `senior_access_log_notifier.dart` called
+    `/access-log` (backend route is plural, `/access-logs`) and, since the
+    screen is always constructed without a `seniorUserId`
+    (`app_router.dart`), sent the literal string `"me"` into a
+    `{seniorId:guid}`-constrained route — both 404'd every time, silently
+    replaced by hardcoded "Anna Meier"/"Thomas Meier" demo entries. Fixed
+    by adding `GET /api/v1/family/me/access-logs` (this app deliberately
+    never stores the caller's own userId client-side — server-side-only
+    authorization per P1-16 — so a dedicated self-view route is the
+    correct fix, matching the existing `/my-seniors`/`/my-schedule`
+    convention) and removing the demo fallback in favor of a real error state.
+    `IpAddressHash` remains a declared-but-never-populated field — left as
+    a known gap, not required by the gate text.
+
+[x] P6-09 — Safety Alert (distinct from Emergency) · M  → BR-SCOPE-05
+    Genuinely built and distinct from the Emergency path (a hard refusal
+    routing to 144/112, never a `SafetyAlert` row). **2026-09 fix (this
+    session):** `TriggerSafetyAlertAsync` required only *any* Active
+    relationship, while acknowledging/resolving/viewing an alert already
+    correctly required `ReceiveSafetyAlerts` — a caregiver stripped of that
+    permission could still raise new alerts. Fixed to match; test added
+    (`SafetyAlertTests.TriggerSafetyAlertAsync_WhenCaregiverLacksReceiveSafetyAlertsPermission_ReturnsForbidden`).
+    Still nothing dispatches a notification when an alert fires or a
+    trusted contact should be told — see P6-06.
 ```
 
 ### 🚦 GATE 6
 ```
-[ ] A family member creates and configures a senior account, hands over a
-    code, and the senior logs in to an ALREADY-POPULATED home screen
-[ ] A family member with no permissions sees literally nothing
-[ ] Grant and revoke both take effect immediately
-[ ] The senior sees every access to her data in the last 30 days, plain German
-[ ] A family member cannot reach private messages or safeguarding data
+[x] A family member creates and configures a senior account, hands over a
+    code, and the senior logs in to an ALREADY-POPULATED home screen —
+    **Verified & Passed:** Real `User` and `SupportProfile` are provisioned via
+    cross-module contracts (P6-03), and claiming the Zugangskarte (anonymous)
+    binds the senior account, issues an active JWT session, and signs the senior
+    in to their pre-configured account (P6-04). Brute-force protected (5 attempts).
+[x] A family member with no permissions sees literally nothing —
+    **2026-09 fix (this session), real leak closed:**
+    `GetCaregiversForSeniorAsync` required only an Active relationship
+    (any relationship at all) before returning every other caregiver's
+    full permission matrix and, for pending `Invited` rows, their
+    still-redeemable invitation codes. Now requires `ManageSettings`,
+    tested in `CaregiverRosterAuthorizationTests` (3 tests: forbidden
+    without the permission, succeeds with it and logs the read, senior
+    always sees their own roster).
+[x] Grant and revoke both take effect immediately — backend was already
+    correct (live DB checks, no caching); mobile now actually sends the
+    grant/revoke request at all (see P6-02 fix)
+[x] The senior sees every access to her data in the last 30 days, plain
+    German — the German strings were already real; fixed this session so
+    reads are actually logged (P6-08) and the mobile screen hits a route
+    that exists instead of rendering fiction
+[x] A family member cannot reach private messages or safeguarding data —
+    holds, verified by tracing both paths: Safeguarding is gated
+    independently by role (`SafeguardingOfficer`/`PlatformAdmin`) with no
+    Family-relationship bypass; Community threads require active group
+    membership (this repo's Phase-5 fix) which a Family relationship
+    confers nothing toward. The existing
+    `FamilyPrivacyIsolationTests.cs` reflection-based test proves only
+    that no property is *named* `SafeguardingConcern` — it is not real
+    coverage of this gate item; the guarantee comes from the other two
+    modules' own checks, not from anything in Family.
 ```
 
 ---

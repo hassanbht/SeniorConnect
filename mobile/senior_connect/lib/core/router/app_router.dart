@@ -144,8 +144,13 @@ GoRouter buildRouter({required ApiClient apiClient}) {
           GoRoute(
             path: AppRoutes.helpRequestCreate,
             name: 'help-request-create',
-            builder: (context, state) =>
-                SeniorRequestFlowScreen(apiClient: apiClient),
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              return SeniorRequestFlowScreen(
+                apiClient: apiClient,
+                seniorUserId: extra?['seniorUserId'] as String?,
+              );
+            },
           ),
           GoRoute(
             path: AppRoutes.volunteerFeed,

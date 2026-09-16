@@ -356,7 +356,13 @@
     "perm_manage_settings": "Einstellungen verwalten",
     "perm_manage_settings_hint": "Darf Einstellungen und Berechtigungen anpassen.",
     "log_viewed_activities": "Hat die aktuellen Hilfeanfragen eingesehen.",
-    "log_created_request": "Hat eine Hilfeanfrage für die unterstützte Person erstellt."
+    "log_created_request": "Hat eine Hilfeanfrage für die unterstützte Person erstellt.",
+    "reltype_child": "Verbundenes Profil (Kind)",
+    "reltype_spouse": "Verbundenes Profil (Ehepartner:in)",
+    "reltype_sibling": "Verbundenes Profil (Geschwister)",
+    "reltype_neighbor": "Verbundenes Profil (Nachbar:in)",
+    "reltype_legal_guardian": "Verbundenes Profil (gesetzliche Vertretung)",
+    "reltype_other": "Verbundenes Profil"
   },
   "safeguarding": {
     "report": "Bedenken melden",

@@ -40,8 +40,8 @@ public interface IFamilyService
         CreateSeniorWithZugangskarteRequest request,
         CancellationToken ct = default);
 
-    Task<Result<ZugangskarteDto>> ClaimZugangskarteAsync(
-        Guid seniorUserId,
+    Task<Result<ClaimZugangskarteResponse>> ClaimZugangskarteAsync(
+        Guid? claimingUserId,
         ClaimZugangskarteRequest request,
         CancellationToken ct = default);
 

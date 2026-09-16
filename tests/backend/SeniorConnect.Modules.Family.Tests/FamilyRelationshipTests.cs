@@ -110,6 +110,26 @@ public sealed class FamilyRelationshipTests
     }
 
     [Fact]
+    public void Accept_WhenCaregiverIsTheSeniorThemselves_FailsValidation()
+    {
+        // Arrange
+        var seniorId = Guid.NewGuid();
+        var relationship = FamilyRelationship.CreateInvitation(
+            seniorId,
+            RelationshipType.Child,
+            "CODE123",
+            DateTimeOffset.UtcNow.AddDays(1));
+
+        // Act
+        var result = relationship.Accept(seniorId);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Code.Should().Be("VALIDATION_FAILED");
+        relationship.Status.Should().Be(RelationshipStatus.Invited);
+    }
+
+    [Fact]
     public void Revoke_RevokesRelationshipAndAllGrantedPermissionsImmediately()
     {
         // Arrange

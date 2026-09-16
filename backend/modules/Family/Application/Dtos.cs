@@ -1,4 +1,5 @@
 using SeniorConnect.Modules.Family.Domain;
+using SeniorConnect.Modules.Identity.Contracts;
 
 namespace SeniorConnect.Modules.Family.Application;
 
@@ -18,7 +19,9 @@ public sealed record FamilyRelationshipDto(
     DateTimeOffset? InvitationExpiresAtUtc,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? ConfirmedAtUtc,
-    IReadOnlyList<FamilyPermissionDto> Permissions);
+    IReadOnlyList<FamilyPermissionDto> Permissions,
+    string? SeniorDisplayName = null,
+    string? SeniorPhoneNumber = null);
 
 public sealed record InviteCaregiverRequest(
     Guid SeniorUserId,
@@ -47,10 +50,16 @@ public sealed record ZugangskarteDto(
     string QrPayload,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset ExpiresAtUtc,
-    bool IsClaimed);
+    bool IsClaimed,
+    Guid? ClaimedByUserId = null);
 
 public sealed record ClaimZugangskarteRequest(
-    string PairingCode);
+    string PairingCode,
+    string? QrToken = null);
+
+public sealed record ClaimZugangskarteResponse(
+    ZugangskarteDto Zugangskarte,
+    UserSessionDto? Session);
 
 public sealed record SeniorAccessLogDto(
     Guid Id,

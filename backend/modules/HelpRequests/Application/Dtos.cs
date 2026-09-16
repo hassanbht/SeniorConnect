@@ -105,7 +105,8 @@ public sealed record CreateHelpRequestRequest(
     double? Latitude = null,
     double? Longitude = null,
     TransportMode TransportMode = TransportMode.None,
-    InsuranceContext InsuranceContext = InsuranceContext.Unknown);
+    InsuranceContext InsuranceContext = InsuranceContext.Unknown,
+    Guid? SeniorUserId = null);
 
 public sealed record AcceptHelpRequestRequest(
     int ExpectedRowVersion);

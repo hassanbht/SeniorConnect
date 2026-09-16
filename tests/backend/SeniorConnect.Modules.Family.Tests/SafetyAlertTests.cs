@@ -50,6 +50,31 @@ public sealed class SafetyAlertTests
     }
 
     [Fact]
+    public async Task TriggerSafetyAlertAsync_WhenCaregiverLacksReceiveSafetyAlertsPermission_ReturnsForbidden()
+    {
+        // Arrange
+        using var db = CreateInMemoryDb();
+        var service = new FamilyService(db);
+        var seniorId = Guid.NewGuid();
+        var caregiverId = Guid.NewGuid();
+
+        var rel = FamilyRelationship.CreateActive(seniorId, caregiverId, RelationshipType.Child);
+        rel.UpdatePermission(PermissionType.ReceiveSafetyAlerts, false);
+        db.FamilyRelationships.Add(rel);
+        await db.SaveChangesAsync();
+
+        var request = new TriggerSafetyAlertRequest(
+            seniorId, SafetyAlertCategory.MissedCheckIn, "Should be blocked.");
+
+        // Act
+        var result = await service.TriggerSafetyAlertAsync(caregiverId, request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Code.Should().Be("FORBIDDEN");
+    }
+
+    [Fact]
     public async Task AcknowledgeAndResolve_UpdatesAlertStateCorrectly()
     {
         // Arrange

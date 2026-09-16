@@ -102,6 +102,30 @@ public sealed class User : Entity, IAuditable, ISoftDeletable
         };
     }
 
+    public static User CreatePreprovisionedSenior(
+        string displayName,
+        string? phone = null,
+        Guid? createdBy = null,
+        string preferredLocale = "de")
+    {
+        var now = DateTimeOffset.UtcNow;
+        return new User
+        {
+            Id = Guid.CreateVersion7(),
+            DisplayName = displayName,
+            Phone = string.IsNullOrWhiteSpace(phone) ? null : phone,
+            PrimaryAuthMethod = AuthMethod.PhoneOtp,
+            PreferredLocale = preferredLocale,
+            SeniorModeDefault = true,
+            Status = UserStatus.Active,
+            CreatedAtUtc = now,
+            CreatedBy = createdBy,
+            UpdatedAtUtc = now,
+            UpdatedBy = createdBy,
+            IsDeleted = false
+        };
+    }
+
     public static User CreateWithEmail(
         string email,
         string displayName,

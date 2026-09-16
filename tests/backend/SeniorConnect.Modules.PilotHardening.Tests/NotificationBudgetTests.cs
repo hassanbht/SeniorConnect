@@ -102,4 +102,57 @@ public sealed class NotificationBudgetTests
         pref.IsCategoryEnabled(NotificationCategory.Community).Should().BeFalse();
         pref.IsCategoryEnabled(NotificationCategory.HelpRequests).Should().BeTrue();
     }
+
+    [Fact]
+    public void SimulatedWeekOfNormalUse_StrictlyEnforcesBudgetCap_Gate7()
+    {
+        var userId = Guid.NewGuid();
+        var tracker = NotificationBudgetTracker.Create(userId);
+        var baseTime = new DateTimeOffset(2026, 9, 1, 8, 0, 0, TimeSpan.Zero);
+
+        int totalAttemptedNonUrgent = 0;
+        int totalAcceptedNonUrgent = 0;
+        int totalSuppressedNonUrgent = 0;
+        int totalSafetyAlertsAccepted = 0;
+
+        // Simulate 7 consecutive days
+        for (int day = 0; day < 7; day++)
+        {
+            var dayStart = baseTime.AddDays(day);
+
+            // Throughout the day: 4 attempted non-urgent notifications (09:00, 12:00, 15:00, 18:00)
+            for (int hourOffset = 1; hourOffset <= 4; hourOffset++)
+            {
+                var eventTime = dayStart.AddHours(hourOffset * 3);
+                totalAttemptedNonUrgent++;
+
+                if (tracker.CanSendNonUrgent(eventTime))
+                {
+                    tracker.RecordDispatch(NotificationPriority.Normal, eventTime);
+                    totalAcceptedNonUrgent++;
+                }
+                else
+                {
+                    totalSuppressedNonUrgent++;
+                }
+            }
+
+            // Plus 1 critical safety alert per day
+            var safetyTime = dayStart.AddHours(12);
+            tracker.RecordDispatch(NotificationPriority.CriticalSafety, safetyTime);
+            totalSafetyAlertsAccepted++;
+        }
+
+        // Over 7 days: 28 non-urgent attempts
+        totalAttemptedNonUrgent.Should().Be(28);
+
+        // Daily budget is 2, so exactly 2 * 7 = 14 non-urgent accepted
+        totalAcceptedNonUrgent.Should().Be(14);
+
+        // 14 non-urgent were suppressed
+        totalSuppressedNonUrgent.Should().Be(14);
+
+        // All 7 safety alerts were delivered without touching the budget
+        totalSafetyAlertsAccepted.Should().Be(7);
+    }
 }

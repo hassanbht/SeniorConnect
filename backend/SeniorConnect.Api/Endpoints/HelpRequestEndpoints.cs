@@ -24,12 +24,14 @@ public static class HelpRequestEndpoints
             var userId = user.GetUserId();
             if (userId is null) return Results.Unauthorized();
 
-            var result = await helpService.CreateHelpRequestAsync(userId.Value, userId.Value, request, ct);
+            var seniorUserId = request.SeniorUserId ?? userId.Value;
+            var result = await helpService.CreateHelpRequestAsync(userId.Value, seniorUserId, request, ct);
             return result.ToHttpResult("/api/v1/help-requests/" + result.Value?.Id);
         })
         .WithName("CreateHelpRequest")
         .Produces<HelpRequestDto>(StatusCodes.Status201Created)
-        .ProducesProblem(StatusCodes.Status400BadRequest);
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status403Forbidden);
 
         helpGroup.MapPost("/parse-voice", async (
             VoiceParseRequest request,

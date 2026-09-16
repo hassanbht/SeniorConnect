@@ -356,7 +356,13 @@
     "perm_manage_settings": "Manage Settings",
     "perm_manage_settings_hint": "Can adjust profile settings and permissions.",
     "log_viewed_activities": "Viewed current help requests.",
-    "log_created_request": "Created a help request for the supported person."
+    "log_created_request": "Created a help request for the supported person.",
+    "reltype_child": "Connected profile (child)",
+    "reltype_spouse": "Connected profile (spouse)",
+    "reltype_sibling": "Connected profile (sibling)",
+    "reltype_neighbor": "Connected profile (neighbor)",
+    "reltype_legal_guardian": "Connected profile (legal guardian)",
+    "reltype_other": "Connected profile"
   },
   "safeguarding": {
     "report": "Report Concern",

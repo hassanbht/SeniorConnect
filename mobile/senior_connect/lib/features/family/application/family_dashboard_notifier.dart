@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
@@ -46,17 +47,10 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
           response.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       state = state.copyWith(relationships: rels, isLoading: false);
     } catch (_) {
-      final mock = [
-        {
-          'id': 'rel-1',
-          'seniorName': 'Oma Gerda (82)',
-          'relationshipType': 'Child',
-          'canCreateRequests': true,
-          'canViewActivities': true,
-          'canReceiveAlerts': true,
-        },
-      ];
-      state = state.copyWith(relationships: mock, isLoading: false);
+      state = state.copyWith(
+        isLoading: false,
+        error: 'errors.generic'.tr(),
+      );
     }
   }
 }

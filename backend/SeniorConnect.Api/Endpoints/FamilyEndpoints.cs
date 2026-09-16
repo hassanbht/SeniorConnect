@@ -39,14 +39,14 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
-
-            var result = await familyService.ClaimZugangskarteAsync(userId.Value, request, ct);
+            var result = await familyService.ClaimZugangskarteAsync(userId, request, ct);
             return result.ToHttpResult();
         })
         .WithName("ClaimZugangskarte")
-        .Produces<ZugangskarteDto>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status404NotFound);
+        .AllowAnonymous()
+        .Produces<ClaimZugangskarteResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status409Conflict);
 
         // --- Invitations & Relationships ---
 
@@ -146,6 +146,21 @@ public static class FamilyEndpoints
         .Produces<IReadOnlyList<FamilyRelationshipDto>>(StatusCodes.Status200OK);
 
         // --- Transparency Log: "Wer hat was gesehen?" ---
+
+        group.MapGet("/me/access-logs", async (
+            int? days,
+            ClaimsPrincipal user,
+            IFamilyService familyService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await familyService.GetAccessLogsAsync(userId.Value, userId.Value, days ?? 30, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("GetMyAccessLogs")
+        .Produces<IReadOnlyList<SeniorAccessLogDto>>(StatusCodes.Status200OK);
 
         group.MapGet("/seniors/{seniorId:guid}/access-logs", async (
             Guid seniorId,

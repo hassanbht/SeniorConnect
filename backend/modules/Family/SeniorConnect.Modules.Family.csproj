@@ -11,5 +11,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\SeniorConnect.Domain\SeniorConnect.Domain.csproj" />
+    <ProjectReference Include="..\Identity\SeniorConnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+    <ProjectReference Include="..\Notifications\SeniorConnect.Modules.Notifications.csproj" />
   </ItemGroup>
 </Project>

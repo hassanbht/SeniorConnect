@@ -33,6 +33,10 @@ public sealed class FamilyRelationship
     public DateTimeOffset? ConfirmedAtUtc { get; private set; }
     public DateTimeOffset? RevokedAtUtc { get; private set; }
     public Guid? RevokedByUserId { get; private set; }
+    public short FailedAttempts { get; private set; }
+    public short MaxAttempts { get; private set; } = 5;
+
+    public bool IsExhausted => FailedAttempts >= MaxAttempts;
 
     private readonly List<FamilyPermission> _permissions = [];
     public IReadOnlyCollection<FamilyPermission> Permissions => _permissions.AsReadOnly();
@@ -52,7 +56,9 @@ public sealed class FamilyRelationship
             RelationshipType = relationshipType,
             Status = RelationshipStatus.Active,
             CreatedAtUtc = DateTimeOffset.UtcNow,
-            ConfirmedAtUtc = DateTimeOffset.UtcNow
+            ConfirmedAtUtc = DateTimeOffset.UtcNow,
+            MaxAttempts = 5,
+            FailedAttempts = 0
         };
 
         // Initialize all permissions with defaults
@@ -80,7 +86,9 @@ public sealed class FamilyRelationship
             Status = RelationshipStatus.Invited,
             InvitationCode = invitationCode,
             InvitationExpiresAtUtc = expiresAtUtc,
-            CreatedAtUtc = DateTimeOffset.UtcNow
+            CreatedAtUtc = DateTimeOffset.UtcNow,
+            MaxAttempts = 5,
+            FailedAttempts = 0
         };
 
         foreach (PermissionType p in Enum.GetValues<PermissionType>())
@@ -92,11 +100,27 @@ public sealed class FamilyRelationship
         return rel;
     }
 
+    public void RecordFailedAttempt()
+    {
+        FailedAttempts++;
+    }
+
     public Result Accept(Guid caregiverUserId)
     {
         if (Status != RelationshipStatus.Invited && Status != RelationshipStatus.PendingApproval)
         {
             return Error.Conflict("INVALID_STATUS", $"Cannot accept a relationship in status {Status}.");
+        }
+
+        if (IsExhausted)
+        {
+            return Error.Conflict("INVITATION_EXHAUSTED", "This invitation code has been locked due to too many failed attempts.");
+        }
+
+        if (caregiverUserId == SeniorUserId)
+        {
+            RecordFailedAttempt();
+            return Error.Validation("A senior cannot become their own caregiver.");
         }
 
         if (InvitationExpiresAtUtc.HasValue && InvitationExpiresAtUtc.Value < DateTimeOffset.UtcNow)
@@ -133,12 +157,26 @@ public sealed class FamilyRelationship
         RevokedByUserId = revokedByUserId;
 
         // Revoke all granted permissions
-        foreach (var p in _permissions)
+        foreach (var perm in _permissions)
         {
-            p.Revoke();
+            perm.Revoke();
         }
 
         return Result.Success();
+    }
+
+    public void UpdatePermission(PermissionType type, bool isGranted)
+    {
+        var existing = _permissions.FirstOrDefault(p => p.PermissionType == type);
+        if (existing != null)
+        {
+            if (isGranted) existing.Grant();
+            else existing.Revoke();
+        }
+        else
+        {
+            _permissions.Add(new FamilyPermission(Id, type, isGranted));
+        }
     }
 
     public bool HasPermission(PermissionType type)
@@ -146,19 +184,5 @@ public sealed class FamilyRelationship
         if (Status != RelationshipStatus.Active) return false;
         var perm = _permissions.FirstOrDefault(p => p.PermissionType == type);
         return perm != null && perm.IsGranted;
-    }
-
-    public void UpdatePermission(PermissionType type, bool isGranted)
-    {
-        var perm = _permissions.FirstOrDefault(p => p.PermissionType == type);
-        if (perm == null)
-        {
-            _permissions.Add(new FamilyPermission(Id, type, isGranted));
-        }
-        else
-        {
-            if (isGranted) perm.Grant();
-            else perm.Revoke();
-        }
     }
 }

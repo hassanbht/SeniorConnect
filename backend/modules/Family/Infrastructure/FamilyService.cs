@@ -3,16 +3,35 @@ using Microsoft.EntityFrameworkCore;
 using SeniorConnect.Domain;
 using SeniorConnect.Modules.Family.Application;
 using SeniorConnect.Modules.Family.Domain;
+using SeniorConnect.Modules.Identity.Contracts;
+using SeniorConnect.Modules.Notifications.Contracts;
+using SeniorConnect.Modules.Profiles.Contracts;
 
 namespace SeniorConnect.Modules.Family.Infrastructure;
 
 public sealed class FamilyService : IFamilyService
 {
     private readonly IFamilyDbContext _db;
+    private readonly ISeniorAccountProvisioner _seniorAccountProvisioner;
+    private readonly ISupportProfileProvisioner _supportProfileProvisioner;
+    private readonly IUserSessionIssuer _userSessionIssuer;
+    private readonly IUserContactReader _userContactReader;
+    private readonly INotificationDispatcher _notificationDispatcher;
 
-    public FamilyService(IFamilyDbContext db)
+    public FamilyService(
+        IFamilyDbContext db,
+        ISeniorAccountProvisioner? seniorAccountProvisioner = null,
+        ISupportProfileProvisioner? supportProfileProvisioner = null,
+        IUserSessionIssuer? userSessionIssuer = null,
+        IUserContactReader? userContactReader = null,
+        INotificationDispatcher? notificationDispatcher = null)
     {
         _db = db;
+        _seniorAccountProvisioner = seniorAccountProvisioner ?? new NoopSeniorAccountProvisioner();
+        _supportProfileProvisioner = supportProfileProvisioner ?? new NoopSupportProfileProvisioner();
+        _userSessionIssuer = userSessionIssuer ?? new NoopUserSessionIssuer();
+        _userContactReader = userContactReader ?? new NoopUserContactReader();
+        _notificationDispatcher = notificationDispatcher ?? new NoopNotificationDispatcher();
     }
 
     public async Task<Result<FamilyRelationshipDto>> InviteCaregiverAsync(
@@ -55,9 +74,16 @@ public sealed class FamilyService : IFamilyService
         AcceptInvitationRequest request,
         CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(request.InvitationCode))
+        {
+            return Error.Validation("Invitation code is required.");
+        }
+
+        var trimmedCode = request.InvitationCode.Trim();
+
         var rel = await _db.FamilyRelationships
             .Include(r => r.Permissions)
-            .FirstOrDefaultAsync(r => r.InvitationCode == request.InvitationCode.Trim()
+            .FirstOrDefaultAsync(r => r.InvitationCode == trimmedCode
                 && r.Status == RelationshipStatus.Invited, ct);
 
         if (rel is null)
@@ -65,9 +91,15 @@ public sealed class FamilyService : IFamilyService
             return Error.NotFound("Invitation code");
         }
 
+        if (rel.IsExhausted)
+        {
+            return Error.Conflict("INVITATION_EXHAUSTED", "This invitation code has been locked due to too many failed attempts.");
+        }
+
         var acceptResult = rel.Accept(caregiverUserId);
         if (acceptResult.IsFailure)
         {
+            await _db.SaveChangesAsync(ct);
             return acceptResult.Error!;
         }
 
@@ -174,18 +206,33 @@ public sealed class FamilyService : IFamilyService
         Guid requesterUserId,
         CancellationToken ct = default)
     {
-        // Senior themselves or connected active caregiver can view caregivers
+        // Senior themselves, or a caregiver with ManageSettings, can view the
+        // roster — it exposes every other caregiver's full permission matrix
+        // and pending invitation codes, so mere presence of a relationship
+        // (Gate 2: "a family member with no permissions sees literally
+        // nothing") is NOT sufficient.
         if (seniorUserId != requesterUserId)
         {
-            var isCaregiver = await _db.FamilyRelationships
+            var canManage = await _db.FamilyRelationships
                 .AnyAsync(r => r.SeniorUserId == seniorUserId
                     && r.CaregiverUserId == requesterUserId
-                    && r.Status == RelationshipStatus.Active, ct);
+                    && r.Status == RelationshipStatus.Active
+                    && r.Permissions.Any(p => p.PermissionType == PermissionType.ManageSettings && p.IsGranted), ct);
 
-            if (!isCaregiver)
+            if (!canManage)
             {
-                return Error.Forbidden("Not authorized to view caregiver roster for this senior.");
+                return Error.Forbidden("Not authorized to view caregivers for this senior.");
             }
+
+            // P6-08: Log caregiver roster reads by non-seniors
+            _db.SeniorAccessLogs.Add(SeniorAccessLog.Create(
+                seniorUserId,
+                requesterUserId,
+                "Angehöriger",
+                "VIEW_CAREGIVER_ROSTER",
+                "FamilyRelationship",
+                "Angehöriger hat die Liste der Betreuungspersonen eingesehen."));
+            await _db.SaveChangesAsync(ct);
         }
 
         var list = await _db.FamilyRelationships
@@ -194,7 +241,7 @@ public sealed class FamilyService : IFamilyService
             .OrderByDescending(r => r.CreatedAtUtc)
             .ToListAsync(ct);
 
-        return list.Select(MapRelationshipToDto).ToList();
+        return list.Select(r => MapRelationshipToDto(r)).ToList();
     }
 
     public async Task<Result<IReadOnlyList<FamilyRelationshipDto>>> GetSeniorsForCaregiverAsync(
@@ -207,7 +254,14 @@ public sealed class FamilyService : IFamilyService
             .OrderByDescending(r => r.CreatedAtUtc)
             .ToListAsync(ct);
 
-        return list.Select(MapRelationshipToDto).ToList();
+        var dtoList = new List<FamilyRelationshipDto>(list.Count);
+        foreach (var rel in list)
+        {
+            var contact = await _userContactReader.GetContactAsync(rel.SeniorUserId, ct);
+            dtoList.Add(MapRelationshipToDto(rel, contact?.DisplayName, contact?.Phone));
+        }
+
+        return dtoList;
     }
 
     public async Task<Result<ZugangskarteDto>> CreateSeniorWithZugangskarteAsync(
@@ -218,10 +272,40 @@ public sealed class FamilyService : IFamilyService
         if (string.IsNullOrWhiteSpace(request.DisplayName))
             return Error.Validation("Senior display name is required.");
 
-        var seniorId = Guid.NewGuid();
-        var zugangskarte = Zugangskarte.Generate(seniorId, caregiverUserId, TimeSpan.FromDays(request.ValidForDays > 0 ? request.ValidForDays : 7));
+        // 1. Provision real senior User account in Identity module (P6-03)
+        var userResult = await _seniorAccountProvisioner.ProvisionSeniorUserAsync(
+            request.DisplayName,
+            request.PhoneNumber,
+            caregiverUserId,
+            ct);
 
-        // Create initial active relationship between caregiver and senior
+        if (userResult.IsFailure)
+        {
+            return userResult.Error!;
+        }
+
+        var seniorId = userResult.Value;
+
+        // 2. Provision SupportProfile in Profiles module (P6-03)
+        var profileResult = await _supportProfileProvisioner.ProvisionSupportProfileAsync(
+            seniorId,
+            request.PostalCode,
+            request.City,
+            caregiverUserId,
+            ct);
+
+        if (profileResult.IsFailure)
+        {
+            return profileResult.Error!;
+        }
+
+        // 3. Generate Zugangskarte with pairing code and QR token
+        var zugangskarte = Zugangskarte.Generate(
+            seniorId,
+            caregiverUserId,
+            TimeSpan.FromDays(request.ValidForDays > 0 ? request.ValidForDays : 7));
+
+        // 4. Create initial active relationship between caregiver and senior
         var rel = FamilyRelationship.CreateActive(seniorId, caregiverUserId, request.RelationshipType);
         // Grant all initial default setup permissions to provisioning caregiver
         rel.UpdatePermission(PermissionType.ViewActivities, true);
@@ -243,39 +327,46 @@ public sealed class FamilyService : IFamilyService
 
         await _db.SaveChangesAsync(ct);
 
-        return new ZugangskarteDto(
-            zugangskarte.Id,
-            zugangskarte.SeniorUserId,
-            zugangskarte.CreatedByCaregiverUserId,
-            zugangskarte.PairingCode,
-            zugangskarte.QrPayload,
-            zugangskarte.CreatedAtUtc,
-            zugangskarte.ExpiresAtUtc,
-            zugangskarte.IsClaimed);
+        return MapKarteToDto(zugangskarte);
     }
 
-    public async Task<Result<ZugangskarteDto>> ClaimZugangskarteAsync(
-        Guid seniorUserId,
+    public async Task<Result<ClaimZugangskarteResponse>> ClaimZugangskarteAsync(
+        Guid? claimingUserId,
         ClaimZugangskarteRequest request,
         CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(request.PairingCode))
+        {
+            return Error.Validation("Pairing code is required.");
+        }
+
+        var trimmedCode = request.PairingCode.Trim();
+
         var karte = await _db.Zugangskarten
-            .FirstOrDefaultAsync(z => z.PairingCode == request.PairingCode.Trim() && !z.ClaimedAtUtc.HasValue, ct);
+            .FirstOrDefaultAsync(z => z.PairingCode == trimmedCode, ct);
 
         if (karte is null)
         {
             return Error.NotFound("Zugangskarte");
         }
 
-        var claimResult = karte.Claim();
+        if (karte.IsExhausted)
+        {
+            return Error.Conflict("ZUGANGSKARTE_EXHAUSTED", "This Zugangskarte has been locked due to too many failed attempts.");
+        }
+
+        var claimResult = karte.Claim(claimingUserId, request.QrToken);
         if (claimResult.IsFailure)
         {
+            await _db.SaveChangesAsync(ct);
             return claimResult.Error!;
         }
 
+        var effectiveUserId = claimingUserId ?? karte.SeniorUserId;
+
         _db.SeniorAccessLogs.Add(SeniorAccessLog.Create(
             karte.SeniorUserId,
-            seniorUserId,
+            effectiveUserId,
             "Senior",
             "ZUGANGSKARTE_CLAIMED",
             "Zugangskarte",
@@ -283,15 +374,11 @@ public sealed class FamilyService : IFamilyService
 
         await _db.SaveChangesAsync(ct);
 
-        return new ZugangskarteDto(
-            karte.Id,
-            karte.SeniorUserId,
-            karte.CreatedByCaregiverUserId,
-            karte.PairingCode,
-            karte.QrPayload,
-            karte.CreatedAtUtc,
-            karte.ExpiresAtUtc,
-            karte.IsClaimed);
+        // Issue JWT session for the senior account (P6-04)
+        var sessionResult = await _userSessionIssuer.IssueSessionAsync(karte.SeniorUserId, "Zugangskarte Device", ct);
+
+        var dto = MapKarteToDto(karte);
+        return new ClaimZugangskarteResponse(dto, sessionResult.IsSuccess ? sessionResult.Value : null);
     }
 
     public async Task<Result<IReadOnlyList<SeniorAccessLogDto>>> GetAccessLogsAsync(
@@ -313,6 +400,15 @@ public sealed class FamilyService : IFamilyService
             {
                 return Error.Forbidden("Not authorized to view access logs for this senior.");
             }
+
+            _db.SeniorAccessLogs.Add(SeniorAccessLog.Create(
+                seniorUserId,
+                requesterUserId,
+                "Angehöriger",
+                "VIEW_ACCESS_LOG",
+                "SeniorAccessLog",
+                "Angehöriger hat das Zugriffsprotokoll eingesehen."));
+            await _db.SaveChangesAsync(ct);
         }
 
         var cutoff = DateTimeOffset.UtcNow.AddDays(-Math.Abs(days));
@@ -397,6 +493,15 @@ public sealed class FamilyService : IFamilyService
             {
                 return Error.Forbidden("Not authorized to view emergency contacts for this senior.");
             }
+
+            _db.SeniorAccessLogs.Add(SeniorAccessLog.Create(
+                seniorUserId,
+                requesterUserId,
+                "Angehöriger",
+                "VIEW_TRUSTED_CONTACTS",
+                "TrustedContact",
+                "Angehöriger hat die Notfallkontakte eingesehen."));
+            await _db.SaveChangesAsync(ct);
         }
 
         var contacts = await _db.TrustedContacts
@@ -502,13 +607,16 @@ public sealed class FamilyService : IFamilyService
         TriggerSafetyAlertRequest request,
         CancellationToken ct = default)
     {
-        // Senior themselves or active caregiver can trigger a safety alert
+        // Senior themselves, or a caregiver with ReceiveSafetyAlerts, can
+        // trigger a safety alert — same permission that gates acknowledging
+        // and resolving one, so a caregiver revoked of it can't raise one either.
         if (request.SeniorUserId != requesterUserId)
         {
             var hasAccess = await _db.FamilyRelationships
                 .AnyAsync(r => r.SeniorUserId == request.SeniorUserId
                     && r.CaregiverUserId == requesterUserId
-                    && r.Status == RelationshipStatus.Active, ct);
+                    && r.Status == RelationshipStatus.Active
+                    && r.Permissions.Any(p => p.PermissionType == PermissionType.ReceiveSafetyAlerts && p.IsGranted), ct);
 
             if (!hasAccess)
             {
@@ -539,6 +647,55 @@ public sealed class FamilyService : IFamilyService
             $"Sicherheitsbenachrichtigung ({request.Category}) wurde ausgelöst."));
 
         await _db.SaveChangesAsync(ct);
+
+        // P6-06: Dispatch notifications to caregivers who have ReceiveSafetyAlerts permission
+        var alertCaregivers = await _db.FamilyRelationships
+            .Where(r => r.SeniorUserId == request.SeniorUserId
+                && r.Status == RelationshipStatus.Active
+                && r.Permissions.Any(p => p.PermissionType == PermissionType.ReceiveSafetyAlerts && p.IsGranted))
+            .Select(r => r.CaregiverUserId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        foreach (var caregiverId in alertCaregivers)
+        {
+            await _notificationDispatcher.DispatchAsync(new NotificationDispatchCommand(
+                RecipientUserId: caregiverId,
+                Category: "FamilyWelfare",
+                Priority: "CriticalSafety",
+                Title: "Sicherheitswarnung",
+                Body: $"Sicherheitswarnung ({alert.Category}) für Ihren Angehörigen ausgelöst: {alert.Details}",
+                PayloadJson: $"{{\"alertId\":\"{alert.Id}\",\"seniorUserId\":\"{alert.SeniorUserId}\"}}"), ct);
+        }
+
+        // P6-06: Dispatch direct SMS to trusted emergency contacts who have NotifyOnSafetyAlert enabled
+        var emergencyContacts = await _db.TrustedContacts
+            .Where(c => c.SeniorUserId == request.SeniorUserId && !c.IsDeleted && c.NotifyOnSafetyAlert)
+            .ToListAsync(ct);
+
+        foreach (var contact in emergencyContacts)
+        {
+            if (!string.IsNullOrWhiteSpace(contact.PhoneNumber))
+            {
+                await _notificationDispatcher.DispatchDirectSmsAsync(
+                    contact.PhoneNumber,
+                    $"SeniorConnect Notfallwarnung ({alert.Category}): {alert.Details}",
+                    ct);
+            }
+        }
+
+        if (alertCaregivers.Count > 0 || emergencyContacts.Count > 0)
+        {
+            _db.SeniorAccessLogs.Add(SeniorAccessLog.Create(
+                request.SeniorUserId,
+                requesterUserId,
+                "System",
+                "SAFETY_ALERT_NOTIFIED",
+                "FamilyRelationship / TrustedContact",
+                $"Benachrichtigung an {alertCaregivers.Count} Betreuer und {emergencyContacts.Count} Notfallkontakte versendet."));
+            await _db.SaveChangesAsync(ct);
+        }
+
         return MapAlertToDto(alert);
     }
 
@@ -605,7 +762,7 @@ public sealed class FamilyService : IFamilyService
             "Angehöriger",
             "SAFETY_ALERT_RESOLVED",
             "SafetyAlert",
-            $"Sicherheitsbenachrichtigung wurde als erledigt markiert: {request.ResolutionNotes}"));
+            "Sicherheitsbenachrichtigung wurde aufgelöst."));
 
         await _db.SaveChangesAsync(ct);
         return MapAlertToDto(alert);
@@ -618,16 +775,25 @@ public sealed class FamilyService : IFamilyService
     {
         if (seniorUserId != requesterUserId)
         {
-            var hasPermission = await _db.FamilyRelationships
+            var hasAccess = await _db.FamilyRelationships
                 .AnyAsync(r => r.SeniorUserId == seniorUserId
                     && r.CaregiverUserId == requesterUserId
                     && r.Status == RelationshipStatus.Active
                     && r.Permissions.Any(p => p.PermissionType == PermissionType.ReceiveSafetyAlerts && p.IsGranted), ct);
 
-            if (!hasPermission)
+            if (!hasAccess)
             {
                 return Error.Forbidden("Not authorized to view safety alerts for this senior.");
             }
+
+            _db.SeniorAccessLogs.Add(SeniorAccessLog.Create(
+                seniorUserId,
+                requesterUserId,
+                "Angehöriger",
+                "VIEW_SAFETY_ALERTS",
+                "SafetyAlert",
+                "Angehöriger hat die Sicherheitsbenachrichtigungen eingesehen."));
+            await _db.SaveChangesAsync(ct);
         }
 
         var alerts = await _db.SafetyAlerts
@@ -638,7 +804,7 @@ public sealed class FamilyService : IFamilyService
         return alerts.Select(MapAlertToDto).ToList();
     }
 
-    private static FamilyRelationshipDto MapRelationshipToDto(FamilyRelationship r) =>
+    private static FamilyRelationshipDto MapRelationshipToDto(FamilyRelationship r, string? displayName = null, string? phone = null) =>
         new(
             r.Id,
             r.SeniorUserId,
@@ -649,7 +815,21 @@ public sealed class FamilyService : IFamilyService
             r.InvitationExpiresAtUtc,
             r.CreatedAtUtc,
             r.ConfirmedAtUtc,
-            r.Permissions.Select(p => new FamilyPermissionDto(p.Id, p.PermissionType, p.IsGranted, p.UpdatedAtUtc)).ToList());
+            r.Permissions.Select(p => new FamilyPermissionDto(p.Id, p.PermissionType, p.IsGranted, p.UpdatedAtUtc)).ToList(),
+            displayName,
+            phone);
+
+    private static ZugangskarteDto MapKarteToDto(Zugangskarte k) =>
+        new(
+            k.Id,
+            k.SeniorUserId,
+            k.CreatedByCaregiverUserId,
+            k.PairingCode,
+            k.QrPayload,
+            k.CreatedAtUtc,
+            k.ExpiresAtUtc,
+            k.IsClaimed,
+            k.ClaimedByUserId);
 
     private static TrustedContactDto MapContactToDto(TrustedContact c) =>
         new(
@@ -677,4 +857,37 @@ public sealed class FamilyService : IFamilyService
             a.ResolvedAtUtc,
             a.ResolvedByUserId,
             a.ResolutionNotes);
+
+    private sealed class NoopSeniorAccountProvisioner : ISeniorAccountProvisioner
+    {
+        public Task<Result<Guid>> ProvisionSeniorUserAsync(string displayName, string? phone, Guid createdByUserId, CancellationToken ct = default)
+            => Task.FromResult(Result<Guid>.Success(Guid.NewGuid()));
+    }
+
+    private sealed class NoopSupportProfileProvisioner : ISupportProfileProvisioner
+    {
+        public Task<Result> ProvisionSupportProfileAsync(Guid userId, string? postalCode, string? city, Guid? createdByUserId, CancellationToken ct = default)
+            => Task.FromResult(Result.Success());
+    }
+
+    private sealed class NoopUserSessionIssuer : IUserSessionIssuer
+    {
+        public Task<Result<UserSessionDto>> IssueSessionAsync(Guid userId, string? deviceLabel = null, CancellationToken ct = default)
+            => Task.FromResult(Result<UserSessionDto>.Success(new UserSessionDto("dummy_access_token", "dummy_refresh_token", 900, userId, "Senior")));
+    }
+
+    private sealed class NoopUserContactReader : IUserContactReader
+    {
+        public Task<UserContact?> GetContactAsync(Guid userId, CancellationToken ct = default)
+            => Task.FromResult<UserContact?>(null);
+    }
+
+    private sealed class NoopNotificationDispatcher : INotificationDispatcher
+    {
+        public Task<Result> DispatchAsync(NotificationDispatchCommand command, CancellationToken ct = default)
+            => Task.FromResult(Result.Success());
+
+        public Task<Result> DispatchDirectSmsAsync(string phoneNumber, string message, CancellationToken ct = default)
+            => Task.FromResult(Result.Success());
+    }
 }
