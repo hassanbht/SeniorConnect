@@ -46,6 +46,16 @@ public interface IReportingService
         DateOnly from,
         DateOnly to,
         CancellationToken cancellationToken = default);
+
+    Task<Result<AnnualStatisticsReportDto>> GetAnnualReportAsync(
+        Guid organizationId,
+        int year,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<byte[]>> ExportAnnualReportPdfAsync(
+        Guid organizationId,
+        int year,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IEsgReportingService

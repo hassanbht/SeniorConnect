@@ -15,6 +15,7 @@ import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
 import '../application/coordinator_attention_dashboard_notifier.dart';
+import 'annual_report_screen.dart';
 
 class CoordinatorAttentionDashboardScreen extends ConsumerWidget {
   const CoordinatorAttentionDashboardScreen({
@@ -171,6 +172,36 @@ class CoordinatorAttentionDashboardScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Card(
+          elevation: 0,
+          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            side: BorderSide(
+              color: theme.colorScheme.primary.withValues(alpha: 0.3),
+            ),
+          ),
+          child: ListTile(
+            leading: Icon(Icons.bar_chart_rounded, color: theme.colorScheme.primary),
+            title: Text(
+              'annual_report.title'.tr(),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text('annual_report.open_dashboard'.tr()),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => AnnualReportScreen(
+                    organizationId: organizationId,
+                    apiClient: apiClient,
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ],
     );

@@ -650,5 +650,19 @@
     "ar": "Arabisch",
     "uk": "Ukrainisch",
     "tr": "Türkisch"
+  },
+  "annual_report": {
+    "title": "Das Freiwilligenzentrum in Zahlen",
+    "subtitle": "Offizieller Jahresbericht ({0})",
+    "open_dashboard": "Jahresbericht & Kennzahlen einsehen",
+    "volunteers": "Freiwillige",
+    "volunteer_pool": "Personen im Freiwilligenpool",
+    "network_partners": "Vernetzungspartner:innen",
+    "placements": "Vermittlungen",
+    "insured": "Versicherte",
+    "events_and_projects": "Veranstaltungen & Projekte",
+    "total_hours_label": "Geleistete Stunden im Berichtsjahr: {0} h",
+    "export_pdf": "Jahresbericht als PDF herunterladen",
+    "export_ready": "Jahresbericht als PDF bereitgestellt."
   }
 }

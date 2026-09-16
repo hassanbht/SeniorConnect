@@ -649,5 +649,19 @@
     "ar": "Arabic",
     "uk": "Ukrainian",
     "tr": "Turkish"
+  },
+  "annual_report": {
+    "title": "The Volunteer Center in Numbers",
+    "subtitle": "Official Annual Report ({0})",
+    "open_dashboard": "View annual report & metrics",
+    "volunteers": "Volunteers",
+    "volunteer_pool": "Volunteer Pool",
+    "network_partners": "Network Partners",
+    "placements": "Placements",
+    "insured": "Insured Persons",
+    "events_and_projects": "Events & Projects",
+    "total_hours_label": "Total volunteer hours in reporting year: {0} h",
+    "export_pdf": "Download Annual Report (PDF)",
+    "export_ready": "Annual report prepared as PDF."
   }
 }

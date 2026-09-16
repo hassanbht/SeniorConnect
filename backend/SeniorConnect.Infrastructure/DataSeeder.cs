@@ -21,15 +21,6 @@ public static class DataSeeder
         }
 
         // 2. Seed Activity Categories (Reference Taxonomy: P1-15, P2-06, PSG-06)
-        // 1. Seed Austrian Administrative Units (P1-15b)
-        if (!await db.AustrianAdministrativeUnits.AnyAsync(cancellationToken))
-        {
-            var units = CreateAustrianAdministrativeUnits();
-            await db.AustrianAdministrativeUnits.AddRangeAsync(units, cancellationToken);
-            await db.SaveChangesAsync(cancellationToken);
-        }
-
-        // 2. Seed Activity Categories (Reference Taxonomy: P1-15, P2-06, PSG-06)
         if (!await db.ActivityCategories.AnyAsync(cancellationToken))
         {
             var categories = new List<ActivityCategory>

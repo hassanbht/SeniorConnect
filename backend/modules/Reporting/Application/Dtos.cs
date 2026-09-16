@@ -49,3 +49,24 @@ public sealed record MultiOrgFunderDashboardDto(
     string TotalAggregatedHours,
     string TotalAggregatedBeneficiaries,
     IReadOnlyList<FunderMonthlyReportItemDto> OrganizationMetrics);
+
+public sealed record MetricWithGrowthDto(
+    int CurrentValue,
+    int PreviousYearValue,
+    int Growth,
+    string FormattedGrowth);
+
+public sealed record AnnualStatisticsReportDto(
+    Guid OrganizationId,
+    string OrganizationName,
+    int Year,
+    MetricWithGrowthDto TotalVolunteers,
+    MetricWithGrowthDto VolunteerPool,
+    MetricWithGrowthDto NetworkPartners,
+    MetricWithGrowthDto Placements,
+    MetricWithGrowthDto InsuredPersons,
+    MetricWithGrowthDto EventsAndProjects,
+    double TotalHours,
+    int TotalActivities,
+    IReadOnlyDictionary<string, double> HoursByCategory,
+    DateTimeOffset GeneratedAtUtc);

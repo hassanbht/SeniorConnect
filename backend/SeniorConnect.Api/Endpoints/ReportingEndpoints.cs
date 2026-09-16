@@ -115,7 +115,32 @@ public static class ReportingEndpoints
 
             return Results.File(result.Value!, "application/pdf", $"esg-certificate-{companyOrgId}.pdf");
         })
-        .WithName("ExportCorporateEsgCertificatePdf")
+        reportGroup.MapGet("/organizations/{orgId:guid}/annual-report", async (
+            Guid orgId,
+            int? year,
+            IReportingService reportService,
+            CancellationToken ct) =>
+        {
+            var targetYear = year ?? DateTime.UtcNow.Year;
+            var result = await reportService.GetAnnualReportAsync(orgId, targetYear, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("GetAnnualReport")
+        .Produces<AnnualStatisticsReportDto>(StatusCodes.Status200OK);
+
+        reportGroup.MapGet("/organizations/{orgId:guid}/annual-report/export.pdf", async (
+            Guid orgId,
+            int? year,
+            IReportingService reportService,
+            CancellationToken ct) =>
+        {
+            var targetYear = year ?? DateTime.UtcNow.Year;
+            var result = await reportService.ExportAnnualReportPdfAsync(orgId, targetYear, ct);
+            if (result.IsFailure) return Results.BadRequest(result.Error?.Detail);
+
+            return Results.File(result.Value!, "application/pdf", $"annual-report-{orgId}-{targetYear}.pdf");
+        })
+        .WithName("ExportAnnualReportPdf")
         .Produces(StatusCodes.Status200OK, contentType: "application/pdf");
 
         return app;
