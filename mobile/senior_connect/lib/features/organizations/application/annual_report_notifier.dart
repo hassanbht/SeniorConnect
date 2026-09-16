@@ -47,10 +47,9 @@ class AnnualReportNotifier extends StateNotifier<AnnualReportState> {
 
   AnnualReportNotifier({
     required this.organizationId,
-    required AnnualReportRepository repository,
+    required this._repository,
     int initialYear = 2025,
-  })  : _repository = repository,
-        super(AnnualReportState(selectedYear: initialYear)) {
+  })  : super(AnnualReportState(selectedYear: initialYear)) {
     load(initialYear);
   }
 

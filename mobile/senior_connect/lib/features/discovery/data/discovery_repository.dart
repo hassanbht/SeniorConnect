@@ -243,8 +243,8 @@ class DiscoveryRepositoryImpl implements DiscoveryRepository {
       queryParameters: {
         'latitude': latitude,
         'longitude': longitude,
-        if (maxDistanceKm != null) 'maxDistanceKm': maxDistanceKm,
-        if (maxResults != null) 'maxResults': maxResults,
+        'maxDistanceKm': ?maxDistanceKm,
+        'maxResults': ?maxResults,
       },
     );
     return response

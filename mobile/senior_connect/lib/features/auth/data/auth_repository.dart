@@ -216,7 +216,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> idAustriaSignIn({required String code, String? state}) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       '/api/v1/auth/id-austria',
-      data: {'code': code, if (state != null) 'state': state},
+      data: {'code': code, 'state': ?state},
     );
 
     final accessToken = response['accessToken'] as String?;
@@ -283,7 +283,7 @@ class AuthRepositoryImpl implements AuthRepository {
       data: {
         'email': email,
         'password': password,
-        if (totpCode != null) 'totpCode': totpCode,
+        'totpCode': ?totpCode,
       },
     );
 

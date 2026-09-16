@@ -309,19 +309,21 @@ class _SingleChoiceInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: theme.textTheme.titleMedium),
-        for (final option in options)
-          RadioListTile<String>(
-            contentPadding: EdgeInsets.zero,
-            value: option,
-            groupValue: selected,
-            onChanged: onChanged,
-            title: Text(option),
-          ),
-      ],
+    return RadioGroup<String>(
+      groupValue: selected,
+      onChanged: onChanged,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: theme.textTheme.titleMedium),
+          for (final option in options)
+            RadioListTile<String>(
+              contentPadding: EdgeInsets.zero,
+              value: option,
+              title: Text(option),
+            ),
+        ],
+      ),
     );
   }
 }

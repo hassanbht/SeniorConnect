@@ -141,7 +141,7 @@ class HelpFaqScreen extends ConsumerWidget {
             }),
             const SizedBox(height: AppSpacing.lg),
             Card(
-              color: theme.colorScheme.surfaceVariant,
+              color: theme.colorScheme.surfaceContainerHighest,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),

@@ -169,7 +169,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
     final isSeniorMode =
-        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     final authState = ref.watch(authProvider(widget.apiClient));
     final authNotifier = ref.read(authProvider(widget.apiClient).notifier);
@@ -354,7 +354,7 @@ class _PhoneTab extends StatelessWidget {
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
     final isSeniorMode =
-        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     return SingleChildScrollView(
       child: Form(
@@ -484,7 +484,7 @@ class _EmailTab extends StatelessWidget {
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
     final isSeniorMode =
-        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     return SingleChildScrollView(
       child: Form(
@@ -690,7 +690,7 @@ class _IdAustriaTab extends StatelessWidget {
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
     final isSeniorMode =
-        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
     final buttonHeight = isSeniorMode
         ? AppTouch.buttonHeightSenior
         : AppTouch.buttonHeightStandard;

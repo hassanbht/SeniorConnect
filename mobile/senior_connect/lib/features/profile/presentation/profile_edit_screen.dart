@@ -245,7 +245,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
     final isSeniorMode =
-        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
     final buttonHeight = isSeniorMode
         ? AppTouch.buttonHeightSenior
         : AppTouch.buttonHeightStandard;
@@ -519,7 +519,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
             // Bundesland dropdown
             DropdownButtonFormField<String>(
-              value: state.selectedBundesland,
+              initialValue: state.selectedBundesland,
               decoration: InputDecoration(
                 labelText: 'profile.bundesland'.tr(),
                 border: const OutlineInputBorder(),
@@ -543,7 +543,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
             // Bezirk dropdown
             DropdownButtonFormField<String>(
-              value: state.selectedBezirk,
+              initialValue: state.selectedBezirk,
               decoration: InputDecoration(
                 labelText: 'profile.bezirk'.tr(),
                 border: const OutlineInputBorder(),
@@ -567,7 +567,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
             // Gemeinde dropdown
             DropdownButtonFormField<String>(
-              value: state.selectedGemeinde,
+              initialValue: state.selectedGemeinde,
               decoration: InputDecoration(
                 labelText: 'profile.gemeinde'.tr(),
                 border: const OutlineInputBorder(),
@@ -814,7 +814,7 @@ class _MapPreviewSheet extends StatelessWidget {
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
     final isSeniorMode =
-        MediaQuery.of(context).textScaler.textScaleFactor > 1.3;
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
     final buttonHeight = isSeniorMode
         ? AppTouch.buttonHeightSenior
         : AppTouch.buttonHeightStandard;

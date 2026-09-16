@@ -124,7 +124,7 @@ class _SafeguardingConcernDialogState
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
-                value: state.selectedCategory,
+                initialValue: state.selectedCategory,
                 isExpanded: true,
                 decoration: InputDecoration(
                   labelText: 'safeguarding.category'.tr(),
