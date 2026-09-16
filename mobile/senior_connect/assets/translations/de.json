@@ -621,5 +621,34 @@
     "log_activity_submit": "Einsatz speichern",
     "fill_required_fields": "Bitte füllen Sie alle erforderlichen Felder aus.",
     "activity_logged_success": "Einsatz erfolgreich erfasst."
+  },
+  "intake": {
+    "field": {
+      "bereiche": "Bereiche",
+      "personengruppen": "Personengruppen",
+      "zeitaufwand": "Zeitaufwand",
+      "faehigkeiten": "Fähigkeiten & Anmerkungen",
+      "strafrechtliche_unbescholtenheit": "Strafrechtliche Unbescholtenheit",
+      "gdpr_consent": "Datenschutz-Einwilligung (DSGVO)",
+      "event_invitation_opt_in": "Einladung zu Veranstaltungen"
+    }
+  },
+  "interest": {
+    "social": "Soziales",
+    "nature": "Natur & Garten",
+    "e_volunteering": "E-Volunteering & Digitales",
+    "climate_sustainability": "Klima & Nachhaltigkeit",
+    "crafts_creative": "Handwerkliches & Kreatives",
+    "arts_culture": "Kunst & Kultur",
+    "volunteer_pool": "Freiwilligenpool",
+    "tutoring": "Lernbetreuung & Bildung"
+  },
+  "language": {
+    "de": "Deutsch",
+    "en": "Englisch",
+    "fa": "Persisch",
+    "ar": "Arabisch",
+    "uk": "Ukrainisch",
+    "tr": "Türkisch"
   }
 }

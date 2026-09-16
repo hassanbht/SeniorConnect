@@ -620,5 +620,34 @@
     "log_activity_submit": "ذخیره فعالیت",
     "fill_required_fields": "لطفاً همه فیلدهای اجباری را تکمیل فرمایید.",
     "activity_logged_success": "فعالیت با موفقیت ثبت شد."
+  },
+  "intake": {
+    "field": {
+      "bereiche": "حوزه‌های فعالیت",
+      "personengruppen": "گروه‌های هدف",
+      "zeitaufwand": "میزان زمان و در دسترس بودن",
+      "faehigkeiten": "مهارت‌ها و توضیحات",
+      "strafrechtliche_unbescholtenheit": "تأییدیه عدم سوء‌پیشینه",
+      "gdpr_consent": "رضایت‌نامه پردازش داده‌ها (DSGVO)",
+      "event_invitation_opt_in": "دریافت دعوت‌نامه برای رویدادها"
+    }
+  },
+  "interest": {
+    "social": "اجتماعی و همراهی",
+    "nature": "طبیعت و باغبانی",
+    "e_volunteering": "داوطلبی دیجیتال و آنلاین",
+    "climate_sustainability": "محیط زیست و پایداری",
+    "crafts_creative": "کارهای دستی و خلاقانه",
+    "arts_culture": "هنر و فرهنگ",
+    "volunteer_pool": "استخر داوطلبان عمومی",
+    "tutoring": "آموزش و تدریس"
+  },
+  "language": {
+    "de": "آلمانی",
+    "en": "انگلیسی",
+    "fa": "فارسی",
+    "ar": "عربی",
+    "uk": "اوکراینی",
+    "tr": "ترکی"
   }
 }

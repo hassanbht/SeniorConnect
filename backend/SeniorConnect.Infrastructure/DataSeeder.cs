@@ -4,6 +4,7 @@ using SeniorConnect.Domain;
 using SeniorConnect.Modules.Geography.Domain;
 using SeniorConnect.Modules.HelpRequests.Domain;
 using SeniorConnect.Modules.Organizations.Domain;
+using SeniorConnect.Modules.Profiles.Domain;
 
 namespace SeniorConnect.Infrastructure;
 
@@ -150,6 +151,50 @@ public static class DataSeeder
             await db.OrganizationBranches.AddAsync(branch, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
         }
+
+        // 3b. Seed Pilot Intake Form for FWZ Innsbruck-Land (ADR-021 / P2-40)
+        var fwzOrg = await db.Organizations.FirstOrDefaultAsync(
+            o => o.Name == "Freiwilligenzentrum Innsbruck-Land", cancellationToken);
+        if (fwzOrg is not null && !await db.OrganizationIntakeForms.AnyAsync(f => f.OrganizationId == fwzOrg.Id, cancellationToken))
+        {
+            await SeedFwzIntakeFormAsync(db, fwzOrg.Id, cancellationToken);
+        }
+
+        // 4. Seed Reference Interests (matching the 8 standard Bereiche from FWZ volunteer intake form)
+        if (!await db.Interests.AnyAsync(cancellationToken))
+        {
+            var interests = new List<Interest>
+            {
+                Interest.Create("social", "interest.social"),
+                Interest.Create("nature", "interest.nature"),
+                Interest.Create("e_volunteering", "interest.e_volunteering"),
+                Interest.Create("climate_sustainability", "interest.climate_sustainability"),
+                Interest.Create("crafts_creative", "interest.crafts_creative"),
+                Interest.Create("arts_culture", "interest.arts_culture"),
+                Interest.Create("volunteer_pool", "interest.volunteer_pool"),
+                Interest.Create("tutoring", "interest.tutoring")
+            };
+
+            await db.Interests.AddRangeAsync(interests, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        // 5. Seed Reference Languages
+        if (!await db.Languages.AnyAsync(cancellationToken))
+        {
+            var languages = new List<Language>
+            {
+                Language.Create("de", "language.de"),
+                Language.Create("en", "language.en"),
+                Language.Create("fa", "language.fa"),
+                Language.Create("ar", "language.ar"),
+                Language.Create("uk", "language.uk"),
+                Language.Create("tr", "language.tr")
+            };
+
+            await db.Languages.AddRangeAsync(languages, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 
     private static List<AustrianAdministrativeUnit> CreateAustrianAdministrativeUnits()
@@ -253,5 +298,49 @@ public static class DataSeeder
         typeof(ActivityCategory).GetProperty(nameof(ActivityCategory.ReferralGroup))!.SetValue(category, referralGroup);
         typeof(ActivityCategory).GetProperty(nameof(ActivityCategory.IsActive))!.SetValue(category, true);
         return category;
+    }
+
+    private static async Task SeedFwzIntakeFormAsync(SeniorConnectDbContext db, Guid organizationId, CancellationToken cancellationToken)
+    {
+        var form = OrganizationIntakeForm.Create(
+            organizationId,
+            FormType.Volunteer,
+            "FWZ Innsbruck-Land: Interesse für Freiwilligentätigkeit",
+            "Standard-Aufnahmeformular für Freiwillige nach Vorlage FWZ Innsbruck-Land");
+
+        await db.OrganizationIntakeForms.AddAsync(form, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+
+        var section1 = IntakeFormSection.Create(form.Id, "Bereiche", "In welchen Bereichen möchten Sie sich engagieren?", 1);
+        var section2 = IntakeFormSection.Create(form.Id, "Personengruppen", "Mit welchen Personengruppen möchten Sie arbeiten?", 2);
+        var section3 = IntakeFormSection.Create(form.Id, "Zeitaufwand", "Wie viel Zeit können Sie einbringen?", 3);
+        var section4 = IntakeFormSection.Create(form.Id, "Fähigkeiten & Anmerkungen", "Haben Sie besondere Fähigkeiten oder Anmerkungen?", 4);
+        var section5 = IntakeFormSection.Create(form.Id, "Strafrechtliche Unbescholtenheit", "Bestätigung der Unbescholtenheit", 5);
+        var section6 = IntakeFormSection.Create(form.Id, "Datenschutz", "Einwilligung zur Datenverarbeitung", 6);
+
+        await db.IntakeFormSections.AddRangeAsync([section1, section2, section3, section4, section5, section6], cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+
+        var bereicheArray = new[] { "Soziales", "Natur", "E-Volunteering", "Klima und Nachhaltigkeit", "Handwerkliches / Kreatives", "Kunst und Kultur", "Freiwilligenpool", "Lernbetreuung" };
+        var personengruppenArray = new[] { "Geflüchtete / Personen mit Migrationshintergrund", "Familien", "Senior:innen", "Menschen mit Behinderung", "Kinder und Jugendliche", "Sonstige" };
+        var zeitaufwandArray = new[] { "einmalig", "regelmäßig (pro Woche)", "regelmäßig (pro Monat)", "regelmäßig (pro Jahr)", "Stundenanzahl", "Tageszeit", "Wochentag(e)", "Flexibel", "WhatsApp-Zustimmung zur Kontaktaufnahme" };
+
+        var bereicheOptions = System.Text.Json.JsonSerializer.Serialize(bereicheArray);
+        var personengruppenOptions = System.Text.Json.JsonSerializer.Serialize(personengruppenArray);
+        var zeitaufwandOptions = System.Text.Json.JsonSerializer.Serialize(zeitaufwandArray);
+
+        var fields = new List<IntakeFormField>
+        {
+            IntakeFormField.Create(section1.Id, "bereiche", "intake.field.bereiche", FieldType.MultiChoice, true, bereicheOptions, 1),
+            IntakeFormField.Create(section2.Id, "personengruppen", "intake.field.personengruppen", FieldType.MultiChoice, true, personengruppenOptions, 1),
+            IntakeFormField.Create(section3.Id, "zeitaufwand", "intake.field.zeitaufwand", FieldType.MultiChoice, true, zeitaufwandOptions, 1),
+            IntakeFormField.Create(section4.Id, "faehigkeiten", "intake.field.faehigkeiten", FieldType.Textarea, false, null, 1),
+            IntakeFormField.Create(section5.Id, "strafrechtliche_unbescholtenheit", "intake.field.strafrechtliche_unbescholtenheit", FieldType.Boolean, true, null, 1),
+            IntakeFormField.Create(section6.Id, "gdpr_consent", "intake.field.gdpr_consent", FieldType.Boolean, true, null, 1),
+            IntakeFormField.Create(section6.Id, "event_invitation_opt_in", "intake.field.event_invitation_opt_in", FieldType.Boolean, false, null, 2)
+        };
+
+        await db.IntakeFormFields.AddRangeAsync(fields, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

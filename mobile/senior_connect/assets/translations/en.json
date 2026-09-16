@@ -620,5 +620,34 @@
     "log_activity_submit": "Save Activity",
     "fill_required_fields": "Please fill out all required fields.",
     "activity_logged_success": "Activity logged successfully."
+  },
+  "intake": {
+    "field": {
+      "bereiche": "Areas of Interest",
+      "personengruppen": "Target Groups",
+      "zeitaufwand": "Time Commitment",
+      "faehigkeiten": "Skills & Notes",
+      "strafrechtliche_unbescholtenheit": "Criminal Clearance Declaration",
+      "gdpr_consent": "Data Privacy Consent (GDPR)",
+      "event_invitation_opt_in": "Event Invitations"
+    }
+  },
+  "interest": {
+    "social": "Social & Companionship",
+    "nature": "Nature & Gardening",
+    "e_volunteering": "Digital & Remote",
+    "climate_sustainability": "Climate & Sustainability",
+    "crafts_creative": "Crafts & Creative",
+    "arts_culture": "Arts & Culture",
+    "volunteer_pool": "General Volunteer Pool",
+    "tutoring": "Tutoring & Education"
+  },
+  "language": {
+    "de": "German",
+    "en": "English",
+    "fa": "Persian",
+    "ar": "Arabic",
+    "uk": "Ukrainian",
+    "tr": "Turkish"
   }
 }
