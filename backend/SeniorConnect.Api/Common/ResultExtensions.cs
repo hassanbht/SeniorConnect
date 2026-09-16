@@ -36,6 +36,15 @@ public static class ResultExtensions
         return Guid.TryParse(sub, out var guid) ? guid : null;
     }
 
+    /// <summary>
+    /// True when the caller holds the PlatformAdmin role or the ManageCompliance capability.
+    /// Authorization is computed server-side from JWT claims — never trusted from the request body.
+    /// </summary>
+    public static bool IsPlatformAdmin(this ClaimsPrincipal user) =>
+        user.IsInRole("PlatformAdmin")
+        || user.HasClaim("capability", "ManageCompliance")
+        || user.HasClaim("capability", "PlatformAdmin");
+
     public static string? GetClientIp(this HttpContext context)
     {
         if (context.Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))

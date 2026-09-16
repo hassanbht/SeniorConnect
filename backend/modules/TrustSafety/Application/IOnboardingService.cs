@@ -29,4 +29,8 @@ public interface IOnboardingService
         DecideApplicationRequest request,
         Guid staffUserId,
         CancellationToken cancellationToken = default);
+
+    Task<Result<IReadOnlyList<VolunteerApplicationDto>>> GetUserApplicationsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }

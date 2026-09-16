@@ -31,6 +31,21 @@ public static class OnboardingEndpoints
         .Produces<VolunteerApplicationDto>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status409Conflict);
 
+        onbGroup.MapGet("/my-applications", async (
+            ClaimsPrincipal user,
+            IOnboardingService onboardingService,
+            CancellationToken ct) =>
+        {
+            var userId = user.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var result = await onboardingService.GetUserApplicationsAsync(userId.Value, ct);
+            return result.ToHttpResult();
+        })
+        .WithName("GetMyVolunteerApplications")
+        .Produces<IReadOnlyList<VolunteerApplicationDto>>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
         onbGroup.MapGet("/applications/{id:guid}", async (
             Guid id,
             IOnboardingService onboardingService,

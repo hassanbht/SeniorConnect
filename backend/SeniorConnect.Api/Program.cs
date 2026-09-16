@@ -236,6 +236,7 @@ app.MapCoordinatorEndpoints();
 app.MapFunderEndpoints();
 app.MapReportingEndpoints();
 app.MapGeographyEndpoints();
+app.MapComplianceEndpoints(); // P7-15 / Legal Gate — /api/v1/admin/compliance
 
 // Seed reference data on startup
 try

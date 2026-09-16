@@ -73,8 +73,33 @@ class VolunteerFeedScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('trust.missing_title'.tr()),
-        content: Text(item.ineligibleReason ?? ''),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(item.ineligibleReason ?? 'trust.ineligible_badge'.tr()),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'trust.how_to_get_it'.tr(),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'trust.how_to_get_it_desc'.tr(),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
         actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              context.push(AppRoutes.profile);
+            },
+            child: Text('profile.title'.tr()),
+          ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text('common.close'.tr()),

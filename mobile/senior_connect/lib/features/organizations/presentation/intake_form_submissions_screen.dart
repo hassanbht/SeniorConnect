@@ -178,7 +178,7 @@ class _StatusChip extends StatelessWidget {
       IntakeSubmissionStatus.declined => 'intake_form.status.declined',
     };
     final color = switch (status) {
-      IntakeSubmissionStatus.approved => Colors.green,
+      IntakeSubmissionStatus.approved => Theme.of(context).colorScheme.primary,
       IntakeSubmissionStatus.declined => Theme.of(context).colorScheme.error,
       _ => Theme.of(context).colorScheme.secondary,
     };

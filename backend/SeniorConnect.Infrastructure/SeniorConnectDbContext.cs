@@ -132,6 +132,14 @@ public sealed class SeniorConnectDbContext(
     public DbSet<FunderMonthlyReportView> FunderMonthlyReports => Set<FunderMonthlyReportView>();
     public DbSet<VolunteerHoursView> VolunteerHours => Set<VolunteerHoursView>();
 
+    // P7-15 / Legal Gate
+    public DbSet<LegalEntityProfile> LegalEntityProfiles => Set<LegalEntityProfile>();
+    public DbSet<DataProcessingAgreement> DataProcessingAgreements => Set<DataProcessingAgreement>();
+    public DbSet<ProcessingActivityRecord> ProcessingActivityRecords => Set<ProcessingActivityRecord>();
+    public DbSet<DpiaRecord> DpiaRecords => Set<DpiaRecord>();
+    public DbSet<InsurancePolicy> InsurancePolicies => Set<InsurancePolicy>();
+    public DbSet<HostingAttestation> HostingAttestations => Set<HostingAttestation>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("public");
@@ -202,6 +210,18 @@ public sealed class SeniorConnectDbContext(
             tenant.IsPlatformScope
             || s.OrganizationId == null
             || s.OrganizationId == tenant.OrganizationId);
+
+        // P7-15 / Legal Gate — DataProcessingAgreement and InsurancePolicy
+        // can be platform-wide (OrganizationId == null) or per-organization.
+        modelBuilder.Entity<DataProcessingAgreement>().HasQueryFilter(a =>
+            tenant.IsPlatformScope
+            || a.OrganizationId == null
+            || a.OrganizationId == tenant.OrganizationId);
+
+        modelBuilder.Entity<InsurancePolicy>().HasQueryFilter(p =>
+            tenant.IsPlatformScope
+            || p.OrganizationId == null
+            || p.OrganizationId == tenant.OrganizationId);
 
         // --- Concurrency -----------------------------------------------------
         modelBuilder.Entity<Activity>().Property<uint>("xmin").HasColumnType("xmin").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken();

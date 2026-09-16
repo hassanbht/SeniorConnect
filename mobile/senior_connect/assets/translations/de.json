@@ -231,7 +231,8 @@
     "background_checked": "Strafregisterbescheinigung geprüft",
     "verified_on": "Bestätigt am {date}",
     "missing_title": "Dafür fehlt noch:",
-    "how_to_get_it": "So bekommen Sie das"
+    "how_to_get_it": "So bekommen Sie das",
+    "how_to_get_it_desc": "Öffnen Sie Ihr Profil, um Identitäts- oder Qualifikationsbestätigungen hinzuzufügen."
   },
   "community": {
     "title": "Gemeinschaft",

@@ -208,11 +208,11 @@ public sealed class MatchingService : IMatchingService
             string? ineligibilityReason = null;
             if (!isTrustEligible)
             {
-                ineligibilityReason = string.Format(CultureInfo.InvariantCulture, "Requires Trust Level {0} (you currently have Level {1})", r.RequiredTrustLevel, volunteerTrustLevel);
+                ineligibilityReason = string.Format(CultureInfo.InvariantCulture, "Erfordert Vertrauensstufe {0} (Ihr aktueller Status: Stufe {1}). Durch Bestätigung von Identität oder Qualifikationen in Ihrem Profil können Sie diese Stufe erreichen.", r.RequiredTrustLevel, volunteerTrustLevel);
             }
             else if (!isDistEligible)
             {
-                ineligibilityReason = "Outside preferred travel radius";
+                ineligibilityReason = "Außerhalb Ihres bevorzugten Umkreises.";
             }
 
             items.Add(new VolunteerFeedItem(

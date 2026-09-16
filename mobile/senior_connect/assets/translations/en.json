@@ -231,7 +231,8 @@
     "background_checked": "Criminal record certificate checked",
     "verified_on": "Confirmed on {date}",
     "missing_title": "Still missing:",
-    "how_to_get_it": "How to get this"
+    "how_to_get_it": "How to get this",
+    "how_to_get_it_desc": "Open your profile to add identity or qualification confirmations."
   },
   "community": {
     "title": "Community",

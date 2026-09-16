@@ -174,6 +174,28 @@ public sealed class OnboardingService : IOnboardingService
         return Result<VolunteerApplicationDto>.Success(MapApplication(application, steps));
     }
 
+    public async Task<Result<IReadOnlyList<VolunteerApplicationDto>>> GetUserApplicationsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var applications = await _db.VolunteerApplications
+            .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.AppliedAtUtc)
+            .ToListAsync(cancellationToken);
+
+        var appIds = applications.Select(a => a.Id).ToList();
+        var allSteps = await _db.VolunteerApplicationSteps
+            .Where(s => appIds.Contains(s.ApplicationId))
+            .OrderBy(s => s.SortOrder)
+            .ToListAsync(cancellationToken);
+
+        var dtos = applications
+            .Select(a => MapApplication(a, allSteps.Where(s => s.ApplicationId == a.Id).ToList()))
+            .ToList();
+
+        return Result<IReadOnlyList<VolunteerApplicationDto>>.Success(dtos);
+    }
+
     private static VolunteerApplicationDto MapApplication(VolunteerApplication a, IReadOnlyList<VolunteerApplicationStep> steps) => new(
         Id: a.Id,
         OrganizationId: a.OrganizationId,

@@ -10,6 +10,8 @@ public static class ReportingModuleExtensions
         services.AddScoped<IFunderService, FunderService>();
         services.AddScoped<IReportingService, ReportingService>();
         services.AddScoped<IEsgReportingService, EsgReportingService>();
+        // P7-15 / Legal Gate — compliance tracking service
+        services.AddScoped<IComplianceService, ComplianceService>();
         return services;
     }
 }

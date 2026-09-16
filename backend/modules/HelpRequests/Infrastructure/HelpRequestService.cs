@@ -12,6 +12,8 @@ namespace SeniorConnect.Modules.HelpRequests.Infrastructure;
 public sealed class HelpRequestService : IHelpRequestService
 {
     private readonly IHelpRequestsDbContext _db;
+    private static readonly string[] DefaultMissingVerifications = ["Profil-Bestätigung (z. B. Identität, Telefon oder Organisation)"];
+
     private readonly IActivitySafetyPolicy _safetyPolicy;
     private readonly ITrustLevelReader _trustLevelReader;
     private readonly ISafetyBoundaryReader _safetyBoundaryReader;
@@ -224,10 +226,10 @@ public sealed class HelpRequestService : IHelpRequestService
         var volunteerTrustLevel = await _trustLevelReader.GetEffectiveTrustLevelAsync(volunteerUserId, cancellationToken);
         if (volunteerTrustLevel < helpRequest.RequiredTrustLevel)
         {
-            return new Error(
-                "TRUST_LEVEL_INSUFFICIENT",
-                $"Your verified Trust Level ({volunteerTrustLevel}) is below the required Trust Level ({helpRequest.RequiredTrustLevel}) for this activity.",
-                ErrorKind.Forbidden);
+            return Error.TrustLevelInsufficient(
+                helpRequest.RequiredTrustLevel,
+                volunteerTrustLevel,
+                DefaultMissingVerifications);
         }
 
         // P4-07: Buddy System Check for Safety Level 3+ (first 3 visits)
@@ -238,8 +240,12 @@ public sealed class HelpRequestService : IHelpRequestService
             {
                 return new Error(
                     "BUDDY_REQUIRED",
-                    "The first three Safety Level 3+ visits require an assigned experienced buddy volunteer or coordinator waiver.",
-                    ErrorKind.Forbidden);
+                    "Für die ersten drei Einsätze mit Sicherheitsstufe 3+ ist die Begleitung durch eine erfahrene Begleitperson (Buddy) oder eine Freigabe der Koordination erforderlich.",
+                    ErrorKind.Forbidden,
+                    new Dictionary<string, object>
+                    {
+                        ["actionKey"] = "trust.action.buddy_required"
+                    });
             }
         }
 

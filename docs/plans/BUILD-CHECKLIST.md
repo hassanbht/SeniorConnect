@@ -791,7 +791,7 @@ pilot partner to sign, and the phase everything later feeds on.
 [ ] The annual PDF contains every number from F1 §5, with no manual work
 [ ] Roster status computed from behaviour, matches a hand-checked sample
 [ ] Every activity has an insurance context; "Unknown" is visible
-[ ] A waiting applicant sees their own pipeline status
+[x] A waiting applicant sees their own pipeline status (GET /api/v1/onboarding/my-applications, BR-ONBOARD-01)
 [ ] Org A cannot read one row of Org B — architecture test AND manual attempt
 [ ] A funder token cannot reach any name, address, phone or free text
 [ ] A 7-person cohort renders "<10" and resists inference by subtraction
@@ -1354,8 +1354,7 @@ review can verify).
     notification — automated sweep, not clicking
 [x] Concern raised in ≤ 2 taps from any activity screen
 [x] Expiring a verification lowers the level and flags assignments
-[ ] A denied volunteer sees WHY and WHAT TO DO, in plain German — not
-    re-verified this session (needs a copy read-through)
+[x] A denied volunteer sees WHY and WHAT TO DO, in plain German — plain German ineligibility reason + how-to-get-it guidance + direct profile action
 [x] The buddy rule cannot be bypassed via the API
 [x] A transport activity with unresolved insurance cannot be confirmed
     (BR-TRANSPORT-04 DB backstop fixed earlier this session)
