@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SeniorConnect.Infrastructure;
-using SeniorConnect.Infrastructure;
 
 #nullable disable
 
@@ -830,15 +829,11 @@ namespace SeniorConnect.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("SeniorConnect.Modules.HelpRequests.Domain.HelpRequest", b =>
-            modelBuilder.Entity("SeniorConnect.Modules.HelpRequests.Domain.HelpRequest", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-                        .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset?>("AssignedAtUtc")
-                        .HasColumnType("timestamptz");
                     b.Property<DateTimeOffset?>("AssignedAtUtc")
                         .HasColumnType("timestamptz");
 
@@ -847,44 +842,25 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
-                    b.Property<Guid?>("AssignedVolunteerUserId")
-                        .HasColumnType("uuid");
 
-                    b.Property<Guid?>("BranchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CancellationReason")
-                        .HasColumnType("text");
                     b.Property<string>("CancellationReason")
                         .HasColumnType("text");
 
                     b.Property<int?>("CancellationReasonCode")
                         .HasColumnType("integer");
-                    b.Property<int?>("CancellationReasonCode")
-                        .HasColumnType("integer");
 
-                    b.Property<DateTimeOffset?>("CancelledAtUtc")
-                        .HasColumnType("timestamptz");
                     b.Property<DateTimeOffset?>("CancelledAtUtc")
                         .HasColumnType("timestamptz");
 
                     b.Property<Guid?>("CancelledByUserId")
                         .HasColumnType("uuid");
-                    b.Property<Guid?>("CancelledByUserId")
-                        .HasColumnType("uuid");
 
-                    b.Property<Guid>("CategoryId")
-                        .HasColumnType("uuid");
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("CheckedInAtUtc")
                         .HasColumnType("timestamptz");
-                    b.Property<DateTimeOffset?>("CheckedInAtUtc")
-                        .HasColumnType("timestamptz");
 
-                    b.Property<DateTimeOffset?>("CheckedOutAtUtc")
-                        .HasColumnType("timestamptz");
                     b.Property<DateTimeOffset?>("CheckedOutAtUtc")
                         .HasColumnType("timestamptz");
 
@@ -893,24 +869,13 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamptz");
-                    b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("timestamptz");
 
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
-                    b.Property<Guid>("CreatedByUserId")
-                        .HasColumnType("uuid");
 
-                    b.Property<int>("DurationMinutes")
-                        .HasColumnType("integer");
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("integer");
 
@@ -919,19 +884,10 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                     b.Property<int>("InsuranceContext")
                         .HasColumnType("integer");
-                    b.Property<DateTimeOffset?>("EscalatedToCoordinatorAtUtc")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<int>("InsuranceContext")
-                        .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
 
-                    b.Property<double?>("Latitude")
-                        .HasColumnType("double precision");
                     b.Property<double?>("Latitude")
                         .HasColumnType("double precision");
 
@@ -971,11 +927,6 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
-                    b.Property<Guid?>("OrganizationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal?>("PreNoShowReliabilityScore")
-                        .HasColumnType("numeric");
 
                     b.Property<decimal?>("PreNoShowReliabilityScore")
                         .HasColumnType("numeric");
@@ -997,16 +948,10 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("ScheduledEndUtc")
                         .HasColumnType("timestamptz");
-                    b.Property<DateTimeOffset>("ScheduledEndUtc")
-                        .HasColumnType("timestamptz");
 
                     b.Property<DateTimeOffset>("ScheduledStartUtc")
                         .HasColumnType("timestamptz");
-                    b.Property<DateTimeOffset>("ScheduledStartUtc")
-                        .HasColumnType("timestamptz");
 
-                    b.Property<Guid>("SeniorUserId")
-                        .HasColumnType("uuid");
                     b.Property<Guid>("SeniorUserId")
                         .HasColumnType("uuid");
 
@@ -1015,31 +960,16 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("TierAdvancedAtUtc")
                         .HasColumnType("timestamptz");
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
 
-                    b.Property<DateTimeOffset?>("TierAdvancedAtUtc")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<int>("TransportMode")
-                        .HasColumnType("integer");
                     b.Property<int>("TransportMode")
                         .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamptz");
-                    b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamptz");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
 
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xmin");
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -1048,41 +978,26 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("HelpRequests", "public");
-                    b.ToTable("HelpRequests", "public");
                 });
 
-            modelBuilder.Entity("SeniorConnect.Modules.HelpRequests.Domain.HelpRequestStatusHistory", b =>
             modelBuilder.Entity("SeniorConnect.Modules.HelpRequests.Domain.HelpRequestStatusHistory", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("ChangedAtUtc")
-                        .HasColumnType("timestamptz");
                     b.Property<DateTimeOffset>("ChangedAtUtc")
                         .HasColumnType("timestamptz");
 
                     b.Property<Guid>("ChangedByUserId")
                         .HasColumnType("uuid");
-                    b.Property<Guid>("ChangedByUserId")
-                        .HasColumnType("uuid");
 
-                    b.Property<int>("FromStatus")
-                        .HasColumnType("integer");
                     b.Property<int>("FromStatus")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("HelpRequestId")
                         .HasColumnType("uuid");
-                    b.Property<Guid>("HelpRequestId")
-                        .HasColumnType("uuid");
 
-                    b.Property<string>("Reason")
-                        .HasColumnType("text");
                     b.Property<string>("Reason")
                         .HasColumnType("text");
 
@@ -1090,16 +1005,10 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-                    b.Property<int>("ToStatus")
-                        .HasColumnType("integer");
 
-                    b.HasKey("Id");
-
-                    b.ToTable("HelpRequestStatusHistories", "public");
                     b.ToTable("HelpRequestStatusHistories", "public");
                 });
 
-            modelBuilder.Entity("SeniorConnect.Modules.HelpRequests.Domain.ReferralDirectory", b =>
             modelBuilder.Entity("SeniorConnect.Modules.HelpRequests.Domain.ReferralDirectory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1116,20 +1025,7 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
-                    b.Property<string>("Address")
-                        .HasColumnType("text")
-                        .HasColumnName("address");
 
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1138,18 +1034,11 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.Property<string>("NoteKey")
                         .HasColumnType("text")
                         .HasColumnName("note_key");
-                    b.Property<string>("NoteKey")
-                        .HasColumnType("text")
-                        .HasColumnName("note_key");
 
                     b.Property<string>("Phone")
                         .HasColumnType("text")
                         .HasColumnName("phone");
-                    b.Property<string>("Phone")
-                        .HasColumnType("text")
-                        .HasColumnName("phone");
 
-                    b.Property<string>("ReferralGroup")
                     b.Property<string>("ReferralGroup")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1159,27 +1048,13 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("region_code");
-                        .HasColumnType("text")
-                        .HasColumnName("referral_group");
 
-                    b.Property<string>("RegionCode")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("region_code");
-
-                    b.Property<string>("Website")
-                        .HasColumnType("text")
-                        .HasColumnName("website");
                     b.Property<string>("Website")
                         .HasColumnType("text")
                         .HasColumnName("website");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ReferralGroup", "RegionCode")
-                        .HasFilter("is_active");
-
-                    b.ToTable("referral_directory", "public");
                     b.HasIndex("ReferralGroup", "RegionCode")
                         .HasFilter("is_active");
 
@@ -1187,27 +1062,15 @@ namespace SeniorConnect.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("SeniorConnect.Modules.Identity.Domain.AccountDeletionRequest", b =>
-            modelBuilder.Entity("SeniorConnect.Modules.Identity.Domain.AccountDeletionRequest", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
 
                     b.Property<string>("ConfirmationToken")
                         .IsRequired()
                         .HasColumnType("text");
-                    b.Property<string>("ConfirmationToken")
-                        .IsRequired()
-                        .HasColumnType("text");
 
-                    b.Property<string>("Reason")
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("RequestedAtUtc")
-                        .HasColumnType("timestamptz");
                     b.Property<string>("Reason")
                         .HasColumnType("text");
 
@@ -1219,19 +1082,10 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
-                    b.Property<DateTimeOffset>("ScheduledTier2PurgeUtc")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("Tier1ExecutedAtUtc")
                         .HasColumnType("timestamptz");
-                    b.Property<DateTimeOffset?>("Tier1ExecutedAtUtc")
-                        .HasColumnType("timestamptz");
 
-                    b.Property<DateTimeOffset?>("Tier2ExecutedAtUtc")
-                        .HasColumnType("timestamptz");
                     b.Property<DateTimeOffset?>("Tier2ExecutedAtUtc")
                         .HasColumnType("timestamptz");
 
@@ -1239,12 +1093,7 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
 
-                    b.HasKey("Id");
-
-                    b.ToTable("AccountDeletionRequests", "public");
                     b.ToTable("AccountDeletionRequests", "public");
                 });
 
@@ -1297,59 +1146,6 @@ namespace SeniorConnect.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("ck_consents_type", "consent_type IN ('terms','privacy','notifications_push','notifications_sms','notifications_email','research_statistics')");
                         });
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Identity.Domain.EmailVerificationToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at_utc")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTimeOffset>("ExpiresAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("expires_at_utc");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("token_hash");
-
-                    b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at_utc")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
-
-                    b.Property<DateTimeOffset?>("UsedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("used_at_utc");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_email_verification_tokens_user")
-                        .HasFilter("used_at_utc IS NULL");
-
-                    b.ToTable("email_verification_tokens", "public");
                 });
 
             modelBuilder.Entity("SeniorConnect.Modules.Identity.Domain.EmailVerificationToken", b =>
@@ -1484,7 +1280,6 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                             t.HasCheckConstraint("ck_otp_channel", "channel IN ('sms','email')");
 
-                            t.HasCheckConstraint("ck_otp_purpose", "purpose IN ('login','registration','phone_change','email_change','recovery','phone_verification')");
                             t.HasCheckConstraint("ck_otp_purpose", "purpose IN ('login','registration','phone_change','email_change','recovery','phone_verification')");
                         });
                 });
@@ -1706,7 +1501,6 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.ToTable("users", "public", t =>
                         {
                             t.HasCheckConstraint("ck_users_auth_method", "primary_auth_method IN ('phone_otp','email_magic_link','password','google','id_austria','email_password')");
-                            t.HasCheckConstraint("ck_users_auth_method", "primary_auth_method IN ('phone_otp','email_magic_link','password','google','id_austria','email_password')");
 
                             t.HasCheckConstraint("ck_users_contact", "email IS NOT NULL OR phone IS NOT NULL");
 
@@ -1780,56 +1574,6 @@ namespace SeniorConnect.Infrastructure.Migrations
                             t.HasCheckConstraint("ck_user_capabilities_reason", "source = 'derived' OR reason IS NOT NULL");
 
                             t.HasCheckConstraint("ck_user_capabilities_source", "source IN ('derived','granted')");
-                        });
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Identity.Domain.UserExternalLogin", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("DisplayName")
-                        .HasColumnType("text")
-                        .HasColumnName("display_name");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("text")
-                        .HasColumnName("email");
-
-                    b.Property<DateTimeOffset>("LinkedAtUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("linked_at_utc")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("provider");
-
-                    b.Property<string>("ProviderKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("provider_key");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_user_external_logins_user");
-
-                    b.HasIndex("Provider", "ProviderKey")
-                        .IsUnique()
-                        .HasDatabaseName("ux_user_external_logins_provider_key");
-
-                    b.ToTable("user_external_logins", "public", t =>
-                        {
-                            t.HasCheckConstraint("ck_user_external_logins_provider", "provider IN ('google','id_austria')");
                         });
                 });
 
@@ -2089,117 +1833,6 @@ namespace SeniorConnect.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.IntakeFormField", b =>
-            modelBuilder.Entity("SeniorConnect.Modules.Notifications.Domain.NotificationBudgetTracker", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("NonUrgentCount")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("WindowStartUtc")
-                        .HasColumnType("timestamptz");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("NotificationBudgetTrackers", "public");
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Notifications.Domain.NotificationMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("Category")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Channel")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<DateTimeOffset?>("DispatchedAtUtc")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<string>("PayloadJson")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset?>("ReadAtUtc")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<Guid>("RecipientUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("NotificationMessages", "public");
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Notifications.Domain.NotificationPreference", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("CommunityCategoryEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("FamilyWelfareCategoryEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HelpRequestsCategoryEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("InAppEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("PushEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("QuietHoursEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<TimeSpan>("QuietHoursEnd")
-                        .HasColumnType("interval");
-
-                    b.Property<TimeSpan>("QuietHoursStart")
-                        .HasColumnType("interval");
-
-                    b.Property<bool>("SmsEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("SystemAccountCategoryEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("NotificationPreferences", "public");
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.IntakeFormField", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2248,45 +1881,9 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .HasColumnName("sort_order");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
-                    b.Property<string>("FieldKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("field_key");
-
-                    b.Property<string>("FieldType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("field_type");
-
-                    b.Property<bool>("IsRequired")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_required");
-
-                    b.Property<string>("LabelKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("label_key");
-
-                    b.Property<string>("OptionsJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("options_json");
-
-                    b.Property<Guid>("SectionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("section_id");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("sort_order");
-
-                    b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamptz")
                         .HasColumnName("updated_at_utc");
-                        .HasColumnName("updated_at_utc");
 
-                    b.Property<Guid?>("UpdatedBy")
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
@@ -2316,41 +1913,11 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
-                        .HasColumnName("updated_by");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("SectionId", "SortOrder")
-                        .HasDatabaseName("ix_intake_form_fields_section_order");
-
-                    b.ToTable("intake_form_fields", "public", t =>
-                        {
-                            t.HasCheckConstraint("ck_intake_fields_type", "field_type IN ('text','textarea','single_choice','multi_choice','boolean','date','time_slots')");
-                        });
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.IntakeFormSection", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Description")
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
-                        .HasColumnName("description");
 
-                    b.Property<Guid>("FormId")
                     b.Property<Guid>("FormId")
                         .HasColumnType("uuid")
                         .HasColumnName("form_id");
@@ -2358,17 +1925,10 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer")
                         .HasColumnName("sort_order");
-                        .HasColumnName("form_id");
 
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("sort_order");
-
-                    b.Property<string>("Title")
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("title");
                         .HasColumnName("title");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
@@ -2383,14 +1943,10 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                     b.HasIndex("FormId", "SortOrder")
                         .HasDatabaseName("ix_intake_form_sections_form_order");
-                    b.HasIndex("FormId", "SortOrder")
-                        .HasDatabaseName("ix_intake_form_sections_form_order");
 
-                    b.ToTable("intake_form_sections", "public");
                     b.ToTable("intake_form_sections", "public");
                 });
 
-            modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.IntakeFormSubmission", b =>
             modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.IntakeFormSubmission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2403,19 +1959,7 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .HasColumnName("created_at_utc");
 
                     b.Property<Guid?>("CreatedBy")
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<bool>("CriminalClearanceDeclared")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("criminal_clearance_declared");
                         .HasColumnName("created_by");
 
                     b.Property<bool>("CriminalClearanceDeclared")
@@ -2425,30 +1969,17 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .HasColumnName("criminal_clearance_declared");
 
                     b.Property<DateTimeOffset?>("CriminalClearanceDeclaredAtUtc")
-                    b.Property<DateTimeOffset?>("CriminalClearanceDeclaredAtUtc")
                         .HasColumnType("timestamptz")
                         .HasColumnName("criminal_clearance_declared_at_utc");
 
                     b.Property<DateTimeOffset?>("DecidedAtUtc")
                         .HasColumnType("timestamptz")
                         .HasColumnName("decided_at_utc");
-                        .HasColumnName("criminal_clearance_declared_at_utc");
 
-                    b.Property<DateTimeOffset?>("DecidedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("decided_at_utc");
-
-                    b.Property<Guid?>("DecidedByUserId")
                     b.Property<Guid?>("DecidedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("decided_by_user_id");
-                        .HasColumnName("decided_by_user_id");
 
-                    b.Property<bool>("EventInvitationOptIn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("event_invitation_opt_in");
                     b.Property<bool>("EventInvitationOptIn")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -2458,31 +1989,13 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.Property<Guid>("FormId")
                         .HasColumnType("uuid")
                         .HasColumnName("form_id");
-                    b.Property<Guid>("FormId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("form_id");
 
-                    b.Property<bool>("GdprConsentAccepted")
                     b.Property<bool>("GdprConsentAccepted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("gdpr_consent_accepted");
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("gdpr_consent_accepted");
 
-                    b.Property<DateTimeOffset?>("GdprConsentAcceptedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("gdpr_consent_accepted_at_utc");
-
-                    b.Property<Guid?>("OrganizationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("organization_id");
-
-                    b.Property<string>("ReviewNotes")
-                        .HasColumnType("text")
-                        .HasColumnName("review_notes");
                     b.Property<DateTimeOffset?>("GdprConsentAcceptedAtUtc")
                         .HasColumnType("timestamptz")
                         .HasColumnName("gdpr_consent_accepted_at_utc");
@@ -2500,30 +2013,10 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("text")
                         .HasDefaultValue("Submitted")
-                        .HasDefaultValue("Submitted")
                         .HasColumnName("status");
 
                     b.Property<string>("SubmissionDataJson")
-                    b.Property<string>("SubmissionDataJson")
                         .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("submission_data_json");
-
-                    b.Property<DateTimeOffset?>("SubmittedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("submitted_at_utc");
-
-                    b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at_utc");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
                         .HasColumnType("jsonb")
                         .HasColumnName("submission_data_json");
 
@@ -2545,15 +2038,6 @@ namespace SeniorConnect.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrganizationId", "Status")
-                        .HasDatabaseName("ix_submissions_org_status");
-
-                    b.HasIndex("FormId", "OrganizationId", "UserId")
-                        .HasDatabaseName("ix_submissions_form_org_user");
-
-                    b.ToTable("intake_form_submissions", "public", t =>
-                        {
-                            t.HasCheckConstraint("ck_submissions_status", "status IN ('draft','submitted','approved','declined')");
                     b.HasIndex("OrganizationId", "Status")
                         .HasDatabaseName("ix_submissions_org_status");
 
@@ -2707,70 +2191,6 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.ToTable("organization_branches", "public", t =>
                         {
                             t.HasCheckConstraint("ck_branches_geo_pair", "(latitude IS NULL) = (longitude IS NULL)");
-                        });
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Organizations.Domain.OrganizationIntakeForm", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<string>("FormType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("form_type");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("organization_id");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("title");
-
-                    b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at_utc");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
-
-                    b.Property<int>("Version")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(1)
-                        .HasColumnName("version");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrganizationId", "FormType", "IsActive")
-                        .HasDatabaseName("ix_intake_forms_org_type_active");
-
-                    b.ToTable("organization_intake_forms", "public", t =>
-                        {
-                            t.HasCheckConstraint("ck_intake_forms_type", "form_type IN ('volunteer','help_seeker')");
                         });
                 });
 
@@ -3074,43 +2494,6 @@ namespace SeniorConnect.Infrastructure.Migrations
                     b.ToTable("skills", "public");
                 });
 
-            modelBuilder.Entity("SeniorConnect.Modules.Profiles.Domain.Skill", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("code");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("NameKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name_key");
-
-                    b.Property<bool>("RequiresVerification")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("requires_verification");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("skills", "public");
-                });
-
             modelBuilder.Entity("SeniorConnect.Modules.Profiles.Domain.SupportProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3293,9 +2676,6 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)
                         .HasColumnName("is_accepting_requests");
-
-                    b.Property<DateOnly?>("LastMonthlyReminderMonth")
-                        .HasColumnType("date");
 
                     b.Property<DateOnly?>("LastMonthlyReminderMonth")
                         .HasColumnType("date");
@@ -4124,11 +3504,6 @@ namespace SeniorConnect.Infrastructure.Migrations
                         .HasForeignKey("FamilyRelationshipId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("SeniorConnect.Modules.Family.Domain.FamilyRelationship", b =>
-                {
-                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("SeniorConnect.Modules.Family.Domain.FamilyRelationship", b =>

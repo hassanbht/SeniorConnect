@@ -518,9 +518,42 @@
     "support_contacted": "Vielen Dank. Ein Ansprechpartner meldet sich bei Ihnen."
   },
   "privacy": {
+    "title": "Datenschutz & Privatsphäre",
     "export_title": "Datenauskunft & Export",
     "export_subtitle": "Kopie aller Ihrer gespeicherten Daten (GDPR / DSG)",
-    "export_requested": "Der Datenexport wird vorbereitet und steht in Kürze bereit."
+    "export_requested": "Der Datenexport wird vorbereitet und steht in Kürze bereit.",
+    "export_button": "Meine Daten exportieren (JSON)",
+    "export_success": "Datenexport erfolgreich erstellt ({0} KB).",
+    "consents_title": "Erteilte Einwilligungen",
+    "consents_desc": "Zustimmungen zur Datenverarbeitung einsehen und widerrufen.",
+    "consent_terms": "Nutzungsbedingungen & Datenschutz",
+    "consent_contact": "Kontaktaufnahme durch Helfer:innen",
+    "consent_version": "Version {0} – Erteilt am {1}",
+    "withdraw": "Widerrufen",
+    "withdraw_confirm": "Möchten Sie diese Einwilligung wirklich widerrufen?",
+    "withdraw_success": "Einwilligung erfolgreich widerrufen.",
+    "delete_account": "Konto löschen",
+    "delete_account_desc": "Löscht Ihr Profil nach einer 30-tägigen Karenzfrist endgültig.",
+    "delete_confirm_title": "Konto wirklich löschen?",
+    "delete_confirm_desc": "Ihr Konto wird sofort deaktiviert und nach einer 30-tägigen Karenzfrist endgültig anonymisiert. Möchten Sie fortfahren?",
+    "delete_requested": "Löschantrag eingereicht. Bitte bestätigen Sie mit dem Bestätigungstoken.",
+    "delete_token_prompt": "Bestätigungstoken eingeben:",
+    "delete_confirmed": "Ihr Konto wurde erfolgreich zur endgültigen Löschung vorgemerkt."
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "quiet_hours_title": "Ruhezeiten",
+    "quiet_hours_desc": "Keine nicht-dringenden Mitteilungen während dieser Zeitspanne.",
+    "quiet_hours_enabled": "Ruhezeiten aktivieren",
+    "quiet_hours_start": "Beginn der Ruhezeit",
+    "quiet_hours_end": "Ende der Ruhezeit",
+    "categories_title": "Themenbereiche",
+    "cat_help_requests": "Hilfeanfragen & Einsätze",
+    "cat_community": "Gemeinschaft & Veranstaltungen",
+    "cat_family": "Familie & Fürsorge",
+    "cat_system": "System & Sicherheit",
+    "safety_notice": "Wichtige Sicherheitsmitteilungen werden zum Schutz aller Beteiligten immer zugestellt.",
+    "saved": "Einstellungen erfolgreich gespeichert."
   },
   "voice_input": {
     "title": "Sprachaufnahme / Vorlesen",

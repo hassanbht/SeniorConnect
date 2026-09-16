@@ -11,13 +11,13 @@ public sealed class NotificationBudgetTracker
 
     private NotificationBudgetTracker() { }
 
-    public static NotificationBudgetTracker Create(Guid userId)
+    public static NotificationBudgetTracker Create(Guid userId, DateTimeOffset? initialWindowStart = null)
     {
         return new NotificationBudgetTracker
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            WindowStartUtc = DateTimeOffset.UtcNow,
+            WindowStartUtc = initialWindowStart ?? DateTimeOffset.UtcNow,
             NonUrgentCount = 0
         };
     }
@@ -41,7 +41,7 @@ public sealed class NotificationBudgetTracker
 
     private void ResetWindowIfExpired(DateTimeOffset nowUtc)
     {
-        if (nowUtc - WindowStartUtc >= TimeSpan.FromHours(24))
+        if (nowUtc < WindowStartUtc || nowUtc - WindowStartUtc >= TimeSpan.FromHours(24))
         {
             WindowStartUtc = nowUtc;
             NonUrgentCount = 0;

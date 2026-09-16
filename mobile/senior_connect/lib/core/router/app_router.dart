@@ -39,6 +39,8 @@ import '../../features/organizations/presentation/log_activity_screen.dart';
 import '../../features/organizations/presentation/organization_profile_screen.dart';
 import '../../features/organizations/presentation/organizations_list_screen.dart';
 import '../../features/profile/presentation/help_faq_screen.dart';
+import '../../features/profile/presentation/notification_preferences_screen.dart';
+import '../../features/profile/presentation/privacy_settings_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_view_screen.dart';
 import '../../shared/senior/senior_shell.dart';
@@ -56,6 +58,8 @@ abstract final class AppRoutes {
   static const profileEdit = '/profile/edit';
   static const deviceList = '/profile/devices';
   static const totpEnrollment = '/profile/totp-enroll';
+  static const privacySettings = '/profile/privacy';
+  static const notificationPreferences = '/profile/notifications';
   static const helpRequestCreate = '/help-requests/create';
   static const volunteerFeed = '/help-requests/feed';
   static const activeAssignment = '/help-requests/active';
@@ -300,6 +304,16 @@ GoRouter buildRouter({required ApiClient apiClient}) {
                 path: 'totp-enroll',
                 name: 'totp-enroll',
                 builder: (context, state) => TotpEnrollmentScreen(apiClient: apiClient),
+              ),
+              GoRoute(
+                path: 'privacy',
+                name: 'privacy-settings',
+                builder: (context, state) => PrivacySettingsScreen(apiClient: apiClient),
+              ),
+              GoRoute(
+                path: 'notifications',
+                name: 'notification-preferences',
+                builder: (context, state) => NotificationPreferencesScreen(apiClient: apiClient),
               ),
             ],
           ),

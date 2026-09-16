@@ -13,7 +13,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design_system/app_tokens.dart';
@@ -22,9 +21,7 @@ import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_states.dart';
 import '../application/senior_request_flow_notifier.dart';
-import '../application/senior_request_flow_notifier.dart';
 
-class SeniorRequestFlowScreen extends ConsumerStatefulWidget {
 class SeniorRequestFlowScreen extends ConsumerStatefulWidget {
   const SeniorRequestFlowScreen({
     super.key,
@@ -40,12 +37,8 @@ class SeniorRequestFlowScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<SeniorRequestFlowScreen> createState() =>
       _SeniorRequestFlowScreenState();
-  ConsumerState<SeniorRequestFlowScreen> createState() =>
-      _SeniorRequestFlowScreenState();
 }
 
-class _SeniorRequestFlowScreenState
-    extends ConsumerState<SeniorRequestFlowScreen> {
 class _SeniorRequestFlowScreenState
     extends ConsumerState<SeniorRequestFlowScreen> {
   final _detailsController = TextEditingController();
@@ -77,18 +70,6 @@ class _SeniorRequestFlowScreenState
       'herzinfarkt',
       'schlaganfall',
       'emergency'
-      'notfall',
-      'schmerz',
-      'sturz',
-      'gefallen',
-      'atemnot',
-      'blut',
-      'bewusstlos',
-      '144',
-      '112',
-      'herzinfarkt',
-      'schlaganfall',
-      'emergency'
     ];
     return emergencyWords.any((word) => lower.contains(word));
   }
@@ -101,7 +82,6 @@ class _SeniorRequestFlowScreenState
     }
 
     ref.read(seniorRequestFlowProvider(_params).notifier).goToReview();
-    ref.read(seniorRequestFlowProvider(_params).notifier).goToReview();
   }
 
   void _showEmergencyAlert() {
@@ -109,11 +89,6 @@ class _SeniorRequestFlowScreenState
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        icon: Icon(
-          Icons.warning,
-          color: Theme.of(ctx).colorScheme.error,
-          size: 48,
-        ),
         icon: Icon(
           Icons.warning,
           color: Theme.of(ctx).colorScheme.error,
@@ -163,35 +138,11 @@ class _SeniorRequestFlowScreenState
         context.pop();
         break;
     }
-  void _onBackPressed(SeniorRequestFlowState state) {
-    final notifier = ref.read(seniorRequestFlowProvider(_params).notifier);
-    switch (state.currentStep) {
-      case SeniorRequestStep.loadingCategories:
-      case SeniorRequestStep.categoriesFailed:
-      case SeniorRequestStep.selectCategory:
-        context.pop();
-        break;
-      case SeniorRequestStep.selectTiming:
-        notifier.goToStep(SeniorRequestStep.selectCategory);
-        break;
-      case SeniorRequestStep.addDetails:
-        notifier.goToStep(SeniorRequestStep.selectTiming);
-        break;
-      case SeniorRequestStep.reviewAndConfirm:
-        notifier.goToStep(SeniorRequestStep.addDetails);
-        break;
-      case SeniorRequestStep.submittedSuccess:
-      case SeniorRequestStep.blockedReferral:
-        context.pop();
-        break;
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final state = ref.watch(seniorRequestFlowProvider(_params));
-    final notifier = ref.read(seniorRequestFlowProvider(_params).notifier);
     final state = ref.watch(seniorRequestFlowProvider(_params));
     final notifier = ref.read(seniorRequestFlowProvider(_params).notifier);
 
@@ -202,7 +153,6 @@ class _SeniorRequestFlowScreenState
           icon: const Icon(Icons.arrow_back),
           tooltip: 'semantic.back_button'.tr(),
           onPressed: () => _onBackPressed(state),
-          onPressed: () => _onBackPressed(state),
         ),
       ),
       body: SafeArea(
@@ -211,7 +161,6 @@ class _SeniorRequestFlowScreenState
             constraints: const BoxConstraints(maxWidth: 560),
             child: SingleChildScrollView(
               padding: const EdgeInsetsDirectional.all(AppSpacing.lg),
-              child: _buildCurrentStep(theme, state, notifier),
               child: _buildCurrentStep(theme, state, notifier),
             ),
           ),
@@ -227,20 +176,11 @@ class _SeniorRequestFlowScreenState
   ) {
     switch (state.currentStep) {
       case SeniorRequestStep.loadingCategories:
-  Widget _buildCurrentStep(
-    ThemeData theme,
-    SeniorRequestFlowState state,
-    SeniorRequestFlowNotifier notifier,
-  ) {
-    switch (state.currentStep) {
-      case SeniorRequestStep.loadingCategories:
         return AppLoading(message: 'common.loading'.tr());
-      case SeniorRequestStep.categoriesFailed:
       case SeniorRequestStep.categoriesFailed:
         return AppErrorView(
           message: 'errors.generic'.tr(),
           retryLabel: 'common.retry'.tr(),
-          onRetry: notifier.loadCategories,
           onRetry: notifier.loadCategories,
         );
       case SeniorRequestStep.selectCategory:
@@ -248,18 +188,7 @@ class _SeniorRequestFlowScreenState
       case SeniorRequestStep.selectTiming:
         return _buildTimingStep(theme, notifier);
       case SeniorRequestStep.addDetails:
-      case SeniorRequestStep.selectCategory:
-        return _buildCategoryStep(theme, notifier);
-      case SeniorRequestStep.selectTiming:
-        return _buildTimingStep(theme, notifier);
-      case SeniorRequestStep.addDetails:
         return _buildDetailsStep(theme);
-      case SeniorRequestStep.reviewAndConfirm:
-        return _buildReviewStep(theme, state, notifier);
-      case SeniorRequestStep.submittedSuccess:
-        return _buildSuccessStep(theme, state);
-      case SeniorRequestStep.blockedReferral:
-        return _buildBlockedReferralStep(theme, notifier);
       case SeniorRequestStep.reviewAndConfirm:
         return _buildReviewStep(theme, state, notifier);
       case SeniorRequestStep.submittedSuccess:
@@ -273,10 +202,6 @@ class _SeniorRequestFlowScreenState
     ThemeData theme,
     SeniorRequestFlowNotifier notifier,
   ) {
-  Widget _buildCategoryStep(
-    ThemeData theme,
-    SeniorRequestFlowNotifier notifier,
-  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -284,15 +209,11 @@ class _SeniorRequestFlowScreenState
           'help.create.what'.tr(),
           style: theme.textTheme.headlineSmall
               ?.copyWith(fontWeight: FontWeight.bold),
-          style: theme.textTheme.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: AppSpacing.lg),
         for (final cat in SeniorRequestFlowNotifier.categories) ...[
-        for (final cat in SeniorRequestFlowNotifier.categories) ...[
           _CategoryCard(
             item: cat,
-            onTap: () => notifier.onCategorySelected(cat),
             onTap: () => notifier.onCategorySelected(cat),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -305,18 +226,9 @@ class _SeniorRequestFlowScreenState
     ThemeData theme,
     SeniorRequestFlowNotifier notifier,
   ) {
-  Widget _buildTimingStep(
-    ThemeData theme,
-    SeniorRequestFlowNotifier notifier,
-  ) {
     final timings = [
       {'key': 'today', 'label': 'common.today'.tr(), 'icon': Icons.today},
       {'key': 'tomorrow', 'label': 'common.tomorrow'.tr(), 'icon': Icons.event},
-      {
-        'key': 'this_week',
-        'label': 'common.this_week'.tr(),
-        'icon': Icons.date_range
-      },
       {
         'key': 'this_week',
         'label': 'common.this_week'.tr(),
@@ -331,15 +243,12 @@ class _SeniorRequestFlowScreenState
           'help.create.when'.tr(),
           style: theme.textTheme.headlineSmall
               ?.copyWith(fontWeight: FontWeight.bold),
-          style: theme.textTheme.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: AppSpacing.lg),
         for (final item in timings) ...[
           _TimingCard(
             label: item['label']! as String,
             icon: item['icon']! as IconData,
-            onTap: () => notifier.onTimingSelected(item['key']! as String),
             onTap: () => notifier.onTimingSelected(item['key']! as String),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -354,8 +263,6 @@ class _SeniorRequestFlowScreenState
       children: [
         Text(
           'help.create.details'.tr(),
-          style: theme.textTheme.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.bold),
           style: theme.textTheme.headlineSmall
               ?.copyWith(fontWeight: FontWeight.bold),
         ),
@@ -391,18 +298,11 @@ class _SeniorRequestFlowScreenState
     SeniorRequestFlowState state,
     SeniorRequestFlowNotifier notifier,
   ) {
-  Widget _buildReviewStep(
-    ThemeData theme,
-    SeniorRequestFlowState state,
-    SeniorRequestFlowNotifier notifier,
-  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'help.create.review_title'.tr(),
-          style: theme.textTheme.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.bold),
           style: theme.textTheme.headlineSmall
               ?.copyWith(fontWeight: FontWeight.bold),
         ),
@@ -421,16 +321,12 @@ class _SeniorRequestFlowScreenState
                 _ReviewRow(
                   icon: state.selectedCategory?.icon ?? Icons.help,
                   label: state.selectedCategory?.titleKey.tr() ?? '',
-                  icon: state.selectedCategory?.icon ?? Icons.help,
-                  label: state.selectedCategory?.titleKey.tr() ?? '',
                 ),
                 const Divider(height: AppSpacing.lg),
                 _ReviewRow(
                   icon: Icons.access_time,
                   label: state.selectedTiming == 'today'
-                  label: state.selectedTiming == 'today'
                       ? 'common.today'.tr()
-                      : state.selectedTiming == 'tomorrow'
                       : state.selectedTiming == 'tomorrow'
                           ? 'common.tomorrow'.tr()
                           : 'common.this_week'.tr(),
@@ -448,9 +344,7 @@ class _SeniorRequestFlowScreenState
         ),
         const SizedBox(height: AppSpacing.xl),
         if (state.errorMessage != null) ...[
-        if (state.errorMessage != null) ...[
           Text(
-            state.errorMessage!,
             state.errorMessage!,
             style: TextStyle(color: theme.colorScheme.error),
           ),
@@ -462,18 +356,11 @@ class _SeniorRequestFlowScreenState
           isLoading: state.isSubmitting,
           onPressed: () =>
               notifier.submitRequest(_detailsController.text.trim()),
-          isLoading: state.isSubmitting,
-          onPressed: () =>
-              notifier.submitRequest(_detailsController.text.trim()),
         ),
       ],
     );
   }
 
-  Widget _buildSuccessStep(
-    ThemeData theme,
-    SeniorRequestFlowState state,
-  ) {
   Widget _buildSuccessStep(
     ThemeData theme,
     SeniorRequestFlowState state,
@@ -488,8 +375,6 @@ class _SeniorRequestFlowScreenState
           'help.create.submitted'.tr(),
           style: theme.textTheme.headlineMedium
               ?.copyWith(fontWeight: FontWeight.bold),
-          style: theme.textTheme.headlineMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.md),
@@ -497,23 +382,10 @@ class _SeniorRequestFlowScreenState
           'help.create.submitted_detail'.tr(),
           style: theme.textTheme.bodyLarge
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-          style: theme.textTheme.bodyLarge
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.xxl),
         AppButton(
-          label: state.createdRequestId != null
-              ? 'help.my_request.title'.tr()
-              : 'common.close'.tr(),
-          onPressed: () {
-            final id = state.createdRequestId;
-            if (id != null) {
-              context.go('${AppRoutes.myRequestStatus}/$id');
-            } else {
-              context.go(AppRoutes.home);
-            }
-          },
           label: state.createdRequestId != null
               ? 'help.my_request.title'.tr()
               : 'common.close'.tr(),
@@ -534,15 +406,9 @@ class _SeniorRequestFlowScreenState
     ThemeData theme,
     SeniorRequestFlowNotifier notifier,
   ) {
-  Widget _buildBlockedReferralStep(
-    ThemeData theme,
-    SeniorRequestFlowNotifier notifier,
-  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(Icons.health_and_safety,
-            size: 64, color: theme.colorScheme.error),
         Icon(Icons.health_and_safety,
             size: 64, color: theme.colorScheme.error),
         const SizedBox(height: AppSpacing.md),
@@ -562,8 +428,6 @@ class _SeniorRequestFlowScreenState
         AppButton(
           label: 'help.blocked.other_request'.tr(),
           variant: AppButtonVariant.tonal,
-          onPressed: () =>
-              notifier.goToStep(SeniorRequestStep.selectCategory),
           onPressed: () =>
               notifier.goToStep(SeniorRequestStep.selectCategory),
         ),
@@ -586,8 +450,6 @@ class _CategoryCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       elevation: 0,
-      shape: BorderSide(color: theme.colorScheme.outlineVariant) ==
-              BorderSide.none
       shape: BorderSide(color: theme.colorScheme.outlineVariant) ==
               BorderSide.none
           ? const RoundedRectangleBorder(borderRadius: AppRadius.card)
@@ -639,8 +501,6 @@ class _TimingCard extends StatelessWidget {
       elevation: 0,
       shape: const RoundedRectangleBorder(borderRadius: AppRadius.card),
       color: theme.colorScheme.surfaceContainerHighest,
-      shape: const RoundedRectangleBorder(borderRadius: AppRadius.card),
-      color: theme.colorScheme.surfaceContainerHighest,
       child: InkWell(
         borderRadius: const BorderRadius.all(Radius.circular(AppRadius.lg)),
         onTap: onTap,
@@ -681,12 +541,10 @@ class _ReviewRow extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
-        Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Text(
             label,
-            style: Theme.of(context).textTheme.bodyLarge,
             style: Theme.of(context).textTheme.bodyLarge,
           ),
         ),

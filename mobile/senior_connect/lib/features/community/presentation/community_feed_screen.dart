@@ -5,16 +5,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/app_tokens.dart';
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/app_states.dart';
 import '../application/community_feed_notifier.dart';
-import '../application/community_feed_notifier.dart';
 import 'event_detail_screen.dart';
 
-class CommunityFeedScreen extends ConsumerWidget {
 class CommunityFeedScreen extends ConsumerWidget {
   const CommunityFeedScreen({
     super.key,
@@ -25,10 +22,7 @@ class CommunityFeedScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final state = ref.watch(communityFeedProvider(apiClient));
-    final notifier = ref.read(communityFeedProvider(apiClient).notifier);
     final state = ref.watch(communityFeedProvider(apiClient));
     final notifier = ref.read(communityFeedProvider(apiClient).notifier);
 
@@ -80,7 +74,6 @@ class CommunityFeedScreen extends ConsumerWidget {
             ),
             Expanded(
               child: state.isLoading
-              child: state.isLoading
                   ? AppLoading(message: 'common.loading'.tr())
                   : state.nearbyUnavailable
                       ? AppEmptyState(
@@ -98,36 +91,22 @@ class CommunityFeedScreen extends ConsumerWidget {
                           itemCount: state.events.length,
                           separatorBuilder: (_, _) =>
                               const SizedBox(height: AppSpacing.md),
-                          padding:
-                              const EdgeInsetsDirectional.all(AppSpacing.md),
-                          itemCount: state.events.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: AppSpacing.md),
                           itemBuilder: (context, index) {
-                            final ev = state.events[index];
                             final ev = state.events[index];
                             return Card(
                               elevation: 1,
                               shape: RoundedRectangleBorder(
                                 borderRadius:
                                     BorderRadius.circular(AppRadius.md),
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.md),
                               ),
                               child: InkWell(
                                 borderRadius:
                                     BorderRadius.circular(AppRadius.md),
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.md),
                                 onTap: () {
-                                  if (apiClient != null) {
                                   if (apiClient != null) {
                                     Navigator.of(context).push(
                                       MaterialPageRoute<void>(
                                         builder: (_) => EventDetailScreen(
-                                          eventId: ev['id'] as String? ??
-                                              'ev-1',
-                                          apiClient: apiClient!,
                                           eventId: ev['id'] as String? ??
                                               'ev-1',
                                           apiClient: apiClient!,
@@ -139,18 +118,12 @@ class CommunityFeedScreen extends ConsumerWidget {
                                 child: Padding(
                                   padding: const EdgeInsetsDirectional.all(
                                       AppSpacing.md),
-                                  padding: const EdgeInsetsDirectional.all(
-                                      AppSpacing.md),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         ev['title'] as String? ?? '',
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
                                         style: theme.textTheme.titleMedium
                                             ?.copyWith(
                                           fontWeight: FontWeight.bold,
@@ -236,17 +209,10 @@ class CommunityFeedScreen extends ConsumerWidget {
                                           padding:
                                               const EdgeInsets.symmetric(
                                                   horizontal: 8, vertical: 4),
-                                          padding:
-                                              const EdgeInsets.symmetric(
-                                                  horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: theme.colorScheme
                                                 .primaryContainer,
-                                            color: theme.colorScheme
-                                                .primaryContainer,
                                             borderRadius:
-                                                BorderRadius.circular(
-                                                    AppRadius.sm),
                                                 BorderRadius.circular(
                                                     AppRadius.sm),
                                           ),

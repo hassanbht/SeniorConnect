@@ -1,6 +1,5 @@
 using SeniorConnect.Domain;
 using SeniorConnect.Modules.Organizations.Domain;
-using SeniorConnect.Modules.Organizations.Domain;
 
 namespace SeniorConnect.Modules.Organizations.Application;
 

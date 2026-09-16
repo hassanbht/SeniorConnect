@@ -185,14 +185,18 @@ class _ProfileContent extends StatelessWidget {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: Icon(Icons.shield_outlined, color: colorScheme.primary),
-          title: Text('privacy.export_title'.tr(), style: textTheme.titleMedium),
-          subtitle: Text('privacy.export_subtitle'.tr(), style: textTheme.bodySmall),
+          title: Text('settings.privacy'.tr(), style: textTheme.titleMedium),
+          subtitle: Text('privacy.consents_desc'.tr(), style: textTheme.bodySmall),
           trailing: const Icon(Icons.chevron_right),
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('privacy.export_requested'.tr())),
-            );
-          },
+          onTap: () => context.push(AppRoutes.privacySettings),
+        ),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(Icons.notifications_outlined, color: colorScheme.primary),
+          title: Text('settings.notifications'.tr(), style: textTheme.titleMedium),
+          subtitle: Text('notifications.quiet_hours_desc'.tr(), style: textTheme.bodySmall),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push(AppRoutes.notificationPreferences),
         ),
         ListTile(
           contentPadding: EdgeInsets.zero,

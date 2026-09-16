@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using SeniorConnect.Modules.Identity.Domain;
 using Xunit;
 
@@ -78,5 +79,76 @@ public sealed class TwoTierDeletionTests
         user.DisplayName.Should().Be("Gelöschtes Profil");
         user.IsDeleted.Should().BeTrue();
         user.Status.Should().Be(UserStatus.Deleted);
+    }
+
+    [Fact]
+    public async Task ExportThenDelete_AnonymizesUser_PreservingPseudonymizedAuditTrail_Gate7()
+    {
+        var options = new DbContextOptionsBuilder<SeniorConnect.Infrastructure.SeniorConnectDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        using var db = new SeniorConnect.Infrastructure.SeniorConnectDbContext(options, new SeniorConnect.Infrastructure.DefaultTenantContext());
+
+        var privacyService = new SeniorConnect.Modules.Identity.Infrastructure.PrivacyService(db);
+
+        // 1. Create active user with PII and consent
+        var user = User.CreateWithPhone("+41791234567", "Greta Wallner", "de", seniorModeDefault: true);
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        await privacyService.RecordConsentAsync(user.Id, new SeniorConnect.Modules.Identity.Application.RecordConsentRequest(
+            ConsentType.Privacy,
+            "v1.0",
+            Granted: true
+        ));
+
+        // Create an audit entry referencing user.Id (simulating past actions)
+        var auditEntry = SeniorConnect.Modules.Reporting.Domain.AuditEntry.Create(
+            action: "HELP_REQUEST_CREATED",
+            subjectType: "HelpRequest",
+            subjectId: Guid.NewGuid(),
+            actorUserId: user.Id
+        );
+        db.AuditEntries.Add(auditEntry);
+        await db.SaveChangesAsync();
+
+        // 2. User requests full GDPR data export
+        var exportResult = await privacyService.ExportUserDataAsync(user.Id);
+        exportResult.IsSuccess.Should().BeTrue();
+        exportResult.Value!.UserProfile.Should().NotBeNull();
+        exportResult.Value.Consents.Should().HaveCount(1);
+
+        // 3. User initiates account deletion
+        var delReqResult = await privacyService.RequestAccountDeletionAsync(user.Id, new SeniorConnect.Modules.Identity.Application.RequestDeletionRequest(
+            Reason: "Umzug ins Ausland"
+        ));
+        delReqResult.IsSuccess.Should().BeTrue();
+
+        // 4. User confirms Tier 1
+        var delReq = await db.AccountDeletionRequests.FirstAsync(r => r.UserId == user.Id);
+        var confirmResult = await privacyService.ConfirmAccountDeletionAsync(user.Id, new SeniorConnect.Modules.Identity.Application.ConfirmDeletionRequest(
+            ConfirmationToken: delReq.ConfirmationToken
+        ));
+        confirmResult.IsSuccess.Should().BeTrue();
+
+        // 5. 30-day grace period passes -> Tier 2 purge executes
+        delReq.ExecuteTier2Purge();
+        user.AnonymizeForGdpr();
+        await db.SaveChangesAsync();
+
+        // 6. Assert User PII is completely eradicated and query filter hides soft-deleted user
+        var normalQueryUser = await db.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+        normalQueryUser.Should().BeNull();
+
+        var purgedUser = await db.Users.IgnoreQueryFilters().FirstAsync(u => u.Id == user.Id);
+        purgedUser.Phone.Should().BeNull();
+        purgedUser.Email.Should().BeNull();
+        purgedUser.DisplayName.Should().Be("Gelöschtes Profil");
+        purgedUser.IsDeleted.Should().BeTrue();
+
+        // 7. Assert Audit trail survives, pseudonymized (ActorUserId remains, but no PII reachable)
+        var survivingAudit = await db.AuditEntries.FirstAsync(a => a.ActorUserId == user.Id);
+        survivingAudit.ActorUserId.Should().Be(user.Id);
+        survivingAudit.Action.Should().Be("HELP_REQUEST_CREATED");
     }
 }

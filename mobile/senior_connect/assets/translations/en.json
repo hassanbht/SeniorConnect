@@ -517,9 +517,42 @@
     "support_contacted": "Thank you. A representative will get in touch."
   },
   "privacy": {
+    "title": "Privacy & Data Protection",
     "export_title": "Data Export & Portability",
     "export_subtitle": "Copy of all your stored data (GDPR / FADP)",
-    "export_requested": "Your data export is being generated and will be available shortly."
+    "export_requested": "Your data export is being generated and will be available shortly.",
+    "export_button": "Export My Data (JSON)",
+    "export_success": "Data export successfully generated ({0} KB).",
+    "consents_title": "Granted Consents",
+    "consents_desc": "Review and withdraw data processing consents.",
+    "consent_terms": "Terms of Service & Privacy Policy",
+    "consent_contact": "Contact by Volunteers",
+    "consent_version": "Version {0} – Granted on {1}",
+    "withdraw": "Withdraw",
+    "withdraw_confirm": "Do you really want to withdraw this consent?",
+    "withdraw_success": "Consent successfully withdrawn.",
+    "delete_account": "Delete Account",
+    "delete_account_desc": "Permanently deletes your account after a 30-day grace period.",
+    "delete_confirm_title": "Permanently delete account?",
+    "delete_confirm_desc": "Your account will be immediately deactivated and permanently anonymized after a 30-day grace period. Do you wish to continue?",
+    "delete_requested": "Deletion request submitted. Please confirm using the confirmation token.",
+    "delete_token_prompt": "Enter confirmation token:",
+    "delete_confirmed": "Your account has been successfully scheduled for permanent deletion."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "quiet_hours_title": "Quiet Hours",
+    "quiet_hours_desc": "No non-urgent notifications during this time window.",
+    "quiet_hours_enabled": "Enable quiet hours",
+    "quiet_hours_start": "Quiet hours start",
+    "quiet_hours_end": "Quiet hours end",
+    "categories_title": "Categories",
+    "cat_help_requests": "Help Requests & Assignments",
+    "cat_community": "Community & Events",
+    "cat_family": "Family & Welfare",
+    "cat_system": "System & Security",
+    "safety_notice": "Critical safety alerts are always delivered to protect all participants.",
+    "saved": "Notification settings saved successfully."
   },
   "voice_input": {
     "title": "Voice Input / Dictation",

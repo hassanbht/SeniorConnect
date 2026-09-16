@@ -31,6 +31,7 @@
     <ProjectReference Include="..\..\..\backend\modules\HelpRequests\SeniorConnect.Modules.HelpRequests.csproj" />
     <ProjectReference Include="..\..\..\backend\modules\Community\SeniorConnect.Modules.Community.csproj" />
     <ProjectReference Include="..\..\..\backend\modules\Family\SeniorConnect.Modules.Family.csproj" />
+    <ProjectReference Include="..\..\..\backend\modules\Reporting\SeniorConnect.Modules.Reporting.csproj" />
   </ItemGroup>
 
 </Project>

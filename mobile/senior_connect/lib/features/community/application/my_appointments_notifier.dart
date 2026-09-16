@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/cache/local_read_cache.dart';
 import '../../../core/network/api_client.dart';
 
 class MyAppointmentsState {
@@ -44,9 +45,21 @@ class MyAppointmentsNotifier extends StateNotifier<MyAppointmentsState> {
       final list = response
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
+      // P7-04: Persist into local read cache for offline / airplane mode resilience
+      await LocalReadCache.save('my_schedule', list);
       state = state.copyWith(appointments: list, isLoading: false);
     } catch (_) {
-      // Fallback demo items for offline/testing
+      // P7-04: On network failure / offline / airplane mode, retrieve from local cache
+      final cached = await LocalReadCache.read('my_schedule');
+      if (cached is List && cached.isNotEmpty) {
+        final cachedList = cached
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        state = state.copyWith(appointments: cachedList, isLoading: false);
+        return;
+      }
+
+      // Fallback demo items for offline/testing if cache empty
       final demo = [
         {
           'eventId': 'ev-1',
