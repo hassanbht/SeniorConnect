@@ -115,6 +115,9 @@ public static class ReportingEndpoints
 
             return Results.File(result.Value!, "application/pdf", $"esg-certificate-{companyOrgId}.pdf");
         })
+        .WithName("ExportCorporateEsgCertificatePdf")
+        .Produces(StatusCodes.Status200OK, contentType: "application/pdf");
+
         reportGroup.MapGet("/organizations/{orgId:guid}/annual-report", async (
             Guid orgId,
             int? year,

@@ -14,11 +14,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SeniorConnect.Infrastructure\SeniorConnect.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\Identity\SeniorConnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\modules\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+    <ProjectReference Include="..\modules\Organizations\SeniorConnect.Modules.Organizations.csproj" />
+    <ProjectReference Include="..\modules\TrustSafety\SeniorConnect.Modules.TrustSafety.csproj" />
     <ProjectReference Include="..\modules\HelpRequests\SeniorConnect.Modules.HelpRequests.csproj" />
     <ProjectReference Include="..\modules\Matching\SeniorConnect.Modules.Matching.csproj" />
     <ProjectReference Include="..\modules\Reporting\SeniorConnect.Modules.Reporting.csproj" />
     <ProjectReference Include="..\modules\Community\SeniorConnect.Modules.Community.csproj" />
     <ProjectReference Include="..\modules\Family\SeniorConnect.Modules.Family.csproj" />
     <ProjectReference Include="..\modules\Notifications\SeniorConnect.Modules.Notifications.csproj" />
+    <ProjectReference Include="..\modules\Geography\SeniorConnect.Modules.Geography.csproj" />
   </ItemGroup>
 </Project>
