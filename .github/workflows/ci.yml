@@ -77,7 +77,7 @@ jobs:
       - name: Build Backend Container Image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./backend
           file: ./backend/Dockerfile
           push: false
           tags: seniorconnect-api:ci-test

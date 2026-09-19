@@ -6,6 +6,7 @@ WORKDIR /src
 # Copy solution and project files for layer caching
 COPY ["SeniorConnect.slnx", "./"]
 COPY ["SeniorConnect.Domain/SeniorConnect.Domain.csproj", "SeniorConnect.Domain/"]
+COPY ["SeniorConnect.Application/SeniorConnect.Application.csproj", "SeniorConnect.Application/"]
 COPY ["SeniorConnect.Infrastructure/SeniorConnect.Infrastructure.csproj", "SeniorConnect.Infrastructure/"]
 COPY ["SeniorConnect.Api/SeniorConnect.Api.csproj", "SeniorConnect.Api/"]
 COPY ["modules/Identity/SeniorConnect.Modules.Identity.csproj", "modules/Identity/"]

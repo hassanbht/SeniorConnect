@@ -5,6 +5,7 @@ namespace SeniorConnect.Modules.HelpRequests.Domain;
 
 public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoftDeletable
 {
+    private readonly object _gate = new();
     private HelpRequest() { }
 
     [DataClass(DataClass.Operational)]
@@ -311,6 +312,8 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
 
     public Result Assign(Guid volunteerUserId, int expectedRowVersion)
     {
+        lock (_gate)
+        {
         if (Status is not (HelpRequestStatus.Open or HelpRequestStatus.Offered or HelpRequestStatus.Matching))
         {
             return new Error("HELP_ALREADY_ASSIGNED", "This help request is no longer available to accept.", ErrorKind.Conflict);
@@ -334,6 +337,7 @@ public sealed class HelpRequest : Entity, IOrganizationScoped, IAuditable, ISoft
         UpdatedBy = volunteerUserId;
 
         return Result.Success();
+        }
     }
 
     public Result CheckIn(Guid volunteerUserId)
