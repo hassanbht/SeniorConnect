@@ -42,6 +42,14 @@ public sealed class SupportProfileConfiguration : IEntityTypeConfiguration<Suppo
 
         builder.HasIndex(s => s.PostalCode)
             .HasDatabaseName("ix_support_profiles_postal");
+
+        builder.HasIndex(s => s.UserId)
+            .IsUnique()
+            .HasDatabaseName("ix_support_profiles_user_id");
+
+        builder.HasIndex(s => s.UserId)
+            .IsUnique()
+            .HasDatabaseName("ix_support_profiles_user_id");
     }
 }
 
@@ -79,6 +87,14 @@ public sealed class VolunteerProfileConfiguration : IEntityTypeConfiguration<Vol
         builder.HasIndex(v => new { v.Latitude, v.Longitude })
             .HasDatabaseName("ix_volunteer_profiles_geo")
             .HasFilter("latitude IS NOT NULL AND is_accepting_requests");
+
+        builder.HasIndex(v => v.UserId)
+            .IsUnique()
+            .HasDatabaseName("ix_volunteer_profiles_user_id");
+
+        builder.HasIndex(v => v.UserId)
+            .IsUnique()
+            .HasDatabaseName("ix_volunteer_profiles_user_id");
     }
 }
 
@@ -198,3 +214,4 @@ public sealed class AvailabilitySlotConfiguration : IEntityTypeConfiguration<Ava
             .HasDatabaseName("ix_availability_user");
     }
 }
+

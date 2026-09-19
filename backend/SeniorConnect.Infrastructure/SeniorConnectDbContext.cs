@@ -233,7 +233,42 @@ public sealed class SeniorConnectDbContext(
         // (Profiles module) via UserInterestConfiguration instead of the
         // shadow many-to-many join that lived here.
 
-        // --- Family & Delegation ---------------------------------------------
+        // --- Community Indexes -----------------------------------------------
+        modelBuilder.Entity<CommunityEvent>(b =>
+        {
+            b.HasIndex(e => new { e.StartsAtUtc, e.IsCancelled })
+             .HasDatabaseName("ix_community_events_schedule");
+            b.HasIndex(e => e.GroupId)
+             .HasDatabaseName("ix_community_events_group");
+            b.HasIndex(e => e.OrganizationId)
+             .HasDatabaseName("ix_community_events_org");
+        });
+
+        modelBuilder.Entity<CommunityGroup>(b =>
+        {
+            b.HasIndex(g => new { g.OrganizationId, g.IsArchived })
+             .HasDatabaseName("ix_community_groups_org_archived");
+            b.HasIndex(g => g.Category)
+             .HasDatabaseName("ix_community_groups_category");
+        });
+
+        modelBuilder.Entity<EventRegistration>(b =>
+        {
+            b.HasIndex(r => new { r.EventId, r.Status })
+             .HasDatabaseName("ix_event_registrations_event_status");
+            b.HasIndex(r => new { r.UserId, r.Status })
+             .HasDatabaseName("ix_event_registrations_user_status");
+        });
+
+        modelBuilder.Entity<GroupMembership>(b =>
+        {
+            b.HasIndex(m => new { m.GroupId, m.Status })
+             .HasDatabaseName("ix_group_memberships_group_status");
+            b.HasIndex(m => new { m.UserId, m.Status })
+             .HasDatabaseName("ix_group_memberships_user_status");
+        });
+
+        // --- Family & Delegation Indexes -------------------------------------
         modelBuilder.Entity<FamilyRelationship>(b =>
         {
             b.HasMany(r => r.Permissions)
@@ -241,6 +276,53 @@ public sealed class SeniorConnectDbContext(
              .HasForeignKey(p => p.FamilyRelationshipId)
              .OnDelete(DeleteBehavior.Cascade);
             b.Navigation(r => r.Permissions).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            b.HasIndex(r => new { r.SeniorUserId, r.Status })
+             .HasDatabaseName("ix_family_relationships_senior_status");
+            b.HasIndex(r => new { r.CaregiverUserId, r.Status })
+             .HasDatabaseName("ix_family_relationships_caregiver_status");
+        });
+
+        modelBuilder.Entity<SafetyAlert>(b =>
+        {
+            b.HasIndex(a => new { a.SeniorUserId, a.Status })
+             .HasDatabaseName("ix_safety_alerts_senior_status");
+        });
+
+        modelBuilder.Entity<SeniorAccessLog>(b =>
+        {
+            b.HasIndex(l => new { l.SeniorUserId, l.TimestampUtc })
+             .HasDatabaseName("ix_senior_access_logs_senior_time");
+        });
+
+        modelBuilder.Entity<TrustedContact>(b =>
+        {
+            b.HasIndex(c => new { c.SeniorUserId, c.IsDeleted })
+             .HasDatabaseName("ix_trusted_contacts_senior_deleted");
+        });
+
+        // --- Notifications Indexes -------------------------------------------
+        modelBuilder.Entity<NotificationMessage>(b =>
+        {
+            b.HasIndex(m => new { m.RecipientUserId, m.Status, m.CreatedAtUtc })
+             .HasDatabaseName("ix_notification_messages_recipient_status_created");
+        });
+
+        modelBuilder.Entity<NotificationPreference>(b =>
+        {
+            b.HasIndex(p => p.UserId)
+             .IsUnique()
+             .HasDatabaseName("ix_notification_preferences_user_id");
+        });
+
+        // --- Geography Indexes -----------------------------------------------
+        modelBuilder.Entity<AustrianAdministrativeUnit>(b =>
+        {
+            b.HasIndex(x => x.PostalCode).HasDatabaseName("ix_austria_geo_plz");
+            b.HasIndex(x => x.GemeindeName).HasDatabaseName("ix_austria_geo_gemeinde");
+            b.HasIndex(x => new { x.Latitude, x.Longitude }).HasDatabaseName("ix_austria_geo_coords");
+            b.HasIndex(x => x.BundeslandCode).HasDatabaseName("ix_austria_bundesland");
+            b.HasIndex(x => x.BezirkCode).HasDatabaseName("ix_austria_bezirk");
         });
 
         base.OnModelCreating(modelBuilder);
@@ -258,3 +340,5 @@ public sealed class SeniorConnectDbContext(
         base.ConfigureConventions(configurationBuilder);
     }
 }
+
+

@@ -137,6 +137,7 @@ public sealed class HelpRequestService : IHelpRequestService
         CancellationToken cancellationToken = default)
     {
         var helpRequest = await _db.HelpRequests
+            .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == helpRequestId && !r.IsDeleted, cancellationToken);
 
         if (helpRequest is null)
@@ -161,6 +162,7 @@ public sealed class HelpRequestService : IHelpRequestService
         CancellationToken cancellationToken = default)
     {
         var requests = await _db.HelpRequests
+            .AsNoTracking()
             .Where(r => r.SeniorUserId == seniorUserId && !r.IsDeleted)
             .OrderByDescending(r => r.ScheduledStartUtc)
             .ToListAsync(cancellationToken);
@@ -181,6 +183,7 @@ public sealed class HelpRequestService : IHelpRequestService
         CancellationToken cancellationToken = default)
     {
         var query = _db.HelpRequests
+            .AsNoTracking()
             .Where(r => (r.Status == HelpRequestStatus.Open || r.Status == HelpRequestStatus.Offered || r.Status == HelpRequestStatus.Matching) && !r.IsDeleted);
 
         if (organizationId.HasValue)
@@ -511,6 +514,7 @@ public sealed class HelpRequestService : IHelpRequestService
         CancellationToken cancellationToken = default)
     {
         var history = await _db.HelpRequestStatusHistories
+            .AsNoTracking()
             .Where(h => h.HelpRequestId == helpRequestId)
             .OrderBy(h => h.ChangedAtUtc)
             .ToListAsync(cancellationToken);

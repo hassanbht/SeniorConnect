@@ -50,6 +50,9 @@ var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? (Environment.GetEnvironmentVariable("DB_NAME") != null ? envConnectionString : builder.Configuration.GetConnectionString("DefaultConnection"))
     ?? envConnectionString;
 
+// In-Memory Caching for high-throughput reads & static reference data
+builder.Services.AddMemoryCache();
+
 // DbContext configuration
 builder.Services.AddScoped<ITenantContext, DefaultTenantContext>();
 builder.Services.AddDbContext<SeniorConnectDbContext>(options =>

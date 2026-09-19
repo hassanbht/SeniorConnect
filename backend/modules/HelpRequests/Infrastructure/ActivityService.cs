@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
 using SeniorConnect.Domain;
 using SeniorConnect.Modules.HelpRequests.Application;
@@ -8,10 +9,16 @@ namespace SeniorConnect.Modules.HelpRequests.Infrastructure;
 public sealed class ActivityService : IActivityService
 {
     private readonly IHelpRequestsDbContext _db;
+    private readonly IMemoryCache _cache;
 
-    public ActivityService(IHelpRequestsDbContext db)
+    private static readonly MemoryCacheEntryOptions CategoryCacheOptions = new MemoryCacheEntryOptions()
+        .SetAbsoluteExpiration(TimeSpan.FromMinutes(30))
+        .SetSlidingExpiration(TimeSpan.FromMinutes(10));
+
+    public ActivityService(IHelpRequestsDbContext db, IMemoryCache cache)
     {
         _db = db;
+        _cache = cache;
     }
 
     public async Task<Result<ActivityDto>> LogActivityAsync(
@@ -63,6 +70,7 @@ public sealed class ActivityService : IActivityService
         CancellationToken cancellationToken = default)
     {
         var activity = await _db.Activities
+            .AsNoTracking()
             .FirstOrDefaultAsync(a => a.Id == activityId && !a.IsDeleted, cancellationToken);
 
         if (activity is null)
@@ -93,6 +101,7 @@ public sealed class ActivityService : IActivityService
         }
 
         var activity = await _db.Activities
+            .AsNoTracking()
             .FirstOrDefaultAsync(a => a.Id == activityId && !a.IsDeleted, cancellationToken);
 
         if (activity is null)
@@ -116,6 +125,7 @@ public sealed class ActivityService : IActivityService
         CancellationToken cancellationToken = default)
     {
         var activity = await _db.Activities
+            .AsNoTracking()
             .FirstOrDefaultAsync(a => a.Id == activityId && !a.IsDeleted, cancellationToken);
 
         if (activity is null)
@@ -133,6 +143,7 @@ public sealed class ActivityService : IActivityService
         CancellationToken cancellationToken = default)
     {
         var query = _db.Activities
+            .AsNoTracking()
             .Where(a => a.VolunteerUserId == volunteerUserId && !a.IsDeleted);
 
         if (from.HasValue) query = query.Where(a => a.OccurredOn >= from.Value);
@@ -154,6 +165,7 @@ public sealed class ActivityService : IActivityService
         CancellationToken cancellationToken = default)
     {
         var query = _db.Activities
+            .AsNoTracking()
             .Where(a => a.OrganizationId == organizationId && !a.IsDeleted);
 
         if (from.HasValue) query = query.Where(a => a.OccurredOn >= from.Value);
@@ -171,19 +183,27 @@ public sealed class ActivityService : IActivityService
     public async Task<Result<IReadOnlyList<ActivityCategoryDto>>> GetCategoriesAsync(
         CancellationToken cancellationToken = default)
     {
-        var categories = await _db.ActivityCategories
-            .Where(c => c.IsActive)
-            .OrderBy(c => c.Code)
-            .ToListAsync(cancellationToken);
+        const string cacheKey = "ref_activity_categories";
 
-        var dtos = categories.Select(c => new ActivityCategoryDto(
-            c.Id,
-            c.Code,
-            c.NameKey,
-            c.DefaultSafetyLevel,
-            c.IsBlocked,
-            c.ReferralGroup,
-            c.IsActive)).ToList();
+        if (!_cache.TryGetValue(cacheKey, out IReadOnlyList<ActivityCategoryDto>? dtos) || dtos is null)
+        {
+            var categories = await _db.ActivityCategories
+                .AsNoTracking()
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Code)
+                .ToListAsync(cancellationToken);
+
+            dtos = categories.Select(c => new ActivityCategoryDto(
+                c.Id,
+                c.Code,
+                c.NameKey,
+                c.DefaultSafetyLevel,
+                c.IsBlocked,
+                c.ReferralGroup,
+                c.IsActive)).ToList();
+
+            _cache.Set(cacheKey, dtos, CategoryCacheOptions);
+        }
 
         return Result<IReadOnlyList<ActivityCategoryDto>>.Success(dtos);
     }
@@ -194,6 +214,7 @@ public sealed class ActivityService : IActivityService
         CancellationToken cancellationToken = default)
     {
         var query = _db.ReferralDirectories
+            .AsNoTracking()
             .Where(r => r.IsActive);
 
         if (!string.IsNullOrWhiteSpace(referralGroup))
@@ -243,3 +264,4 @@ public sealed class ActivityService : IActivityService
         ConfirmedAtUtc: a.ConfirmedAtUtc,
         Status: a.Status);
 }
+

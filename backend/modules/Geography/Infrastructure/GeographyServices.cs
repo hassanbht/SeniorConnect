@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using SeniorConnect.Domain;
 using SeniorConnect.Modules.Geography.Application;
@@ -12,63 +13,132 @@ namespace SeniorConnect.Modules.Geography.Infrastructure;
 public sealed class GeographyReferenceService : IGeographyReferenceService
 {
     private readonly IGeographyDbContext _db;
+    private readonly IMemoryCache? _cache;
 
-    public GeographyReferenceService(IGeographyDbContext db)
+    public GeographyReferenceService(IGeographyDbContext db, IMemoryCache? cache = null)
     {
         _db = db;
+        _cache = cache;
     }
 
     public async Task<Result<IReadOnlyList<BundeslandDto>>> GetBundeslaenderAsync(CancellationToken cancellationToken = default)
     {
+        if (_cache is not null)
+        {
+            var cached = await _cache.GetOrCreateAsync("geo_bundeslaender", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24);
+                entry.SlidingExpiration = TimeSpan.FromHours(4);
+                return await QueryBundeslaenderAsync(cancellationToken);
+            });
+            return Result<IReadOnlyList<BundeslandDto>>.Success(cached ?? []);
+        }
+
+        return Result<IReadOnlyList<BundeslandDto>>.Success(await QueryBundeslaenderAsync(cancellationToken));
+    }
+
+    private async Task<IReadOnlyList<BundeslandDto>> QueryBundeslaenderAsync(CancellationToken ct)
+    {
         var units = await _db.AustrianAdministrativeUnits
+            .AsNoTracking()
             .Where(x => x.IsActive)
             .Select(x => new { x.BundeslandCode, x.BundeslandName })
             .Distinct()
             .OrderBy(x => x.BundeslandName)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(ct);
 
-        var dtos = units.Select(u => new BundeslandDto(u.BundeslandCode, u.BundeslandName)).ToList();
-        return Result<IReadOnlyList<BundeslandDto>>.Success(dtos);
+        return units.Select(u => new BundeslandDto(u.BundeslandCode, u.BundeslandName)).ToList();
     }
 
     public async Task<Result<IReadOnlyList<BezirkDto>>> GetBezirkeAsync(string bundeslandCode, CancellationToken cancellationToken = default)
     {
+        if (_cache is not null)
+        {
+            var key = $"geo_bezirke_{bundeslandCode}";
+            var cached = await _cache.GetOrCreateAsync(key, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24);
+                entry.SlidingExpiration = TimeSpan.FromHours(4);
+                return await QueryBezirkeAsync(bundeslandCode, cancellationToken);
+            });
+            return Result<IReadOnlyList<BezirkDto>>.Success(cached ?? []);
+        }
+
+        return Result<IReadOnlyList<BezirkDto>>.Success(await QueryBezirkeAsync(bundeslandCode, cancellationToken));
+    }
+
+    private async Task<IReadOnlyList<BezirkDto>> QueryBezirkeAsync(string bundeslandCode, CancellationToken ct)
+    {
         var units = await _db.AustrianAdministrativeUnits
+            .AsNoTracking()
             .Where(x => x.IsActive && x.BundeslandCode == bundeslandCode)
             .Select(x => new { x.BezirkCode, x.BezirkName })
             .Distinct()
             .OrderBy(x => x.BezirkName)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(ct);
 
-        var dtos = units.Select(u => new BezirkDto(u.BezirkCode, u.BezirkName)).ToList();
-        return Result<IReadOnlyList<BezirkDto>>.Success(dtos);
+        return units.Select(u => new BezirkDto(u.BezirkCode, u.BezirkName)).ToList();
     }
 
     public async Task<Result<IReadOnlyList<GemeindeDto>>> GetGemeindenAsync(string bezirkCode, CancellationToken cancellationToken = default)
     {
+        if (_cache is not null)
+        {
+            var key = $"geo_gemeinden_{bezirkCode}";
+            var cached = await _cache.GetOrCreateAsync(key, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24);
+                entry.SlidingExpiration = TimeSpan.FromHours(4);
+                return await QueryGemeindenAsync(bezirkCode, cancellationToken);
+            });
+            return Result<IReadOnlyList<GemeindeDto>>.Success(cached ?? []);
+        }
+
+        return Result<IReadOnlyList<GemeindeDto>>.Success(await QueryGemeindenAsync(bezirkCode, cancellationToken));
+    }
+
+    private async Task<IReadOnlyList<GemeindeDto>> QueryGemeindenAsync(string bezirkCode, CancellationToken ct)
+    {
         var units = await _db.AustrianAdministrativeUnits
+            .AsNoTracking()
             .Where(x => x.IsActive && x.BezirkCode == bezirkCode)
             .Select(x => new { x.GemeindeCode, x.GemeindeName, x.PostalCode, x.Latitude, x.Longitude })
             .Distinct()
             .OrderBy(x => x.GemeindeName)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(ct);
 
-        var dtos = units.Select(u => new GemeindeDto(
+        return units.Select(u => new GemeindeDto(
             u.GemeindeCode, u.GemeindeName, u.PostalCode, u.Latitude, u.Longitude)).ToList();
-        return Result<IReadOnlyList<GemeindeDto>>.Success(dtos);
     }
 
     public async Task<Result<IReadOnlyList<GemeindeDto>>> LookupByPlzAsync(string plz, CancellationToken cancellationToken = default)
     {
+        if (_cache is not null)
+        {
+            var key = $"geo_plz_{plz}";
+            var cached = await _cache.GetOrCreateAsync(key, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24);
+                entry.SlidingExpiration = TimeSpan.FromHours(4);
+                return await QueryLookupByPlzAsync(plz, cancellationToken);
+            });
+            return Result<IReadOnlyList<GemeindeDto>>.Success(cached ?? []);
+        }
+
+        return Result<IReadOnlyList<GemeindeDto>>.Success(await QueryLookupByPlzAsync(plz, cancellationToken));
+    }
+
+    private async Task<IReadOnlyList<GemeindeDto>> QueryLookupByPlzAsync(string plz, CancellationToken ct)
+    {
         var units = await _db.AustrianAdministrativeUnits
+            .AsNoTracking()
             .Where(x => x.IsActive && x.PostalCode == plz)
             .Select(x => new { x.GemeindeCode, x.GemeindeName, x.PostalCode, x.Latitude, x.Longitude })
             .Distinct()
-            .ToListAsync(cancellationToken);
+            .ToListAsync(ct);
 
-        var dtos = units.Select(u => new GemeindeDto(
+        return units.Select(u => new GemeindeDto(
             u.GemeindeCode, u.GemeindeName, u.PostalCode, u.Latitude, u.Longitude)).ToList();
-        return Result<IReadOnlyList<GemeindeDto>>.Success(dtos);
     }
 }
 
@@ -144,24 +214,29 @@ public sealed class GeocodingProviderStub : IGeocodingProvider
 
 public sealed class ProximityService : IProximityService
 {
+    private sealed record AdminUnitCacheItem(string GemeindeCode, string GemeindeName, string BezirkName, string BundeslandName, double Latitude, double Longitude);
+
     private readonly IGeographyDbContext _geoDb;
     private readonly IProfilesDbContext _profileDb;
     private readonly IOrganizationsDbContext _orgDb;
     private readonly IHelpRequestDiscoveryReader _helpRequestReader;
     private readonly ICommunityDiscoveryReader _communityReader;
+    private readonly IMemoryCache? _cache;
 
     public ProximityService(
         IGeographyDbContext geoDb,
         IProfilesDbContext profileDb,
         IOrganizationsDbContext orgDb,
         IHelpRequestDiscoveryReader helpRequestReader,
-        ICommunityDiscoveryReader communityReader)
+        ICommunityDiscoveryReader communityReader,
+        IMemoryCache? cache = null)
     {
         _geoDb = geoDb;
         _profileDb = profileDb;
         _orgDb = orgDb;
         _helpRequestReader = helpRequestReader;
         _communityReader = communityReader;
+        _cache = cache;
     }
 
     private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
@@ -182,6 +257,7 @@ public sealed class ProximityService : IProximityService
         double latitude, double longitude, double radiusKm, CancellationToken ct = default)
     {
         var branches = await _orgDb.OrganizationBranches
+            .AsNoTracking()
             .Where(b => b.IsActive && b.Latitude.HasValue && b.Longitude.HasValue)
             .ToListAsync(ct);
 
@@ -213,6 +289,7 @@ public sealed class ProximityService : IProximityService
         double latitude, double longitude, double radiusKm, CancellationToken ct = default)
     {
         var profiles = await _profileDb.VolunteerProfiles
+            .AsNoTracking()
             .Where(v => v.Latitude.HasValue && v.Longitude.HasValue && v.IsAcceptingRequests)
             .ToListAsync(ct);
 
@@ -272,9 +349,28 @@ public sealed class ProximityService : IProximityService
     public async Task<Result<IReadOnlyList<NearbyTownDto>>> GetNearestTownsAsync(
         double latitude, double longitude, double maxDistanceKm = 50, int maxResults = 10, CancellationToken ct = default)
     {
-        var units = await _geoDb.AustrianAdministrativeUnits
-            .Where(x => x.IsActive)
-            .ToListAsync(ct);
+        IReadOnlyList<AdminUnitCacheItem> units;
+        if (_cache is not null)
+        {
+            units = await _cache.GetOrCreateAsync("geo_active_admin_units", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12);
+                entry.SlidingExpiration = TimeSpan.FromHours(2);
+                return await _geoDb.AustrianAdministrativeUnits
+                    .AsNoTracking()
+                    .Where(x => x.IsActive)
+                    .Select(u => new AdminUnitCacheItem(u.GemeindeCode, u.GemeindeName, u.BezirkName, u.BundeslandName, u.Latitude, u.Longitude))
+                    .ToListAsync(ct);
+            }) ?? [];
+        }
+        else
+        {
+            units = await _geoDb.AustrianAdministrativeUnits
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .Select(u => new AdminUnitCacheItem(u.GemeindeCode, u.GemeindeName, u.BezirkName, u.BundeslandName, u.Latitude, u.Longitude))
+                .ToListAsync(ct);
+        }
 
         var results = units
             .Select(u => new
@@ -311,6 +407,7 @@ public sealed class ProximityService : IProximityService
 
         var postalCodes = withPostalCode.Select(e => e.PostalCode!).Distinct().ToList();
         var matchingUnits = await _geoDb.AustrianAdministrativeUnits
+            .AsNoTracking()
             .Where(u => u.IsActive && postalCodes.Contains(u.PostalCode))
             .ToListAsync(ct);
         var unitsByPostalCode = matchingUnits
@@ -321,8 +418,9 @@ public sealed class ProximityService : IProximityService
         if (matchMyInterests && callerUserId is not null)
         {
             myInterestCodes = (await _profileDb.UserInterests
+                .AsNoTracking()
                 .Where(ui => ui.UserId == callerUserId.Value)
-                .Join(_profileDb.Interests, ui => ui.InterestId, i => i.Id, (ui, i) => i.Code)
+                .Join(_profileDb.Interests.AsNoTracking(), ui => ui.InterestId, i => i.Id, (ui, i) => i.Code)
                 .ToListAsync(ct))
                 .Select(c => c.ToLowerInvariant())
                 .ToHashSet();
@@ -402,3 +500,4 @@ public sealed class StoreLocationService : IStoreLocationService
         return Result.Success();
     }
 }
+

@@ -50,6 +50,7 @@ public sealed class CommunityService : ICommunityService
         }
 
         var group = await _db.CommunityGroups
+            .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == contextId, ct);
 
         if (group is null)
@@ -116,6 +117,7 @@ public sealed class CommunityService : ICommunityService
         CancellationToken cancellationToken = default)
     {
         var group = await _db.CommunityGroups
+            .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == groupId && !g.IsDeleted, cancellationToken);
 
         if (group is null)
@@ -136,6 +138,7 @@ public sealed class CommunityService : ICommunityService
         CancellationToken cancellationToken = default)
     {
         var query = _db.CommunityGroups
+            .AsNoTracking()
             .Where(g => !g.IsDeleted && !g.IsArchived);
 
         if (!string.IsNullOrWhiteSpace(category))
@@ -162,6 +165,7 @@ public sealed class CommunityService : ICommunityService
         var groupIds = groups.Select(g => g.Id).ToList();
 
         var memberCounts = await _db.GroupMemberships
+            .AsNoTracking()
             .Where(m => groupIds.Contains(m.GroupId) && m.Status == GroupMembershipStatus.Active)
             .GroupBy(m => m.GroupId)
             .Select(g => new { GroupId = g.Key, Count = g.Count() })
@@ -228,6 +232,7 @@ public sealed class CommunityService : ICommunityService
         CancellationToken cancellationToken = default)
     {
         var group = await _db.CommunityGroups
+            .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == groupId && !g.IsDeleted, cancellationToken);
 
         if (group is null)
@@ -403,6 +408,7 @@ public sealed class CommunityService : ICommunityService
         CancellationToken cancellationToken = default)
     {
         var ev = await _db.CommunityEvents
+            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId && !e.IsDeleted, cancellationToken);
 
         if (ev is null)
@@ -416,6 +422,7 @@ public sealed class CommunityService : ICommunityService
         var waitlistCount = await _db.EventRegistrations
             .CountAsync(r => r.EventId == eventId && r.Status == EventRsvpStatus.Waitlisted, cancellationToken);
         var cancelledOccurrences = await _db.EventOccurrenceCancellations
+            .AsNoTracking()
             .Where(c => c.EventId == eventId)
             .Select(c => c.OccurrenceStartUtc)
             .ToListAsync(cancellationToken);
@@ -424,6 +431,7 @@ public sealed class CommunityService : ICommunityService
         if (requestingUserId is not null)
         {
             var myRegistration = await _db.EventRegistrations
+                .AsNoTracking()
                 .Where(r => r.EventId == eventId && r.UserId == requestingUserId.Value && r.Status != EventRsvpStatus.Cancelled)
                 .Select(r => (EventRsvpStatus?)r.Status)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -443,6 +451,7 @@ public sealed class CommunityService : ICommunityService
         CancellationToken cancellationToken = default)
     {
         var query = _db.CommunityEvents
+            .AsNoTracking()
             .Where(e => !e.IsDeleted);
 
         if (fromUtc.HasValue)
@@ -484,18 +493,21 @@ public sealed class CommunityService : ICommunityService
         var eventIds = events.Select(e => e.Id).ToList();
 
         var goingCounts = await _db.EventRegistrations
+            .AsNoTracking()
             .Where(r => eventIds.Contains(r.EventId) && r.Status == EventRsvpStatus.Going)
             .GroupBy(r => r.EventId)
             .Select(g => new { EventId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(k => k.EventId, v => v.Count, cancellationToken);
 
         var waitlistCounts = await _db.EventRegistrations
+            .AsNoTracking()
             .Where(r => eventIds.Contains(r.EventId) && r.Status == EventRsvpStatus.Waitlisted)
             .GroupBy(r => r.EventId)
             .Select(g => new { EventId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(k => k.EventId, v => v.Count, cancellationToken);
 
         var cancelledOccurrencesByEvent = await _db.EventOccurrenceCancellations
+            .AsNoTracking()
             .Where(c => eventIds.Contains(c.EventId))
             .GroupBy(c => c.EventId)
             .Select(g => new { EventId = g.Key, Starts = g.Select(c => c.OccurrenceStartUtc).ToList() })
@@ -554,6 +566,7 @@ public sealed class CommunityService : ICommunityService
         var waitlistCount = await _db.EventRegistrations
             .CountAsync(r => r.EventId == eventId && r.Status == EventRsvpStatus.Waitlisted, cancellationToken);
         var cancelledOccurrences = await _db.EventOccurrenceCancellations
+            .AsNoTracking()
             .Where(c => c.EventId == eventId)
             .Select(c => c.OccurrenceStartUtc)
             .ToListAsync(cancellationToken);
@@ -650,6 +663,7 @@ public sealed class CommunityService : ICommunityService
         var waitlistCount = await _db.EventRegistrations
             .CountAsync(r => r.EventId == eventId && r.Status == EventRsvpStatus.Waitlisted, cancellationToken);
         var cancelledOccurrences = await _db.EventOccurrenceCancellations
+            .AsNoTracking()
             .Where(c => c.EventId == eventId)
             .Select(c => c.OccurrenceStartUtc)
             .ToListAsync(cancellationToken);
@@ -664,6 +678,7 @@ public sealed class CommunityService : ICommunityService
         CancellationToken cancellationToken = default)
     {
         var ev = await _db.CommunityEvents
+            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId && !e.IsDeleted, cancellationToken);
 
         if (ev is null)
@@ -770,12 +785,14 @@ public sealed class CommunityService : ICommunityService
         var threshold = fromUtc ?? DateTimeOffset.UtcNow.AddHours(-1);
 
         var registrations = await _db.EventRegistrations
+            .AsNoTracking()
             .Where(r => r.UserId == userId && r.Status != EventRsvpStatus.Cancelled)
             .ToListAsync(cancellationToken);
 
         var eventIds = registrations.Select(r => r.EventId).Distinct().ToList();
 
         var events = await _db.CommunityEvents
+            .AsNoTracking()
             .Where(e => eventIds.Contains(e.Id) && !e.IsDeleted && e.EndsAtUtc >= threshold)
             .OrderBy(e => e.StartsAtUtc)
             .ToListAsync(cancellationToken);
@@ -834,6 +851,7 @@ public sealed class CommunityService : ICommunityService
         CancellationToken cancellationToken = default)
     {
         var thread = await _db.MessageThreads
+            .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == threadId, cancellationToken);
 
         if (thread is null)
@@ -848,6 +866,7 @@ public sealed class CommunityService : ICommunityService
         }
 
         var messages = await _db.ThreadMessages
+            .AsNoTracking()
             .Where(m => m.ThreadId == threadId && !m.IsDeleted)
             .OrderBy(m => m.CreatedAtUtc)
             .ToListAsync(cancellationToken);
@@ -867,6 +886,7 @@ public sealed class CommunityService : ICommunityService
         CancellationToken cancellationToken = default)
     {
         var thread = await _db.MessageThreads
+            .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == threadId, cancellationToken);
 
         if (thread is null)
@@ -1063,3 +1083,5 @@ public sealed class CommunityService : ICommunityService
         IsFlaggedForModeration: m.IsFlaggedForModeration,
         CreatedAtUtc: m.CreatedAtUtc);
 }
+
+

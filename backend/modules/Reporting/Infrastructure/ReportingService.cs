@@ -22,6 +22,7 @@ public sealed class ReportingService : IReportingService
         CancellationToken cancellationToken = default)
     {
         var records = await _db.VolunteerHours
+            .AsNoTracking()
             .Where(v => v.OrganizationId == organizationId && v.OccurredOn >= from && v.OccurredOn <= to)
             .ToListAsync(cancellationToken);
 
@@ -30,6 +31,7 @@ public sealed class ReportingService : IReportingService
         var activeVolunteers = records.Select(r => r.VolunteerUserId).Distinct().Count();
 
         var monthlyReports = await _db.FunderMonthlyReports
+            .AsNoTracking()
             .Where(r => r.OrganizationId == organizationId && r.Month >= from && r.Month <= to)
             .ToListAsync(cancellationToken);
 
@@ -423,3 +425,4 @@ public sealed class ReportingService : IReportingService
         return Result<byte[]>.Success(Encoding.ASCII.GetBytes(pdfDoc));
     }
 }
+

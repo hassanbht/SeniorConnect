@@ -18,8 +18,10 @@ public sealed class CommunityDiscoveryReader : ICommunityDiscoveryReader
         var now = DateTimeOffset.UtcNow;
 
         return await _db.CommunityEvents
+            .AsNoTracking()
             .Where(e => !e.IsDeleted && !e.IsCancelled && e.EndsAtUtc >= now)
             .Select(e => new CommunityEventDiscoveryRow(e.Id, e.Title, e.Category, e.LocationPostalCode, e.StartsAtUtc))
             .ToListAsync(ct);
     }
 }
+

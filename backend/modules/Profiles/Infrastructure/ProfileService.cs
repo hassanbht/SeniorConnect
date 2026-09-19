@@ -17,6 +17,7 @@ public sealed class ProfileService : IProfileService
     public async Task<Result<SupportProfileDto>> GetSupportProfileAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var profile = await _db.SupportProfiles
+            .AsNoTracking()
             .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
 
         if (profile is null)
@@ -70,6 +71,7 @@ public sealed class ProfileService : IProfileService
     public async Task<Result<VolunteerProfileDto>> GetVolunteerProfileAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var profile = await _db.VolunteerProfiles
+            .AsNoTracking()
             .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
 
         if (profile is null)
@@ -157,6 +159,7 @@ public sealed class ProfileService : IProfileService
         CancellationToken cancellationToken = default)
     {
         var slots = await _db.AvailabilitySlots
+            .AsNoTracking()
             .Where(s => s.UserId == userId)
             .OrderBy(s => s.DayOfWeek)
             .ThenBy(s => s.StartTime)
@@ -201,6 +204,7 @@ public sealed class ProfileService : IProfileService
         CancellationToken cancellationToken = default)
     {
         var dtos = await _db.UserInterests
+            .AsNoTracking()
             .Where(ui => ui.UserId == userId)
             .Join(_db.Interests, ui => ui.InterestId, i => i.Id, (ui, i) => new InterestDto(
                 i.Id,

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
 using SeniorConnect.Domain;
 using SeniorConnect.Modules.Organizations.Application;
@@ -8,10 +9,16 @@ namespace SeniorConnect.Modules.Organizations.Infrastructure;
 public sealed class OrganizationService : IOrganizationService
 {
     private readonly IOrganizationsDbContext _db;
+    private readonly IMemoryCache _cache;
 
-    public OrganizationService(IOrganizationsDbContext db)
+    private static readonly MemoryCacheEntryOptions OrgCacheOptions = new MemoryCacheEntryOptions()
+        .SetAbsoluteExpiration(TimeSpan.FromMinutes(60))
+        .SetSlidingExpiration(TimeSpan.FromMinutes(15));
+
+    public OrganizationService(IOrganizationsDbContext db, IMemoryCache cache)
     {
         _db = db;
+        _cache = cache;
     }
 
     public async Task<Result<OrganizationDto>> CreateOrganizationAsync(
@@ -35,6 +42,8 @@ public sealed class OrganizationService : IOrganizationService
         _db.Organizations.Add(org);
         await _db.SaveChangesAsync(cancellationToken);
 
+        _cache.Remove("org_active_list");
+
         return Result<OrganizationDto>.Success(MapOrg(org));
     }
 
@@ -42,25 +51,42 @@ public sealed class OrganizationService : IOrganizationService
         Guid organizationId,
         CancellationToken cancellationToken = default)
     {
-        var org = await _db.Organizations
-            .FirstOrDefaultAsync(o => o.Id == organizationId && !o.IsDeleted, cancellationToken);
+        string cacheKey = $"org_detail_{organizationId}";
 
-        if (org is null)
+        if (!_cache.TryGetValue(cacheKey, out OrganizationDto? dto) || dto is null)
         {
-            return Error.NotFound("Organization");
+            var org = await _db.Organizations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Id == organizationId && !o.IsDeleted, cancellationToken);
+
+            if (org is null)
+            {
+                return Error.NotFound("Organization");
+            }
+
+            dto = MapOrg(org);
+            _cache.Set(cacheKey, dto, OrgCacheOptions);
         }
 
-        return Result<OrganizationDto>.Success(MapOrg(org));
+        return Result<OrganizationDto>.Success(dto);
     }
 
     public async Task<Result<IReadOnlyList<OrganizationDto>>> ListOrganizationsAsync(CancellationToken cancellationToken = default)
     {
-        var orgs = await _db.Organizations
-            .Where(o => !o.IsDeleted && o.Status == OrganizationStatus.Active)
-            .OrderBy(o => o.Name)
-            .ToListAsync(cancellationToken);
+        const string cacheKey = "org_active_list";
 
-        var dtos = orgs.Select(MapOrg).ToList();
+        if (!_cache.TryGetValue(cacheKey, out IReadOnlyList<OrganizationDto>? dtos) || dtos is null)
+        {
+            var orgs = await _db.Organizations
+                .AsNoTracking()
+                .Where(o => !o.IsDeleted && o.Status == OrganizationStatus.Active)
+                .OrderBy(o => o.Name)
+                .ToListAsync(cancellationToken);
+
+            dtos = orgs.Select(MapOrg).ToList();
+            _cache.Set(cacheKey, dtos, OrgCacheOptions);
+        }
+
         return Result<IReadOnlyList<OrganizationDto>>.Success(dtos);
     }
 
@@ -104,6 +130,7 @@ public sealed class OrganizationService : IOrganizationService
         CancellationToken cancellationToken = default)
     {
         var branches = await _db.OrganizationBranches
+            .AsNoTracking()
             .Where(b => b.OrganizationId == organizationId && b.IsActive)
             .OrderBy(b => b.Name)
             .ToListAsync(cancellationToken);
@@ -178,6 +205,7 @@ public sealed class OrganizationService : IOrganizationService
         CancellationToken cancellationToken = default)
     {
         var memberships = await _db.OrganizationMemberships
+            .AsNoTracking()
             .Where(m => m.OrganizationId == organizationId)
             .OrderByDescending(m => m.CreatedAtUtc)
             .ToListAsync(cancellationToken);
@@ -232,6 +260,7 @@ public sealed class OrganizationService : IOrganizationService
         CancellationToken cancellationToken = default)
     {
         var policies = await _db.OrganizationPolicies
+            .AsNoTracking()
             .Where(p => p.OrganizationId == organizationId)
             .OrderBy(p => p.PolicyKey)
             .ToListAsync(cancellationToken);
@@ -278,12 +307,14 @@ public sealed class OrganizationService : IOrganizationService
         }
 
         var sections = await _db.IntakeFormSections
+            .AsNoTracking()
             .Where(s => s.FormId == form.Id)
             .OrderBy(s => s.SortOrder)
             .ToListAsync(cancellationToken);
 
         var sectionIds = sections.Select(s => s.Id).ToList();
         var fields = await _db.IntakeFormFields
+            .AsNoTracking()
             .Where(f => sectionIds.Contains(f.SectionId))
             .OrderBy(f => f.SortOrder)
             .ToListAsync(cancellationToken);
@@ -471,6 +502,7 @@ public sealed class OrganizationService : IOrganizationService
 
         // Validate required fields
         var fields = await _db.IntakeFormFields
+            .AsNoTracking()
             .Where(f => f.SectionId == _db.IntakeFormSections
                 .Where(s => s.FormId == formId)
                 .Select(s => s.Id)
@@ -625,6 +657,7 @@ public sealed class OrganizationService : IOrganizationService
 
         // Now add fields for each section
         var sections = await _db.IntakeFormSections
+            .AsNoTracking()
             .Where(s => s.FormId == formId)
             .OrderBy(s => s.SortOrder)
             .ToListAsync(cancellationToken);
@@ -732,3 +765,4 @@ public sealed class OrganizationService : IOrganizationService
         JoinedAtUtc: m.JoinedAtUtc,
         CreatedAtUtc: m.CreatedAtUtc);
 }
+

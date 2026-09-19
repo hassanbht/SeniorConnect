@@ -20,6 +20,7 @@ public sealed class FunderService : IFunderService
         CancellationToken cancellationToken = default)
     {
         var funder = await _db.Funders
+            .AsNoTracking()
             .FirstOrDefaultAsync(f => f.Id == funderId && f.Status == FunderStatus.Active, cancellationToken);
 
         if (funder is null)
@@ -29,16 +30,19 @@ public sealed class FunderService : IFunderService
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var fundedCount = await _db.FundingRelationships
+            .AsNoTracking()
             .Where(r => r.FunderId == funderId && (r.ValidUntil == null || r.ValidUntil >= today))
             .CountAsync(cancellationToken);
 
         var relationships = await _db.FundingRelationships
+            .AsNoTracking()
             .Where(r => r.FunderId == funderId && (r.ValidUntil == null || r.ValidUntil >= today))
             .ToListAsync(cancellationToken);
 
         var orgIds = relationships.Select(r => r.OrganizationId).ToList();
 
         var reports = await _db.FunderMonthlyReports
+            .AsNoTracking()
             .Where(r => orgIds.Contains(r.OrganizationId))
             .ToListAsync(cancellationToken);
 
@@ -61,12 +65,14 @@ public sealed class FunderService : IFunderService
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var relationships = await _db.FundingRelationships
+            .AsNoTracking()
             .Where(r => r.FunderId == funderId && (r.ValidUntil == null || r.ValidUntil >= today))
             .ToListAsync(cancellationToken);
 
         var orgIds = relationships.Select(r => r.OrganizationId).ToList();
 
         var query = _db.FunderMonthlyReports
+            .AsNoTracking()
             .Where(r => orgIds.Contains(r.OrganizationId));
 
         if (fromMonth.HasValue)
@@ -140,3 +146,4 @@ public sealed class FunderService : IFunderService
         return count < 10 ? "<10" : count.ToString(CultureInfo.InvariantCulture);
     }
 }
+

@@ -22,6 +22,7 @@ public sealed class EsgReportingService : IEsgReportingService
         CancellationToken cancellationToken = default)
     {
         var records = await _db.VolunteerHours
+            .AsNoTracking()
             .Where(v => v.OrganizationId == companyOrganizationId && v.OccurredOn >= from && v.OccurredOn <= to)
             .ToListAsync(cancellationToken);
 
@@ -30,6 +31,7 @@ public sealed class EsgReportingService : IEsgReportingService
         var totalActivities = (int)records.Sum(r => r.ActivityCount);
 
         var monthlyReports = await _db.FunderMonthlyReports
+            .AsNoTracking()
             .Where(r => r.OrganizationId == companyOrganizationId && r.Month >= from && r.Month <= to)
             .ToListAsync(cancellationToken);
 
@@ -139,3 +141,4 @@ public sealed class EsgReportingService : IEsgReportingService
         return Result<byte[]>.Success(Encoding.ASCII.GetBytes(pdfDoc));
     }
 }
+

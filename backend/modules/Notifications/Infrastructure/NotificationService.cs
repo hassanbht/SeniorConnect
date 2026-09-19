@@ -100,6 +100,7 @@ public sealed class NotificationService : INotificationService
         CancellationToken ct = default)
     {
         var query = _db.NotificationMessages
+            .AsNoTracking()
             .Where(m => m.RecipientUserId == userId && m.Status != NotificationStatus.SuppressedBudgetExceeded);
 
         if (unreadOnly)
@@ -138,13 +139,15 @@ public sealed class NotificationService : INotificationService
         CancellationToken ct = default)
     {
         var pref = await _db.NotificationPreferences
+            .AsNoTracking()
             .FirstOrDefaultAsync(p => p.UserId == userId, ct);
 
         if (pref is null)
         {
-            pref = NotificationPreference.CreateDefault(userId);
-            _db.NotificationPreferences.Add(pref);
+            var newPref = NotificationPreference.CreateDefault(userId);
+            _db.NotificationPreferences.Add(newPref);
             await _db.SaveChangesAsync(ct);
+            return MapPrefToDto(newPref);
         }
 
         return MapPrefToDto(pref);
@@ -211,3 +214,4 @@ public sealed class NotificationService : INotificationService
             p.FamilyWelfareCategoryEnabled,
             p.SystemAccountCategoryEnabled);
 }
+

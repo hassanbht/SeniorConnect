@@ -17,6 +17,7 @@ public sealed class HelpRequestDiscoveryReader : IHelpRequestDiscoveryReader
     public async Task<IReadOnlyList<NearbyHelpRequestRow>> FindOpenRequestsWithLocationAsync(CancellationToken ct)
     {
         return await _db.HelpRequests
+            .AsNoTracking()
             .Where(r => r.Status == HelpRequestStatus.Open && r.Latitude != null && r.Longitude != null)
             .Select(r => new NearbyHelpRequestRow(r.Id, r.CategoryId, r.Latitude!.Value, r.Longitude!.Value))
             .ToListAsync(ct);

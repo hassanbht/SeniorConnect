@@ -26,6 +26,7 @@ public sealed class FamilyPermissionReader : IFamilyPermissionReader
         }
 
         var relationship = await _db.FamilyRelationships
+            .AsNoTracking()
             .Include(r => r.Permissions)
             .FirstOrDefaultAsync(r => r.SeniorUserId == seniorUserId
                 && r.CaregiverUserId == caregiverUserId
@@ -39,3 +40,4 @@ public sealed class FamilyPermissionReader : IFamilyPermissionReader
         return relationship.HasPermission(parsedType);
     }
 }
+

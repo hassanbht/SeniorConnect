@@ -236,6 +236,7 @@ public sealed class FamilyService : IFamilyService
         }
 
         var list = await _db.FamilyRelationships
+            .AsNoTracking()
             .Include(r => r.Permissions)
             .Where(r => r.SeniorUserId == seniorUserId && r.Status != RelationshipStatus.Revoked)
             .OrderByDescending(r => r.CreatedAtUtc)
@@ -249,6 +250,7 @@ public sealed class FamilyService : IFamilyService
         CancellationToken ct = default)
     {
         var list = await _db.FamilyRelationships
+            .AsNoTracking()
             .Include(r => r.Permissions)
             .Where(r => r.CaregiverUserId == caregiverUserId && r.Status == RelationshipStatus.Active)
             .OrderByDescending(r => r.CreatedAtUtc)
@@ -413,6 +415,7 @@ public sealed class FamilyService : IFamilyService
 
         var cutoff = DateTimeOffset.UtcNow.AddDays(-Math.Abs(days));
         var logs = await _db.SeniorAccessLogs
+            .AsNoTracking()
             .Where(l => l.SeniorUserId == seniorUserId && l.TimestampUtc >= cutoff)
             .OrderByDescending(l => l.TimestampUtc)
             .ToListAsync(ct);
@@ -505,6 +508,7 @@ public sealed class FamilyService : IFamilyService
         }
 
         var contacts = await _db.TrustedContacts
+            .AsNoTracking()
             .Where(c => c.SeniorUserId == seniorUserId && !c.IsDeleted)
             .OrderByDescending(c => c.IsPrimaryEmergency)
             .ThenBy(c => c.Name)
@@ -797,6 +801,7 @@ public sealed class FamilyService : IFamilyService
         }
 
         var alerts = await _db.SafetyAlerts
+            .AsNoTracking()
             .Where(a => a.SeniorUserId == seniorUserId)
             .OrderByDescending(a => a.CreatedAtUtc)
             .ToListAsync(ct);
@@ -891,3 +896,4 @@ public sealed class FamilyService : IFamilyService
             => Task.FromResult(Result.Success());
     }
 }
+
