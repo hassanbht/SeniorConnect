@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0-*" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0-*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SeniorConnect.Domain\SeniorConnect.Domain.csproj" />
+    <ProjectReference Include="..\Identity\SeniorConnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\TrustSafety\SeniorConnect.Modules.TrustSafety.csproj" />
+    <ProjectReference Include="..\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+    <ProjectReference Include="..\Family\SeniorConnect.Modules.Family.csproj" />
+    <!-- Contracts only: IOrganizationCoordinatorReader for party authorization (coordinators of the request's org). -->
+    <ProjectReference Include="..\Organizations\SeniorConnect.Modules.Organizations.csproj" />
+    <ProjectReference Include="..\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+  </ItemGroup>
+</Project>

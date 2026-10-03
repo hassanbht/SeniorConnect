@@ -1,0 +1,8 @@
+# analysis_options.yaml
+# Ignore all non-project starter, backup, and document Dart files from IDE analysis.
+
+analyzer:
+  exclude:
+    - Document/**
+    - starter/**
+    - archive/**

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0-*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0-*" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SeniorConnect.Domain\SeniorConnect.Domain.csproj" />
+    <!-- Phase 4: discovery eligibility and location visibility read verification facts,
+         blocks, safeguarding restrictions and organization rosters through their Contracts. -->
+    <ProjectReference Include="..\Identity\SeniorConnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\TrustSafety\SeniorConnect.Modules.TrustSafety.csproj" />
+    <ProjectReference Include="..\Organizations\SeniorConnect.Modules.Organizations.csproj" />
+  </ItemGroup>
+</Project>

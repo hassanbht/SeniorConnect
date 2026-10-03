@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <NoWarn>$(NoWarn);CA1848;CA1873;CA1305</NoWarn>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-*" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0-*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0-*" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.0.*" />
+    <!-- Pinned above the transitive 2.0.0: GHSA-v5pm-xwqc-g5wc (High), fixed in 2.7.5. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+    <PackageReference Include="DotNetEnv" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SeniorConnect.Infrastructure\SeniorConnect.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\Identity\SeniorConnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\modules\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+    <ProjectReference Include="..\modules\Organizations\SeniorConnect.Modules.Organizations.csproj" />
+    <ProjectReference Include="..\modules\TrustSafety\SeniorConnect.Modules.TrustSafety.csproj" />
+    <ProjectReference Include="..\modules\HelpRequests\SeniorConnect.Modules.HelpRequests.csproj" />
+    <ProjectReference Include="..\modules\Matching\SeniorConnect.Modules.Matching.csproj" />
+    <ProjectReference Include="..\modules\Reporting\SeniorConnect.Modules.Reporting.csproj" />
+    <ProjectReference Include="..\modules\Community\SeniorConnect.Modules.Community.csproj" />
+    <ProjectReference Include="..\modules\Family\SeniorConnect.Modules.Family.csproj" />
+    <ProjectReference Include="..\modules\Notifications\SeniorConnect.Modules.Notifications.csproj" />
+    <ProjectReference Include="..\modules\Geography\SeniorConnect.Modules.Geography.csproj" />
+  </ItemGroup>
+</Project>

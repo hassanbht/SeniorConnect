@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <NoWarn>$(NoWarn);CA1861;CA1848;CA1873</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0-*" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0-*" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SeniorConnect.Domain\SeniorConnect.Domain.csproj" />
+    <ProjectReference Include="..\modules\HelpRequests\SeniorConnect.Modules.HelpRequests.csproj" />
+    <ProjectReference Include="..\modules\Reporting\SeniorConnect.Modules.Reporting.csproj" />
+    <ProjectReference Include="..\modules\Organizations\SeniorConnect.Modules.Organizations.csproj" />
+    <ProjectReference Include="..\modules\TrustSafety\SeniorConnect.Modules.TrustSafety.csproj" />
+    <ProjectReference Include="..\modules\Identity\SeniorConnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\modules\Profiles\SeniorConnect.Modules.Profiles.csproj" />
+    <ProjectReference Include="..\modules\Community\SeniorConnect.Modules.Community.csproj" />
+    <ProjectReference Include="..\modules\Family\SeniorConnect.Modules.Family.csproj" />
+    <ProjectReference Include="..\modules\Notifications\SeniorConnect.Modules.Notifications.csproj" />
+    <ProjectReference Include="..\modules\Matching\SeniorConnect.Modules.Matching.csproj" />
+    <ProjectReference Include="..\modules\Geography\SeniorConnect.Modules.Geography.csproj" />
+  </ItemGroup>
+</Project>

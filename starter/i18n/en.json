@@ -1,0 +1,74 @@
+{
+  "app": { "name": "SeniorConnect", "tagline": "Help from next door." },
+  "common": {
+    "save": "Save", "cancel": "Cancel", "next": "Next", "back": "Back",
+    "confirm": "Confirm", "yes": "Yes", "no": "No", "close": "Close",
+    "retry": "Try again", "loading": "Loading …", "search": "Search",
+    "today": "Today", "tomorrow": "Tomorrow", "this_week": "This week",
+    "km_away": "{count} km away"
+  },
+  "errors": {
+    "generic": "That didn't work. Please try again.",
+    "no_internet": "No connection. Please check your internet.",
+    "session_expired": "You were signed out. Please sign in again.",
+    "not_allowed": "You are not allowed to do that here.",
+    "already_taken": "Someone else was faster. Here are similar requests."
+  },
+  "auth": {
+    "login": { "title": "Welcome", "email": "Email address", "password": "Password", "submit": "Sign in", "forgot": "Forgot your password?" },
+    "register": { "title": "Create account", "who_are_you": "Who are you?", "i_need_help": "I am looking for support", "i_want_to_help": "I want to help", "i_support_someone": "I support someone" },
+    "verify_phone": { "title": "Confirm phone number", "description": "We sent a code to {phone}.", "code": "Code", "resend": "Send the code again" }
+  },
+  "home": {
+    "greeting": "Hello {name}",
+    "senior": { "request_help": "Request help", "my_activities": "My appointments", "my_groups": "My groups", "my_contacts": "My contacts", "emergency": "Emergency" }
+  },
+  "help": {
+    "create": {
+      "title": "Request help", "what": "What do you need help with?", "when": "When?",
+      "details": "Would you like to add anything?", "details_hint": "For example: third floor, no lift",
+      "review_title": "Is this correct?", "submit": "Yes, send request",
+      "submitted": "Your request is on its way.", "submitted_detail": "We are looking for someone. You will hear from us by tomorrow at the latest."
+    },
+    "category": { "shopping": "Shopping", "doctor": "Doctor's appointment", "authority": "Visit to an authority", "accompaniment": "Company or a walk", "home_small": "Small help at home", "other": "Something else" },
+    "status": { "open": "Looking for someone", "offered": "Asked", "assigned": "Confirmed", "in_progress": "In progress", "completed": "Completed", "cancelled": "Cancelled", "expired": "Expired" },
+    "blocked": { "title": "This needs trained care staff.", "description": "We are not allowed to arrange this. Here are services near you that can.", "other_request": "I would like to request something else instead" },
+    "checkin": "Arrived", "checkout": "Finished"
+  },
+  "emergency": {
+    "title": "Do you need help right now?", "call_144": "Call 144 (ambulance)", "call_112": "Call 112 (emergency)",
+    "call_contacts": "Call my contacts", "no": "No, I do not need emergency help"
+  },
+  "trust": {
+    "title": "Confirmations", "identity_verified": "Identity confirmed", "phone_verified": "Phone confirmed",
+    "address_verified": "Address confirmed", "organization_verified": "Confirmed by {organization}",
+    "training_completed": "Training \"{training}\" completed", "background_checked": "Criminal record certificate checked",
+    "verified_on": "Confirmed on {date}", "missing_title": "Still missing:", "how_to_get_it": "How to get this"
+  },
+  "community": {
+    "groups": "Groups", "create_group": "Start a group", "join": "Join", "leave": "Leave",
+    "members": "{count} of {capacity} places", "next_meeting": "Next meeting: {date}"
+  },
+  "family": {
+    "title": "Relatives", "invite": "Invite a relative", "create_senior_account": "Set up an account for someone",
+    "permissions": "What may this person do?",
+    "permission": { "view_activities": "See my appointments", "view_help_requests": "See my requests", "create_help_requests": "Request help for me", "receive_safety_notifications": "Be notified about important events", "emergency_contact": "Be an emergency contact" },
+    "access_log": "Who saw what?"
+  },
+  "safeguarding": { "report": "Report something", "thanks": "Thank you. A responsible person will take care of it." },
+  "settings": {
+    "title": "Settings", "appearance": "Appearance",
+    "theme": { "system": "As set on the device", "light": "Light", "dark": "Dark", "high_contrast_light": "High contrast (light)", "high_contrast_dark": "High contrast (dark)" },
+    "senior_mode": "Large view", "senior_mode_hint": "Larger text and larger buttons",
+    "language": "Language", "notifications": "Notifications", "my_data": "My data", "privacy": "Privacy"
+  },
+  "empty": {
+    "no_activities": "You do not have any appointments yet.", "no_activities_action": "See groups near you",
+    "no_requests": "There are no requests near you right now.", "no_groups": "There is no group here yet. Start the first one."
+  },
+  "semantic": {
+    "request_help_button": "Request help. Opens the form.",
+    "emergency_button": "Emergency. Opens emergency help.",
+    "back_button": "Back to the previous page."
+  }
+}
