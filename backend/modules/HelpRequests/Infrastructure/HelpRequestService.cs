@@ -282,6 +282,24 @@ public sealed class HelpRequestService : IHelpRequestService
         Guid? viewerUserId = null,
         CancellationToken cancellationToken = default)
     {
+        // BR-TENANT-03: an organizationId narrowing the list is a CLIENT-SUPPLIED
+        // tenant selector, never an authorization. The guard decides membership;
+        // a miss is 404 so the existence of the foreign org is never confirmed.
+        // Fail closed: without the guard nobody is recognised as staff.
+        if (organizationId is { } requestedOrgId)
+        {
+            if (_accessGuard is null)
+            {
+                return Error.NotFound("HelpRequest");
+            }
+
+            var staffCheck = await _accessGuard.EnsureStaffAsync(viewerUserId ?? Guid.Empty, requestedOrgId, cancellationToken);
+            if (staffCheck.IsFailure)
+            {
+                return staffCheck.Error!;
+            }
+        }
+
         var query = _db.HelpRequests
             .AsNoTracking()
             .Where(r => (r.Status == HelpRequestStatus.Open || r.Status == HelpRequestStatus.Offered || r.Status == HelpRequestStatus.Matching) && !r.IsDeleted);

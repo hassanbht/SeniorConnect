@@ -10,6 +10,130 @@ using Xunit;
 namespace SeniorConnect.Modules.TrustSafety.Tests;
 
 /// <summary>
+/// Wave-1 negative authorization tests (BR-SG-02). A safeguarding case may only
+/// be assigned to an officer of the case's OWN organization. Without this check
+/// an officer of org B could be handed an org-A case and would then see it —
+/// subject and reporter included — through VisibleCasesAsync.
+/// </summary>
+public sealed class SafeguardingCaseAssignmentScopeTests
+{
+    private sealed class TestSafeguardingDbContext(DbContextOptions<TestSafeguardingDbContext> options)
+        : DbContext(options), ISafeguardingDbContext
+    {
+        public DbSet<SafeguardingCase> SafeguardingCases => Set<SafeguardingCase>();
+        public DbSet<SafeguardingCaseNote> SafeguardingCaseNotes => Set<SafeguardingCaseNote>();
+        public DbSet<SafeguardingAccessLog> SafeguardingAccessLogs => Set<SafeguardingAccessLog>();
+        public DbSet<SafeguardingRestriction> SafeguardingRestrictions => Set<SafeguardingRestriction>();
+        public DbSet<OperationalTask> OperationalTasks => Set<OperationalTask>();
+    }
+
+    /// <summary>Maps a user to the organizations they officer. Everyone else is a non-officer.</summary>
+    private sealed class FakeOrgReader(Dictionary<Guid, Guid[]> officerOrgs) : IOrganizationCoordinatorReader
+    {
+        public Task<IReadOnlyList<Guid>> GetActiveCoordinatorUserIdsAsync(Guid organizationId, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<Guid>>(
+                officerOrgs.Where(kv => kv.Value.Contains(organizationId)).Select(kv => kv.Key).ToList());
+
+        public Task<IReadOnlyList<StaffOrganizationDto>> GetActiveMembershipsForUserAsync(Guid userId, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<StaffOrganizationDto>>([]);
+
+        public Task<IReadOnlyList<Guid>> GetSafeguardingOfficerOrganizationIdsAsync(Guid userId, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<Guid>>(officerOrgs.TryGetValue(userId, out var orgs) ? orgs : []);
+
+        public Task<IReadOnlyList<Guid>> GetPlatformSafeguardingOfficerUserIdsAsync(CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<Guid>>([]);
+    }
+
+    private static readonly Guid OrgA = Guid.NewGuid();
+    private static readonly Guid OrgB = Guid.NewGuid();
+    private static readonly Guid OfficerOfA = Guid.NewGuid();
+    private static readonly Guid OfficerOfB = Guid.NewGuid();
+    private static readonly Guid NonOfficer = Guid.NewGuid();
+    private static readonly Guid Reporter = Guid.NewGuid();
+    private static readonly Guid Subject = Guid.NewGuid();
+
+    private static (SafeguardingService Service, TestSafeguardingDbContext Db) CreateService()
+    {
+        var db = new TestSafeguardingDbContext(new DbContextOptionsBuilder<TestSafeguardingDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+
+        var reader = new FakeOrgReader(new Dictionary<Guid, Guid[]>
+        {
+            [OfficerOfA] = [OrgA],
+            [OfficerOfB] = [OrgB],
+        });
+
+        return (new SafeguardingService(db, reader), db);
+    }
+
+    private static async Task<Guid> SeedCaseOfOrgAAsync(SafeguardingService service)
+    {
+        var raised = await service.RaiseConcernAsync(
+            Reporter,
+            new RaiseConcernRequest(Subject, "Welfare check requested by family.", SafeguardingSeverity.High, "vulnerability_welfare", OrgA),
+            CancellationToken.None);
+
+        raised.IsSuccess.Should().BeTrue();
+        return raised.Value!.Id;
+    }
+
+    [Fact]
+    public async Task Assigning_to_an_officer_of_the_same_organization_succeeds()
+    {
+        var (service, _) = CreateService();
+        var caseId = await SeedCaseOfOrgAAsync(service);
+
+        var result = await service.AssignCaseAsync(
+            caseId, OfficerOfA, new AssignCaseRequest(OfficerOfA), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.AssignedOfficerUserId.Should().Be(OfficerOfA);
+    }
+
+    [Fact]
+    public async Task Assigning_to_an_officer_of_another_organization_is_not_found()
+    {
+        var (service, _) = CreateService();
+        var caseId = await SeedCaseOfOrgAAsync(service);
+
+        // OfficerOfB cannot see an org-A case and must not learn that it exists.
+        var result = await service.AssignCaseAsync(
+            caseId, OfficerOfA, new AssignCaseRequest(OfficerOfB), CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error!.Code.Should().Be("NOT_FOUND");
+    }
+
+    [Fact]
+    public async Task Assigning_to_a_non_officer_is_not_found()
+    {
+        var (service, _) = CreateService();
+        var caseId = await SeedCaseOfOrgAAsync(service);
+
+        var result = await service.AssignCaseAsync(
+            caseId, OfficerOfA, new AssignCaseRequest(NonOfficer), CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error!.Code.Should().Be("NOT_FOUND");
+    }
+
+    [Fact]
+    public async Task The_foreign_assignee_gains_no_visibility_of_the_case()
+    {
+        var (service, _) = CreateService();
+        var caseId = await SeedCaseOfOrgAAsync(service);
+
+        await service.AssignCaseAsync(caseId, OfficerOfA, new AssignCaseRequest(OfficerOfB), CancellationToken.None);
+
+        // OfficerOfB may not read it either — neither before nor after the
+        // rejected assignment attempt.
+        var readBack = await service.GetCasesAsync(OrgA, OfficerOfB, CancellationToken.None);
+        readBack.IsSuccess.Should().BeTrue();
+        readBack.Value.Should().BeEmpty("the rejected assignment granted no visibility");
+    }
+}
+
+/// <summary>
 /// Negative authorization tests for P4-07 (buddy waiver), P4-11 (safeguarding scope),
 /// P4-14 (key custody) and P4-15 (expense confirmation).
 /// </summary>
@@ -85,6 +209,81 @@ public sealed class TrustSafetyAuthorizationTests
         db.VolunteerApplications.Add(application);
         await db.SaveChangesAsync();
         return (service, db);
+    }
+
+    // --- W2: buddy status is not readable by any authenticated caller -------
+
+    [Fact]
+    public async Task Buddy_status_is_not_found_for_an_unrelated_user()
+    {
+        var (service, _) = await CreateWithVolunteerInOrgAAsync();
+
+        var result = await service.GetBuddyStatusAsync(Volunteer, Stranger);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error!.Code.Should().Be("BUDDY_STATUS_NOT_FOUND");
+    }
+
+    [Fact]
+    public async Task Buddy_status_is_not_found_for_a_coordinator_of_another_organization()
+    {
+        var (service, _) = await CreateWithVolunteerInOrgAAsync();
+
+        // CoordinatorB staffs OrgB; the volunteer belongs to OrgA.
+        var result = await service.GetBuddyStatusAsync(Volunteer, CoordinatorB);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error!.Code.Should().Be("BUDDY_STATUS_NOT_FOUND");
+    }
+
+    [Fact]
+    public async Task A_volunteer_may_read_their_own_buddy_status()
+    {
+        var (service, _) = await CreateWithVolunteerInOrgAAsync();
+
+        var result = await service.GetBuddyStatusAsync(Volunteer, Volunteer);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.VolunteerUserId.Should().Be(Volunteer);
+    }
+
+    [Fact]
+    public async Task A_safeguarding_officer_may_read_the_status_and_the_waiver_reason()
+    {
+        var (service, _) = await CreateWithVolunteerInOrgAAsync();
+        await service.WaiveBuddyAsync(Volunteer, CoordinatorA, false,
+            new WaiveBuddyRequest("Works only accompanied, two completed L3 assignments."));
+
+        var result = await service.GetBuddyStatusAsync(Volunteer, CoordinatorA, viewerIsSafeguardingOfficer: true);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.WaiverReason.Should().NotBeNullOrEmpty(
+            "an officer needs the justification to make a safety decision");
+    }
+
+    [Fact]
+    public async Task A_volunteer_does_not_see_the_internal_waiver_reason()
+    {
+        var (service, _) = await CreateWithVolunteerInOrgAAsync();
+        await service.WaiveBuddyAsync(Volunteer, CoordinatorA, false,
+            new WaiveBuddyRequest("Internal justification not meant for the volunteer."));
+
+        var result = await service.GetBuddyStatusAsync(Volunteer, Volunteer);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.IsWaived.Should().BeTrue("the volunteer learns the decision...");
+        result.Value!.WaiverReason.Should().BeNull("...but not the internal reasoning behind it");
+    }
+
+    [Fact]
+    public async Task A_refused_caller_learns_nothing_about_the_volunteer()
+    {
+        var (service, _) = await CreateWithVolunteerInOrgAAsync();
+
+        var result = await service.GetBuddyStatusAsync(Volunteer, Stranger);
+
+        // Not 403: a 403 would confirm the volunteer exists.
+        result.Error!.Kind.Should().Be(ErrorKind.NotFound);
     }
 
     // --- P4-07: buddy waiver --------------------------------------------------

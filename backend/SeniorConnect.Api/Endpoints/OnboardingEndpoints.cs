@@ -24,7 +24,7 @@ public static class OnboardingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await onboardingService.ApplyAsync(userId.Value, request, ct);
             return result.ToHttpResult("/api/v1/onboarding/applications/" + result.Value?.Id);
@@ -39,7 +39,7 @@ public static class OnboardingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await onboardingService.GetUserApplicationsAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -57,7 +57,7 @@ public static class OnboardingEndpoints
             IOnboardingService onboardingService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
 
             var result = await onboardingService.GetApplicationByIdAsync(id, ct);
             if (result.IsFailure || result.Value!.UserId == userId) return result.ToHttpResult();
@@ -76,7 +76,7 @@ public static class OnboardingEndpoints
             IOnboardingService onboardingService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var auth = await guard.EnsureStaffAsync(userId, orgId, ct);
             if (auth.IsFailure) return auth.ToHttpResult();
 
@@ -96,7 +96,7 @@ public static class OnboardingEndpoints
             CancellationToken ct) =>
         {
             var staffUserId = user.GetUserId();
-            if (staffUserId is null) return Results.Unauthorized();
+            if (staffUserId is null) return ResultExtensions.UnauthorizedProblem();
 
             var denied = await AuthorizeReviewerAsync(guard, onboardingService, staffUserId.Value, appId, ct);
             if (denied is not null) return denied;
@@ -117,7 +117,7 @@ public static class OnboardingEndpoints
             CancellationToken ct) =>
         {
             var staffUserId = user.GetUserId();
-            if (staffUserId is null) return Results.Unauthorized();
+            if (staffUserId is null) return ResultExtensions.UnauthorizedProblem();
 
             var denied = await AuthorizeReviewerAsync(guard, onboardingService, staffUserId.Value, id, ct);
             if (denied is not null) return denied;

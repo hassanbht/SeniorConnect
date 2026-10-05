@@ -152,7 +152,10 @@ public sealed class ScaleAndIntelligenceTests
     [Fact]
     public async Task IdAustriaVerificationProvider_ReturnsVerifiedOutcome_WithoutPersistingDocuments_BRTRUST05()
     {
-        var provider = new IdAustriaVerificationProvider();
+        // BR-TRUST-06: the sandbox provider only ever answers inside Development.
+        var provider = new IdAustriaVerificationProvider(
+            new IdAustriaOptions { Enabled = true, SharedSecret = "sandbox-secret-not-a-real-one" },
+            isDevelopment: true);
         var userId = Guid.CreateVersion7();
 
         var result = await provider.VerifyIdentityAsync(new IdentityVerificationRequest(

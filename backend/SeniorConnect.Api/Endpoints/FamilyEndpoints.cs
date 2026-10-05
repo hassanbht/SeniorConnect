@@ -24,7 +24,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.CreateSeniorWithZugangskarteAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -60,7 +60,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.InviteCaregiverAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -75,7 +75,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.AcceptInvitationAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -96,7 +96,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.UpdatePermissionsAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -114,7 +114,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.RevokeRelationshipAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -131,7 +131,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.GetCaregiversForSeniorAsync(seniorId, userId.Value, ct);
             return result.ToHttpResult();
@@ -145,7 +145,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.GetSeniorsForCaregiverAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -162,7 +162,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.GetAccessLogsAsync(userId.Value, userId.Value, days ?? 30, ct);
             return result.ToHttpResult();
@@ -178,7 +178,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.GetAccessLogsAsync(seniorId, userId.Value, days ?? 30, ct);
             return result.ToHttpResult();
@@ -196,7 +196,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.GetTrustedContactsAsync(seniorId, userId.Value, ct);
             return result.ToHttpResult();
@@ -211,7 +211,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.CreateTrustedContactAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -227,7 +227,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.UpdateTrustedContactAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -242,7 +242,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.DeleteTrustedContactAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -259,7 +259,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.TriggerSafetyAlertAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -274,7 +274,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.AcknowledgeSafetyAlertAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -290,7 +290,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.ResolveSafetyAlertAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -305,7 +305,7 @@ public static class FamilyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await familyService.GetSafetyAlertsForSeniorAsync(seniorId, userId.Value, ct);
             return result.ToHttpResult();

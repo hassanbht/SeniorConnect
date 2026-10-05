@@ -101,7 +101,11 @@ class CoordinatorRosterNotifier extends StateNotifier<CoordinatorRosterState> {
     try {
       await apiClient.post<dynamic>(
         '/api/v1/coordinator/volunteers/$volunteerUserId:reactivate?organizationId=$organizationId',
-        data: {'notes': 'coordinator.reactivated_by_coordinator'.tr()},
+        // A stable code, never a translated sentence: this lands in the audit
+        // trail of a roster state change, where the value has to stay
+        // greppable and comparable across records and locales. The label is
+        // localized for display at 'coordinator.roster_status.$notesCode'.
+        data: {'notes': 'REACTIVATED_BY_COORDINATOR'},
       );
       await loadRoster();
       return null;

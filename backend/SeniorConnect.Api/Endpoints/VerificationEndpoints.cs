@@ -25,7 +25,7 @@ public static class VerificationEndpoints
         me.MapGet("/verification", async (ClaimsPrincipal user, IVerificationService service, CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             return (await service.GetMineAsync(userId.Value, ct)).ToHttpResult();
         })
         .WithName("GetMyVerification")
@@ -35,7 +35,7 @@ public static class VerificationEndpoints
         me.MapGet("/discoverability", async (ClaimsPrincipal user, IDiscoverabilityService service, CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             return (await service.GetAsync(userId.Value, ct)).ToHttpResult();
         })
         .WithName("GetDiscoverability")
@@ -46,7 +46,7 @@ public static class VerificationEndpoints
             UpdateDiscoverabilityRequest request, ClaimsPrincipal user, IDiscoverabilityService service, CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             return (await service.SetAsync(userId.Value, request, ct)).ToHttpResult();
         })
         .WithName("UpdateDiscoverability")
@@ -62,7 +62,7 @@ public static class VerificationEndpoints
             ClaimsPrincipal user, IVerificationService service, CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             return (await service.RecordAsync(userId.Value, organizationId, volunteerUserId, request, ct)).ToHttpResult();
         })
         .WithName("RecordVolunteerVerification")
@@ -76,7 +76,7 @@ public static class VerificationEndpoints
             ClaimsPrincipal user, IVerificationService service, CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             return (await service.RevokeAsync(userId.Value, organizationId, verificationId, request, ct)).ToHttpResult();
         })
         .WithName("RevokeVolunteerVerification")

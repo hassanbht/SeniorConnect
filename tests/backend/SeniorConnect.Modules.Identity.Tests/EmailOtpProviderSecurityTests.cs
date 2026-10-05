@@ -36,6 +36,7 @@ public sealed class EmailOtpProviderSecurityTests
         var logger = new RecordingLogger();
         var emailSender = new SmtpEmailSender(logger, new EmailProviderOptions(), isDevelopment);
         var smsSender = new SmsSender(NullLogger<SmsSender>.Instance, logMessagesForDevelopment: false);
+        var serviceLogger = NullLogger<SeniorConnect.Modules.Identity.Infrastructure.IdentityService>.Instance;
 
         var tokenService = new JwtTokenService(db, hashing, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
         var otpService = new OtpService(db, hashing, smsSender, emailSender);
@@ -54,7 +55,8 @@ public sealed class EmailOtpProviderSecurityTests
             smsSender,
             new LocalDiskPhotoStorage(new Microsoft.Extensions.Configuration.ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?> { ["Storage:PhotoUploadPath"] = Path.Combine(Path.GetTempPath(), "sc_email_otp_" + Guid.NewGuid()) })
-                .Build()));
+                .Build()),
+            serviceLogger);
 
         return (service, db, hashing, logger);
     }

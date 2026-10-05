@@ -26,7 +26,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             // Server-side only: an organization-scoped group is created on behalf of
             // that (staff-verified) organization; anything else is an individual
@@ -80,7 +80,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.UpdateGroupAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -97,7 +97,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.ArchiveGroupAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -114,7 +114,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.JoinGroupAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -130,7 +130,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.AcceptInvitationAsync(id, token, userId.Value, ct);
             return result.ToHttpResult();
@@ -146,7 +146,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.GetGroupMembersAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -164,7 +164,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.InviteMemberAsync(id, userId.Value, request.InvitedUserId, request.Email, request.Phone, ct);
             return result.ToHttpResult();
@@ -181,7 +181,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.ApproveMemberAsync(id, targetUserId, userId.Value, ct);
             return result.ToHttpResult();
@@ -199,7 +199,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.RejectMemberAsync(id, targetUserId, userId.Value, ct);
             return result.ToHttpResult();
@@ -218,7 +218,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.RemoveMemberAsync(id, targetUserId, userId.Value, request.Reason ?? "No reason provided.", ct);
             return result.ToHttpResult();
@@ -237,7 +237,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.MuteMemberAsync(id, targetUserId, userId.Value, request.UntilUtc, request.Reason, ct);
             return result.ToHttpResult();
@@ -255,7 +255,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.UnmuteMemberAsync(id, targetUserId, userId.Value, ct);
             return result.ToHttpResult();
@@ -274,7 +274,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.BanMemberAsync(id, targetUserId, userId.Value, request.Reason ?? "No reason provided.", ct);
             return result.ToHttpResult();
@@ -292,7 +292,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.UnbanMemberAsync(id, targetUserId, userId.Value, ct);
             return result.ToHttpResult();
@@ -310,7 +310,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.AppointModeratorAsync(id, targetUserId, userId.Value, ct);
             return result.ToHttpResult();
@@ -328,7 +328,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.RemoveModeratorAsync(id, targetUserId, userId.Value, ct);
             return result.ToHttpResult();
@@ -345,7 +345,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.LeaveGroupAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -378,7 +378,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.CreatePostAsync(id, userId.Value, request, ct);
             return result.ToHttpResult("/api/v1/community/groups/" + id + "/posts/" + result.Value?.Id);
@@ -396,7 +396,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.HidePostAsync(id, postId, userId.Value, request.Reason, ct);
             return result.ToHttpResult();
@@ -418,7 +418,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.RemovePostAsync(id, postId, userId.Value, request.Reason, ct);
             return result.ToHttpResult();
@@ -437,7 +437,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.CreateReportAsync(userId.Value, request, ct);
             return result.ToHttpResult("/api/v1/community/reports/" + result.Value?.Id);
@@ -457,7 +457,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             var isOfficer = SeniorConnect.Api.Endpoints.SafeguardingEndpoints.IsSafeguardingOfficer(user);
 
             var result = await communityService.ConvertReportToCaseAsync(
@@ -481,7 +481,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.CreateEventAsync(userId.Value, request, ct);
             return result.ToHttpResult("/api/v1/community/events/" + result.Value?.Id);
@@ -528,7 +528,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.UpdateEventAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -546,7 +546,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.CancelEventAsync(id, userId.Value, request.Reason, ct);
             return result.ToHttpResult();
@@ -564,7 +564,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.CancelEventOccurrenceAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -583,7 +583,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.RegisterForEventAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -598,7 +598,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.CancelRegistrationAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -616,7 +616,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.GetMyScheduleAsync(userId.Value, fromUtc, ct);
             return result.ToHttpResult();
@@ -634,7 +634,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.GetOrCreateThreadAsync(contextType, contextId, userId.Value, ct);
             return result.ToHttpResult();
@@ -649,7 +649,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.GetMessagesAsync(threadId, userId.Value, ct);
             return result.ToHttpResult();
@@ -665,7 +665,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.PostMessageAsync(threadId, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -681,7 +681,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.DeleteMessageAsync(threadId, messageId, userId.Value, ct);
             return result.ToHttpResult();
@@ -700,7 +700,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.ReportMessageAsync(threadId, messageId, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -720,7 +720,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.GetModerationQueueAsync(userId.Value, IsCommunityModerator(user), ct);
             return result.ToHttpResult();
@@ -737,7 +737,7 @@ public static class CommunityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await communityService.ResolveModerationItemAsync(
                 userId.Value, IsCommunityModerator(user), itemType, itemId, request, ct);

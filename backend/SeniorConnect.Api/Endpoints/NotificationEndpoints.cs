@@ -22,7 +22,7 @@ public static class NotificationEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await notificationService.GetUserNotificationsAsync(userId.Value, unreadOnly ?? false, ct);
             return result.ToHttpResult();
@@ -37,7 +37,7 @@ public static class NotificationEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await notificationService.MarkAsReadAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -52,7 +52,7 @@ public static class NotificationEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await notificationService.GetPreferencesAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -67,29 +67,13 @@ public static class NotificationEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await notificationService.UpdatePreferencesAsync(userId.Value, request, ct);
             return result.ToHttpResult();
         })
         .WithName("UpdateNotificationPreferences")
         .Produces<NotificationPreferenceDto>(StatusCodes.Status200OK);
-
-        group.MapPost("/dispatch", async (
-            DispatchNotificationRequest request,
-            ClaimsPrincipal user,
-            INotificationService notificationService,
-            CancellationToken ct) =>
-        {
-            var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
-
-            var result = await notificationService.DispatchNotificationAsync(request, ct);
-            return result.ToHttpResult();
-        })
-        .WithName("DispatchNotification")
-        .Produces<NotificationMessageDto>(StatusCodes.Status201Created)
-        .ProducesProblem(StatusCodes.Status409Conflict);
 
         return app;
     }

@@ -83,7 +83,7 @@ class ProfileViewScreen extends ConsumerWidget {
           photoUrl: data.user.photoUrl,
           baseUrl: apiClient.baseUrl,
           interests: data.interests,
-          isStaff: data.user.primaryAuthMethod == 'Password',
+          isStaff: data.user.canManageStaffSecurity,
           onLogout: () => _logout(context, ref),
         ),
       ),

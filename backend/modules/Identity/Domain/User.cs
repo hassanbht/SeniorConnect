@@ -321,6 +321,16 @@ public sealed class User : Entity, IAuditable, ISoftDeletable
         UpdatedAtUtc = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Replaces the stored password hash after a successful login when the old
+    /// one was produced with a weaker work factor (transparent upgrade).
+    /// </summary>
+    public void UpgradePasswordHash(string passwordHash)
+    {
+        PasswordHash = passwordHash;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+    }
+
     public void AnonymizeForGdpr()
     {
         DisplayName = "Gelöschtes Profil";

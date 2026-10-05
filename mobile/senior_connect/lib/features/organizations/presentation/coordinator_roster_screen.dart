@@ -204,6 +204,27 @@ class _VolunteerCard extends StatelessWidget {
   final ThemeData theme;
   final VoidCallback onReactivate;
 
+  /// Renders the server's roster status code as a localized label.
+  ///
+  /// The filter chips above already translate these exact values, so showing the
+  /// raw code on the card meant a Persian coordinator saw "Dormant" on one part
+  /// of the screen and its translation on another. An unrecognised code (a newer
+  /// backend) falls back to the code itself rather than inventing a meaning.
+  static String _rosterStatusLabel(String status) {
+    switch (status) {
+      case 'Active':
+        return 'coordinator.status_active'.tr();
+      case 'Dormant':
+        return 'coordinator.status_dormant'.tr();
+      case 'Inactive':
+        return 'coordinator.status_inactive'.tr();
+      case 'NeverActivated':
+        return 'coordinator.status_never_activated'.tr();
+      default:
+        return status;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = volunteer['displayName'] as String? ?? '–';
@@ -237,7 +258,7 @@ class _VolunteerCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                AppStatusChip(tone: chipTone, label: status),
+                AppStatusChip(tone: chipTone, label: _rosterStatusLabel(status)),
               ],
             ),
             const SizedBox(height: AppSpacing.xs),

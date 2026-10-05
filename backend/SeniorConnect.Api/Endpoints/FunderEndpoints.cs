@@ -25,7 +25,7 @@ public static class FunderEndpoints
             IFunderService funderService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await funderService.GetFunderSummaryAsync(userId, id, ct);
             return result.ToHttpResult();
         })
@@ -41,7 +41,7 @@ public static class FunderEndpoints
             IFunderService funderService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await funderService.GetMonthlyReportsAsync(userId, id, fromMonth, toMonth, ct);
             return result.ToHttpResult();
         })
@@ -57,7 +57,7 @@ public static class FunderEndpoints
             IFunderService funderService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var fromDate = from ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-365));
             var toDate = to ?? DateOnly.FromDateTime(DateTime.UtcNow);
 

@@ -1,7 +1,9 @@
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SeniorConnect.Modules.Identity.Application;
 using SeniorConnect.Modules.Identity.Domain;
+using SeniorConnect.Modules.Organizations.Contracts;
 using SeniorConnect.Domain;
 
 namespace SeniorConnect.Modules.Identity.Infrastructure;
@@ -21,6 +23,14 @@ public sealed class IdentityService : IIdentityService
     private readonly ITotpService _totpService;
     private readonly ISmsSender _smsSender;
     private readonly IPhotoStorage _photoStorage;
+    private readonly ILogger<IdentityService> _logger;
+
+    /// <param name="staffSecurityAuthorizer">
+    /// ADR-029: optional so startup order stays intact (Identity registers
+    /// before Organizations). Absent ⇒ nobody may manage staff security
+    /// (fail closed). Resolved automatically once Organizations registers.
+    /// </param>
+    private readonly IStaffSecurityAuthorizer? _staffSecurityAuthorizer;
 
     public IdentityService(
         IIdentityDbContext db,
@@ -35,7 +45,9 @@ public sealed class IdentityService : IIdentityService
         IEmailSender emailSender,
         ITotpService totpService,
         ISmsSender smsSender,
-        IPhotoStorage photoStorage)
+        IPhotoStorage photoStorage,
+        ILogger<IdentityService> logger,
+        IStaffSecurityAuthorizer? staffSecurityAuthorizer = null)
     {
         _db = db;
         _otpService = otpService;
@@ -50,6 +62,8 @@ public sealed class IdentityService : IIdentityService
         _totpService = totpService;
         _smsSender = smsSender;
         _photoStorage = photoStorage;
+        _logger = logger;
+        _staffSecurityAuthorizer = staffSecurityAuthorizer;
     }
 
     public async Task<Result<string>> RequestPhoneOtpAsync(
@@ -216,6 +230,14 @@ public sealed class IdentityService : IIdentityService
             return new Error("INVALID_CREDENTIALS", "Invalid email or password.", ErrorKind.Unauthenticated);
         }
 
+        // Transparent upgrade: a hash written under an older, cheaper cost is
+        // re-derived now that the password is known in the clear. The login
+        // itself is unaffected, so no user is locked out by the cost change.
+        if (_passwordHasher.NeedsRehash(user.PasswordHash!))
+        {
+            user.UpgradePasswordHash(_passwordHasher.HashPassword(request.Password));
+        }
+
         if (user.TotpEnabledAtUtc.HasValue)
         {
             if (string.IsNullOrWhiteSpace(request.TotpCode))
@@ -239,6 +261,15 @@ public sealed class IdentityService : IIdentityService
         Guid userId,
         CancellationToken cancellationToken = default)
     {
+        // ADR-029: enrollment is a staff control. Authentication method never
+        // grants it; an active Coordinator/Admin membership does. Fail closed.
+        var allowed = await CanManageStaffSecurityAsync(userId, cancellationToken);
+        if (!allowed)
+        {
+            _logger.LogWarning("Staff TOTP enrollment denied for {UserId}: not a staff member.", userId);
+            return Error.CapabilityMissing("ManageOrganizationVolunteers");
+        }
+
         var user = await _db.Users
             .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
 
@@ -271,6 +302,15 @@ public sealed class IdentityService : IIdentityService
         ConfirmTotpRequest request,
         CancellationToken cancellationToken = default)
     {
+        // ADR-029: confirming enrollment must not bypass the enrollment gate —
+        // otherwise an already-staged secret could be activated by a non-staff account.
+        var allowed = await CanManageStaffSecurityAsync(userId, cancellationToken);
+        if (!allowed)
+        {
+            _logger.LogWarning("Staff TOTP confirmation denied for {UserId}: not a staff member.", userId);
+            return Error.CapabilityMissing("ManageOrganizationVolunteers");
+        }
+
         if (string.IsNullOrWhiteSpace(request.Code))
         {
             return Error.Validation("Code is required.");
@@ -333,7 +373,7 @@ public sealed class IdentityService : IIdentityService
             AccessToken: accessToken,
             RefreshToken: newRawToken,
             ExpiresAtUtc: DateTimeOffset.UtcNow.AddMinutes(15),
-            User: MapUserSummary(user),
+            User: await MapUserSummaryAsync(user, cancellationToken),
             Capabilities: capabilities,
             TrustLevel: trustEval.Level));
     }
@@ -362,7 +402,7 @@ public sealed class IdentityService : IIdentityService
             return Error.NotFound("User");
         }
 
-        return Result<UserSummaryDto>.Success(MapUserSummary(user));
+        return Result<UserSummaryDto>.Success(await MapUserSummaryAsync(user, cancellationToken));
     }
 
     public async Task<Result<UserSummaryDto>> UpdateProfileAsync(
@@ -386,7 +426,7 @@ public sealed class IdentityService : IIdentityService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        return Result<UserSummaryDto>.Success(MapUserSummary(user));
+        return Result<UserSummaryDto>.Success(await MapUserSummaryAsync(user, cancellationToken));
     }
 
     public async Task<Result<TrustLevelDto>> GetTrustLevelAsync(
@@ -718,6 +758,12 @@ public sealed class IdentityService : IIdentityService
             return new Error("INVALID_CREDENTIALS", "Invalid email or password.", ErrorKind.Unauthenticated);
         }
 
+        // Same transparent upgrade as the phone/password path.
+        if (_passwordHasher.NeedsRehash(user.PasswordHash!))
+        {
+            user.UpgradePasswordHash(_passwordHasher.HashPassword(request.Password));
+        }
+
         if (!user.EmailVerifiedAtUtc.HasValue)
         {
             return new Error("EMAIL_VERIFICATION_REQUIRED", "Please verify your email address before logging in.", ErrorKind.Forbidden,
@@ -1011,7 +1057,7 @@ public sealed class IdentityService : IIdentityService
         user.SetPhoto(storageResult.Value);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return Result<UserSummaryDto>.Success(MapUserSummary(user));
+        return Result<UserSummaryDto>.Success(await MapUserSummaryAsync(user, cancellationToken));
     }
 
     private async Task<Result<AuthResponse>> BuildAuthResponseAsync(
@@ -1067,12 +1113,37 @@ public sealed class IdentityService : IIdentityService
             AccessToken: accessToken,
             RefreshToken: refreshResult.Value.RawToken,
             ExpiresAtUtc: DateTimeOffset.UtcNow.AddMinutes(15),
-            User: MapUserSummary(user),
+            User: await MapUserSummaryAsync(user, cancellationToken),
             Capabilities: capabilities,
             TrustLevel: trustEval.Level));
     }
 
-    private static UserSummaryDto MapUserSummary(User user) => new(
+    /// <summary>
+    /// ADR-029: staff two-factor is a role question, resolved from
+    /// organization membership — never from the authentication method.
+    /// Fail closed when the authorizer is not registered.
+    /// </summary>
+    private async Task<bool> CanManageStaffSecurityAsync(Guid userId, CancellationToken ct)
+    {
+        if (_staffSecurityAuthorizer is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return await _staffSecurityAuthorizer.CanManageStaffSecurityAsync(userId, ct);
+        }
+        catch (Exception ex)
+        {
+            // Fail closed: an unreadable membership table must not grant a
+            // security-management capability.
+            _logger.LogError(ex, "Staff security authorization unavailable for {UserId}; denying.", userId);
+            return false;
+        }
+    }
+
+    private async Task<UserSummaryDto> MapUserSummaryAsync(User user, CancellationToken ct) => new(
         Id: user.Id,
         Phone: user.Phone,
         Email: user.Email,
@@ -1081,5 +1152,6 @@ public sealed class IdentityService : IIdentityService
         SeniorModeDefault: user.SeniorModeDefault,
         PrimaryAuthMethod: user.PrimaryAuthMethod.ToString(),
         Status: user.Status.ToString(),
-        PhotoUrl: user.PhotoUrl);
+        PhotoUrl: user.PhotoUrl,
+        CanManageStaffSecurity: await CanManageStaffSecurityAsync(user.Id, ct));
 }

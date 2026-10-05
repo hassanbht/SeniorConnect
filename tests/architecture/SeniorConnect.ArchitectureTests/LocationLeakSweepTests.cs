@@ -22,6 +22,52 @@ public sealed class LocationLeakSweepTests
     private static readonly Regex StringLiteral = new("\"(?:[^\"\\\\]|\\\\.)*\"", RegexOptions.Compiled);
     private static readonly Regex SensitiveIdentifier = new(@"(?i)\b(latitude|longitude|lat|lon|lng|address\w*)\b", RegexOptions.Compiled);
 
+    /// <summary>
+    /// Wave-1: the public notification dispatch endpoint was removed because it
+    /// let ANY authenticated caller send any notification to ANY user, including
+    /// CriticalSafety priority (which bypasses mute and quiet hours). Dispatch is
+    /// an internal operation now; nothing may map it again.
+    /// </summary>
+    [Fact]
+    public void No_endpoint_lets_a_caller_dispatch_arbitrary_notifications()
+    {
+        var endpointSource = File.ReadAllText(Path.Combine(
+            RepoRoot(), "backend", "SeniorConnect.Api", "Endpoints", "NotificationEndpoints.cs"));
+
+        endpointSource.Should().NotContain("DispatchNotificationAsync",
+            "a client-supplied RecipientUserId/Category/Priority is an impersonation vector");
+        endpointSource.Should().NotContain("\"/dispatch\"",
+            "notification dispatch must not be reachable from any authenticated caller");
+    }
+
+    /// <summary>
+    /// Wave-2 (GDPR Art. 32): no endpoint may persist a raw IP address. The
+    /// consent endpoint once wrote RemoteIpAddress straight into consents.ip_hash,
+    /// which the column contract and every other call site forbid.
+    /// </summary>
+    [Fact]
+    public void No_endpoint_stores_a_raw_ip_address()
+    {
+        var endpointDirectory = Path.Combine(RepoRoot(), "backend", "SeniorConnect.Api", "Endpoints");
+        var offenders = new List<string>();
+
+        foreach (var file in Directory.EnumerateFiles(endpointDirectory, "*.cs"))
+        {
+            var source = File.ReadAllText(file);
+
+            // A raw RemoteIpAddress passed to a service (as opposed to read and
+            // immediately hashed through IIdentityHashingService.HashIp) is the defect.
+            if (source.Contains("RemoteIpAddress", StringComparison.Ordinal)
+                && !source.Contains("HashIp", StringComparison.Ordinal))
+            {
+                offenders.Add(Path.GetFileName(file));
+            }
+        }
+
+        offenders.Should().BeEmpty(
+            "an IP address is a personal datum; it may only be stored as a hash (BR-TRUST-05)");
+    }
+
     [Theory]
     [InlineData(typeof(IProximityService), nameof(IProximityService.FindNearbyVolunteersAsync))]
     [InlineData(typeof(IProximityService), nameof(IProximityService.FindNearbyRequestsAsync))]

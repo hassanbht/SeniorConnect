@@ -13,6 +13,8 @@ public static class OrganizationsModuleExtensions
         services.AddScoped<OrganizationAccessGuard>();
         services.AddScoped<IOrganizationAccessGuard>(sp => sp.GetRequiredService<OrganizationAccessGuard>());
         services.AddScoped<IOrganizationDirectory>(sp => sp.GetRequiredService<OrganizationAccessGuard>());
+        // ADR-029: staff two-factor authorization, consumed by Identity (optional, fail-closed).
+        services.AddScoped<IStaffSecurityAuthorizer, OrganizationStaffSecurityAuthorizer>();
         return services;
     }
 }

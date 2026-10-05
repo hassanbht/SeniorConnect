@@ -197,7 +197,7 @@ public sealed class FamilyPhase6CompletionTests
 
         // Assert
         lockedResult.IsSuccess.Should().BeFalse();
-        lockedResult.Error.Code.Should().Be("ZUGANGSKARTE_EXHAUSTED");
+        lockedResult.Error!.Code.Should().Be("ZUGANGSKARTE_EXHAUSTED");
     }
 
     [Fact]
@@ -226,7 +226,7 @@ public sealed class FamilyPhase6CompletionTests
 
         // Assert
         lockedResult.IsSuccess.Should().BeFalse();
-        lockedResult.Error.Code.Should().Be("INVITATION_EXHAUSTED");
+        lockedResult.Error!.Code.Should().Be("INVITATION_EXHAUSTED");
     }
 
     [Fact]

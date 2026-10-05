@@ -37,7 +37,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.CreateOrganizationAsync(request, userId, user.IsPlatformAdmin(), ct);
             return result.ToHttpResult("/api/v1/organizations/" + result.Value?.Id);
         })
@@ -76,7 +76,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.CreateBranchAsync(id, request, userId, ct);
             return result.ToHttpResult();
         })
@@ -92,7 +92,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.GetMembershipsAsync(id, userId, ct);
             return result.ToHttpResult();
         })
@@ -108,7 +108,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.AddMembershipAsync(id, request, userId, user.IsPlatformAdmin(), ct);
             return result.ToHttpResult();
         })
@@ -125,7 +125,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.GetPoliciesAsync(id, userId, ct);
             return result.ToHttpResult();
         })
@@ -142,7 +142,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.SetPolicyAsync(id, key, request.PolicyValueJson, userId, ct);
             return result.ToHttpResult();
         })
@@ -163,7 +163,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.CreateIntakeFormAsync(id, request, userId, ct);
             return result.ToHttpResult("/api/v1/organizations/" + id + "/forms/" + result.Value?.Id);
         })
@@ -201,7 +201,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.UpdateIntakeFormAsync(id, formId, request, userId, ct);
             return result.ToHttpResult();
         })
@@ -219,7 +219,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.AddSectionAsync(id, formId, request, userId, ct);
             return result.ToHttpResult("/api/v1/organizations/" + id + "/forms/" + formId + "/sections/" + result.Value?.Id);
         })
@@ -238,7 +238,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.UpdateSectionAsync(id, formId, sectionId, request, userId, ct);
             return result.ToHttpResult();
         })
@@ -256,7 +256,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.DeleteSectionAsync(id, formId, sectionId, userId, ct);
             return result.ToHttpResult();
         })
@@ -274,7 +274,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.AddFieldAsync(id, formId, sectionId, request, userId, ct);
             return result.ToHttpResult("/api/v1/organizations/" + id + "/forms/" + formId + "/sections/" + sectionId + "/fields/" + result.Value?.Id);
         })
@@ -294,7 +294,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.UpdateFieldAsync(id, formId, sectionId, fieldId, request, userId, ct);
             return result.ToHttpResult();
         })
@@ -313,7 +313,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.DeleteFieldAsync(id, formId, sectionId, fieldId, userId, ct);
             return result.ToHttpResult();
         })
@@ -330,7 +330,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.SubmitIntakeFormAsync(formId, id, request, userId, ct);
             return result.ToHttpResult("/api/v1/organizations/" + id + "/forms/" + formId + "/submissions/" + result.Value?.Id);
         })
@@ -346,7 +346,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.GetSubmissionsAsync(formId, id, userId, ct);
             return result.ToHttpResult();
         })
@@ -364,7 +364,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.DecideSubmissionAsync(formId, id, submissionId, request, userId, ct);
             return result.ToHttpResult();
         })
@@ -383,7 +383,7 @@ public static class OrganizationEndpoints
             IOrganizationService orgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var result = await orgService.ActivateStandardTemplateAsync(id, request, userId, ct);
             return result.ToHttpResult();
         })

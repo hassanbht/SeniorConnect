@@ -86,7 +86,7 @@ public static class GeographyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await geocodingProvider.GeocodeAsync(request.Address, "de", ct);
             if (result.IsFailure) return result.ToHttpResult();
@@ -171,7 +171,7 @@ public static class GeographyEndpoints
             }
 
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await proximityService.FindNearbyVolunteersAsync(userId.Value, radiusKm, ct);
             return result.ToHttpResult();
@@ -194,7 +194,7 @@ public static class GeographyEndpoints
             }
 
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await proximityService.FindNearbyRequestsAsync(userId.Value, radiusKm, ct);
             return result.ToHttpResult();

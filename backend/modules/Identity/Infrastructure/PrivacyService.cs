@@ -8,10 +8,17 @@ namespace SeniorConnect.Modules.Identity.Infrastructure;
 public sealed class PrivacyService : IPrivacyService
 {
     private readonly IIdentityDbContext _db;
+    private readonly IIdentityHashingService? _hashing;
 
-    public PrivacyService(IIdentityDbContext db)
+    /// <param name="hashing">
+    /// Optional so design-time and legacy callers still resolve. When present,
+    /// the service re-hashes the address defensively: an IP reaches storage
+    /// only as a hash, whichever layer supplied it.
+    /// </param>
+    public PrivacyService(IIdentityDbContext db, IIdentityHashingService? hashing = null)
     {
         _db = db;
+        _hashing = hashing;
     }
 
     public async Task<Result<IReadOnlyList<VersionedConsentDto>>> GetUserConsentsAsync(
@@ -35,12 +42,19 @@ public sealed class PrivacyService : IPrivacyService
         if (string.IsNullOrWhiteSpace(request.DocumentVersion))
             return Error.Validation("Document version is required.");
 
+        // Defence in depth: the endpoint already hashes, and every other call
+        // site does too, but a future caller must not be able to persist a raw
+        // address into consents.ip_hash. A value that is already in the stored
+        // hash form is left untouched — HMAC is deterministic but not
+        // self-identifying, so double-hashing would corrupt a correct value.
+        var storedIpHash = NormalizeIpHash(ipHash);
+
         var consent = Consent.Create(
             userId,
             request.ConsentType,
             request.DocumentVersion.Trim(),
             request.Granted,
-            ipHash);
+            storedIpHash);
 
         _db.Consents.Add(consent);
         await _db.SaveChangesAsync(ct);
@@ -158,6 +172,47 @@ public sealed class PrivacyService : IPrivacyService
 
         await _db.SaveChangesAsync(ct);
         return MapDeletionToDto(deletionReq);
+    }
+
+        /// <summary>
+    /// Returns the value in stored-hash form. An input that already looks like
+    /// an HMAC-SHA256 hex digest is passed through unchanged; anything else
+    /// (a raw address) is hashed. Without this, a caller that already hashed
+    /// the address would get it hashed twice and the stored value would no
+    /// longer match the pepper's output for that IP.
+    /// </summary>
+    private string? NormalizeIpHash(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        if (IsStoredHashForm(value))
+        {
+            return value;
+        }
+
+        return _hashing?.HashIp(value) ?? value;
+    }
+
+    private static bool IsStoredHashForm(string value)
+    {
+        if (value.Length != 64)
+        {
+            return false;
+        }
+
+        foreach (var c in value)
+        {
+            var isHexDigit = c is >= '0' and <= '9' or >= 'a' and <= 'f';
+            if (!isHexDigit)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static VersionedConsentDto MapConsentToDto(Consent c) =>

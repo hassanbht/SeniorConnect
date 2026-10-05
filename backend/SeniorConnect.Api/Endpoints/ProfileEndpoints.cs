@@ -22,7 +22,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await profileService.GetSupportProfileAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -39,7 +39,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await profileService.UpsertSupportProfileAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -56,7 +56,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await profileService.GetSupportProfileAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -74,7 +74,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             return (await locationSharing.GetAsync(userId.Value, ct)).ToHttpResult();
         })
@@ -89,7 +89,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             return (await locationSharing.SetAsync(userId.Value, request, ct)).ToHttpResult();
         })
@@ -105,7 +105,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await profileService.GetVolunteerProfileAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -122,7 +122,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await profileService.UpsertVolunteerProfileAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -138,7 +138,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await profileService.GetAvailabilityAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -154,7 +154,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await profileService.UpdateAvailabilityAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -170,7 +170,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await profileService.GetUserInterestsAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -186,7 +186,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await profileService.UpdateUserInterestsAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -202,7 +202,7 @@ public static class ProfileEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var memberships = await orgReader.GetActiveMembershipsForUserAsync(userId.Value, ct);
             return Results.Ok(memberships);

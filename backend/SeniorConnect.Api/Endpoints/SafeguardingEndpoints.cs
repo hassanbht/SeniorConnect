@@ -29,7 +29,7 @@ public static class SafeguardingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await safeguardingService.RaiseConcernAsync(userId.Value, request, ct);
             return result.ToHttpResult("/api/v1/safeguarding/cases/" + result.Value?.Id);
@@ -46,7 +46,7 @@ public static class SafeguardingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             if (!IsSafeguardingOfficer(user))
             {
@@ -71,7 +71,7 @@ public static class SafeguardingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             if (!IsSafeguardingOfficer(user))
             {
@@ -98,7 +98,7 @@ public static class SafeguardingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             if (!IsSafeguardingOfficer(user))
             {
@@ -125,7 +125,7 @@ public static class SafeguardingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             if (!IsSafeguardingOfficer(user))
             {
@@ -152,7 +152,7 @@ public static class SafeguardingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             if (!IsSafeguardingOfficer(user))
             {
@@ -178,7 +178,7 @@ public static class SafeguardingEndpoints
             Guid id, ClaimsPrincipal user, ISafeguardingService safeguardingService, CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             if (!IsSafeguardingOfficer(user)) return OfficerRequired();
             return (await safeguardingService.GetRestrictionsAsync(id, userId.Value, ct)).ToHttpResult();
         })
@@ -192,7 +192,7 @@ public static class SafeguardingEndpoints
             ISafeguardingService safeguardingService, CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             if (!IsSafeguardingOfficer(user)) return OfficerRequired();
             return (await safeguardingService.ImposeRestrictionAsync(id, userId.Value, request, ct)).ToHttpResult();
         })
@@ -213,7 +213,7 @@ public static class SafeguardingEndpoints
             SeniorConnectDbContext db, IOrganizationsDbContext orgs, CancellationToken ct) =>
         {
             var callerId = user.GetUserId();
-            if (callerId is null) return Results.Unauthorized();
+            if (callerId is null) return ResultExtensions.UnauthorizedProblem();
             if (!IsPlatformAdmin(user)) return PlatformAdminRequired();
 
             var user2 = await db.Users.FirstOrDefaultAsync(u => u.Id == officerUserId && !u.IsDeleted, ct);
@@ -251,7 +251,7 @@ public static class SafeguardingEndpoints
             SeniorConnectDbContext db, IOrganizationsDbContext orgs, CancellationToken ct) =>
         {
             var callerId = user.GetUserId();
-            if (callerId is null) return Results.Unauthorized();
+            if (callerId is null) return ResultExtensions.UnauthorizedProblem();
             if (!IsPlatformAdmin(user)) return PlatformAdminRequired();
 
             var memberships = await orgs.OrganizationMemberships
@@ -287,7 +287,7 @@ public static class SafeguardingEndpoints
             ISafeguardingService safeguardingService, CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             if (!IsSafeguardingOfficer(user)) return OfficerRequired();
             return (await safeguardingService.LiftRestrictionAsync(restrictionId, userId.Value, request, ct)).ToHttpResult();
         })

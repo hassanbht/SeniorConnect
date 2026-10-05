@@ -128,6 +128,6 @@ public sealed class ZugangskarteProvisioningTests
 
         // Assert
         claimResult.IsSuccess.Should().BeFalse();
-        claimResult.Error.Code.Should().Be("NOT_FOUND");
+        claimResult.Error!.Code.Should().Be("NOT_FOUND");
     }
 }

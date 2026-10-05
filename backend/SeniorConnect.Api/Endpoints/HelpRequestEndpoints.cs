@@ -22,7 +22,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var seniorUserId = request.SeniorUserId ?? userId.Value;
             var result = await helpService.CreateHelpRequestAsync(userId.Value, seniorUserId, request, ct);
@@ -63,7 +63,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.GetSeniorHelpRequestsAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -78,7 +78,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.GetHelpRequestByIdAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -96,7 +96,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             return (await helpService.GetHelpRequestLocationAsync(id, userId.Value, ct)).ToHttpResult();
         })
@@ -113,7 +113,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.AcceptHelpRequestAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -130,7 +130,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.CheckInHelpRequestAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -148,7 +148,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.CompleteHelpRequestAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -166,7 +166,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.CancelHelpRequestAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -184,7 +184,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.MarkNoShowAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -204,7 +204,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.DisputeNoShowAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -223,7 +223,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.ResolveNoShowDisputeAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -244,7 +244,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.GrantVisitAddressAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -268,7 +268,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.RevokeVisitAddressAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -284,7 +284,7 @@ public static class HelpRequestEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await helpService.GetStatusHistoryAsync(id, userId.Value, ct);
             return result.ToHttpResult();

@@ -32,7 +32,7 @@ public sealed class FamilyPrivacyIsolationTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("FORBIDDEN");
+        result.Error!.Code.Should().Be("FORBIDDEN");
     }
 
     [Fact]

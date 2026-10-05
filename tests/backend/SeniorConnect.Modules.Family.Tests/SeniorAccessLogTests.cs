@@ -83,6 +83,6 @@ public sealed class SeniorAccessLogTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("FORBIDDEN");
+        result.Error!.Code.Should().Be("FORBIDDEN");
     }
 }

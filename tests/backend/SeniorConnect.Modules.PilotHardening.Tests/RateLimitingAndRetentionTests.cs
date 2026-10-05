@@ -32,7 +32,7 @@ public sealed class RateLimitingAndRetentionTests
         // When claiming an expired card
         var claimResult = card.Claim();
         claimResult.IsFailure.Should().BeTrue();
-        claimResult.Error.Code.Should().Be("EXPIRED");
+        claimResult.Error!.Code.Should().Be("EXPIRED");
     }
 
     [Fact]

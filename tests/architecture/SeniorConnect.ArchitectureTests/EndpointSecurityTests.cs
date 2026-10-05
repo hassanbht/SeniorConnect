@@ -9,6 +9,64 @@ namespace SeniorConnect.ArchitectureTests;
 public sealed class EndpointSecurityTests
 {
     /// <summary>
+    /// Wave-3: an authorization failure must always produce the canonical
+    /// ProblemDetails body with a stable `code` — never a bare 401/403.
+    ///
+    /// What is forbidden: `Results.Unauthorized()` and `Results.Forbid()`
+    /// inside `SeniorConnect.Api/Endpoints`. Both produce an empty body, which
+    /// breaks the client (it switches on `code`) and the product rule that a
+    /// refusal must say what is missing and how to fix it.
+    ///
+    /// What is allowed: `ResultExtensions.UnauthorizedProblem(...)`,
+    /// `ResultExtensions.ForbiddenProblem(...)`,
+    /// `ResultExtensions.TenantNotFoundProblem(...)` and any `...ToHttpResult()`
+    /// path, which all delegate to the single `MapErrorToProblemDetails`.
+    /// Framework `Results.*` for success shapes (`Ok`, `Created`, `NoContent`)
+    /// are untouched by this rule.
+    /// </summary>
+    [Fact]
+    public void No_endpoint_emits_a_bodyless_authorization_refusal()
+    {
+        var endpointDirectory = Path.Combine(RepoRoot(), "backend", "SeniorConnect.Api", "Endpoints");
+        var offenders = new List<string>();
+
+        foreach (var file in Directory.EnumerateFiles(endpointDirectory, "*.cs"))
+        {
+            var number = 0;
+            foreach (var line in File.ReadLines(file))
+            {
+                number++;
+                var trimmed = line.Trim();
+
+                // Comments and member definitions are not responses.
+                if (trimmed.StartsWith("//", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (trimmed.Contains("Results.Unauthorized()", StringComparison.Ordinal)
+                    || trimmed.Contains("Results.Forbid()", StringComparison.Ordinal))
+                {
+                    offenders.Add($"{Path.GetFileName(file)}:{number}");
+                }
+            }
+        }
+
+        offenders.Should().BeEmpty(
+            "use ResultExtensions.UnauthorizedProblem/ForbiddenProblem so every refusal carries a stable code");
+    }
+
+    private static string RepoRoot()
+    {
+        var dir = new DirectoryInfo(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "backend", "SeniorConnect.slnx")))
+        {
+            dir = dir.Parent;
+        }
+
+        return dir?.FullName ?? throw new DirectoryNotFoundException("Repository root not found.");
+    }
+    /// <summary>
     /// Nothing arrives from a client that the server should decide.
     /// docs/architecture/authorization.md §6.
     /// </summary>

@@ -34,7 +34,7 @@ public sealed class TenantIsolationTests
 
         var offenders = model.GetEntityTypes()
             .Where(e => typeof(IOrganizationScoped).IsAssignableFrom(e.ClrType))
-            .Where(e => e.GetQueryFilter() is null)
+            .Where(e => e.GetDeclaredQueryFilters() is null)
             .Select(e => e.ClrType.Name)
             .ToList();
 
@@ -50,7 +50,7 @@ public sealed class TenantIsolationTests
 
         var offenders = model.GetEntityTypes()
             .Where(e => typeof(ISoftDeletable).IsAssignableFrom(e.ClrType))
-            .Where(e => e.GetQueryFilter() is null)
+            .Where(e => e.GetDeclaredQueryFilters() is null)
             .Select(e => e.ClrType.Name)
             .ToList();
 
@@ -99,7 +99,7 @@ public sealed class TenantIsolationTests
             .Where(e => typeof(IOrganizationScoped).IsAssignableFrom(e.ClrType))
             .Where(e =>
             {
-                var expression = e.GetQueryFilter()?.ToString() ?? string.Empty;
+                var expression = e.GetDeclaredQueryFilters()?.ToString() ?? string.Empty;
                 return !expression.Contains("OrganizationId == null",
                     StringComparison.Ordinal);
             })

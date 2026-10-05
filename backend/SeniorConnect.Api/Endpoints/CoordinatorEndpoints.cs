@@ -634,7 +634,7 @@ public static class CoordinatorEndpoints
     private static async Task<IResult?> AuthorizeStaffAsync(
         ClaimsPrincipal user, IOrganizationAccessGuard guard, Guid organizationId, CancellationToken ct)
     {
-        if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+        if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
 
         var auth = await guard.EnsureStaffAsync(userId, organizationId, ct);
         return auth.IsFailure ? auth.ToHttpResult() : null;

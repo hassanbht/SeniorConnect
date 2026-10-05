@@ -6,6 +6,8 @@ public interface ITrustSafetyService
 {
     Task<Result<BuddyStatusDto>> GetBuddyStatusAsync(
         Guid volunteerUserId,
+        Guid viewerUserId,
+        bool viewerIsSafeguardingOfficer = false,
         CancellationToken cancellationToken = default);
 
     /// <param name="actorIsSafeguardingOfficer">Computed server-side from the caller's claims.</param>

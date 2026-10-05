@@ -22,7 +22,7 @@ public static class ActivityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await activityService.LogActivityAsync(userId.Value, request, cancellationToken: ct);
             return result.ToHttpResult("/api/v1/activities/" + result.Value?.Id);
@@ -41,7 +41,7 @@ public static class ActivityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             if (organizationId.HasValue)
             {
@@ -62,7 +62,7 @@ public static class ActivityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await activityService.GetActivityByIdAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -78,7 +78,7 @@ public static class ActivityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await activityService.ConfirmActivityAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -97,7 +97,7 @@ public static class ActivityEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await activityService.DisputeActivityAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();

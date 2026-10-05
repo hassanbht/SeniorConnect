@@ -121,7 +121,14 @@ public sealed class LocationVisibilityArchitectureTests
     public void Phase4PolicyServices_AreRegistered()
     {
         var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
-        SeniorConnect.Modules.Identity.Infrastructure.IdentityModuleExtensions.AddIdentityModule(services, isDevelopment: false);
+        // A non-Development registration requires a real pepper; supply a test-only one.
+        var pepperConfiguration = new TestConfigurationSource(
+            new Dictionary<string, string?>
+            {
+                ["IDENTITY_HASH_PEPPER"] = "architecture_test_pepper_value_not_a_real_secret",
+            });
+        SeniorConnect.Modules.Identity.Infrastructure.IdentityModuleExtensions.AddIdentityModule(
+            services, isDevelopment: false, configuration: pepperConfiguration);
         SeniorConnect.Modules.Profiles.Infrastructure.ProfilesModuleExtensions.AddProfilesModule(services);
         SeniorConnect.Modules.TrustSafety.Infrastructure.TrustSafetyModuleExtensions.AddTrustSafetyModule(services);
         var registered = services.Select(d => d.ServiceType).ToHashSet();
@@ -193,5 +200,34 @@ public sealed class LocationVisibilityArchitectureTests
         }
 
         return dir?.FullName ?? throw new DirectoryNotFoundException("Repository root (backend/SeniorConnect.slnx) not found.");
+    }
+
+    /// <summary>
+    /// Minimal in-memory IConfiguration for the registration-only test above,
+    /// avoiding a Microsoft.Extensions.Configuration.Binder dependency.
+    /// </summary>
+    private sealed class TestConfigurationSource(Dictionary<string, string?> values)
+        : Microsoft.Extensions.Configuration.IConfiguration
+    {
+        public string? this[string key]
+        {
+            get => values.TryGetValue(key, out var value) ? value : null;
+            set => values[key] = value;
+        }
+
+        public Microsoft.Extensions.Configuration.IConfigurationSection GetSection(string key) => null!;
+
+        public System.Collections.Generic.IEnumerable<Microsoft.Extensions.Configuration.IConfigurationSection> GetChildren() =>
+            Array.Empty<Microsoft.Extensions.Configuration.IConfigurationSection>();
+
+        public Microsoft.Extensions.Primitives.IChangeToken GetReloadToken() =>
+            new Microsoft.Extensions.Primitives.CancellationChangeToken(CancellationToken.None);
+
+        public string[] GetChildKeys(
+            Microsoft.Extensions.Configuration.IConfigurationBuilder builder,
+            Action<string>? keyFilter) => values.Keys.ToArray();
+
+        public Microsoft.Extensions.Primitives.IChangeToken OnChange(Action<object, string?> listener) =>
+            GetReloadToken();
     }
 }

@@ -38,7 +38,7 @@ public sealed class DataExportTests
         exportResult.IsSuccess.Should().BeTrue();
 
         var data = exportResult.Value;
-        data.UserId.Should().Be(user.Id);
+        data!.UserId.Should().Be(user.Id);
         data.ExportFormat.Should().Be("JSON-GDPR-PORTABLE-v1");
         data.UserProfile.Should().NotBeNull();
         data.Consents.Should().HaveCount(1);

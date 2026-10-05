@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SeniorConnect.Modules.Identity.Application;
 
@@ -9,8 +10,24 @@ public static class IdentityModuleExtensions
     /// Only a Development host gets the external-login stubs. Everywhere else
     /// Google tokens are really validated and ID Austria is refused.
     /// </param>
-    public static IServiceCollection AddIdentityModule(this IServiceCollection services, bool isDevelopment)
+    public static IServiceCollection AddIdentityModule(
+        this IServiceCollection services,
+        bool isDevelopment,
+        IConfiguration? configuration = null)
     {
+        // The identifier-hash pepper comes from configuration, never from source
+        // (BR-TRUST-05 / GDPR Art. 32). Outside Development a missing or short
+        // pepper fails startup instead of silently using a known value.
+        if (configuration is not null)
+        {
+            var hashingSettings = IdentityHashingSettings.Resolve(configuration);
+            hashingSettings.EnsureSafeFor(isDevelopment);
+            services.AddSingleton(hashingSettings);
+        }
+
+        // No configuration supplied (design-time / legacy callers): the hashing
+        // service then falls back to the development pepper. A real host always
+        // supplies configuration, so the check above is the one that applies.
         services.AddSingleton<IIdentityHashingService, IdentityHashingService>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<ITotpService, TotpService>();

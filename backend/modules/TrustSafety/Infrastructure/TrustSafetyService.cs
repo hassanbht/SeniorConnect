@@ -23,10 +23,40 @@ public sealed class TrustSafetyService : ITrustSafetyService
 
     public async Task<Result<BuddyStatusDto>> GetBuddyStatusAsync(
         Guid volunteerUserId,
+        Guid viewerUserId,
+        bool viewerIsSafeguardingOfficer = false,
         CancellationToken cancellationToken = default)
     {
+        // BR-SAFETY-05: buddy status is a safety fact about a named person, and
+        // a waiver carries the coordinator's written reason — typically why that
+        // person was judged safe to work alone. It must not be readable by any
+        // authenticated caller, and a non-officer must not learn from the
+        // response whether the volunteer exists or is waived.
+        if (viewerUserId != volunteerUserId && !viewerIsSafeguardingOfficer)
+        {
+            var volunteerOrgIds = await _db.VolunteerApplications
+                .Where(a => a.UserId == volunteerUserId
+                         && a.Status == ApplicationStatus.Approved
+                         && a.OrganizationId != null)
+                .Select(a => a.OrganizationId!.Value)
+                .ToListAsync(cancellationToken);
+
+            if (!await IsCoordinatorOfAnyAsync(viewerUserId, volunteerOrgIds, cancellationToken))
+            {
+                return new Error(
+                    "BUDDY_STATUS_NOT_FOUND",
+                    "Buddy status is not available.",
+                    ErrorKind.NotFound);
+            }
+        }
+
         var buddy = await _db.BuddyAssignments
             .FirstOrDefaultAsync(b => b.VolunteerUserId == volunteerUserId, cancellationToken);
+
+        // The waiver justification is an officer/coordinator-level record. A
+        // volunteer looking at their own status sees the decision, not the
+        // internal reason attached to it.
+        var mayReadWaiverReason = viewerIsSafeguardingOfficer || viewerUserId != volunteerUserId;
 
         if (buddy is null)
         {
@@ -45,7 +75,7 @@ public sealed class TrustSafetyService : ITrustSafetyService
             IsBuddyRequired: buddy.IsBuddyRequired,
             AssignedBuddyVolunteerUserId: buddy.AssignedBuddyVolunteerUserId,
             IsWaived: buddy.IsWaived,
-            WaiverReason: buddy.WaiverReason));
+            WaiverReason: mayReadWaiverReason ? buddy.WaiverReason : null));
     }
 
     public async Task<Result<BuddyStatusDto>> WaiveBuddyAsync(

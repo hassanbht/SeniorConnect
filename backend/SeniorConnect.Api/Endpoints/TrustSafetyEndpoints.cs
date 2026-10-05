@@ -23,7 +23,7 @@ public static class TrustSafetyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var req = request with { UserId = userId.Value, ProviderType = VerificationProviderType.IdAustria };
             var result = await provider.VerifyIdentityAsync(req, ct);
@@ -34,16 +34,25 @@ public static class TrustSafetyEndpoints
         .ProducesProblem(StatusCodes.Status400BadRequest);
 
         // --- Buddy System ---
+        // BR-SAFETY-05: readable by the volunteer themselves, a coordinator of
+        // the volunteer's organization, or a safeguarding officer. Anyone else
+        // gets 404 — a 403 would confirm that the volunteer exists.
         group.MapGet("/buddy/{volunteerUserId:guid}", async (
             Guid volunteerUserId,
+            ClaimsPrincipal user,
             ITrustSafetyService trustService,
             CancellationToken ct) =>
         {
-            var result = await trustService.GetBuddyStatusAsync(volunteerUserId, ct);
+            var userId = user.GetUserId();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
+
+            var result = await trustService.GetBuddyStatusAsync(
+                volunteerUserId, userId.Value, SafeguardingEndpoints.IsSafeguardingOfficer(user), ct);
             return result.ToHttpResult();
         })
         .WithName("GetBuddyStatus")
-        .Produces<BuddyStatusDto>(StatusCodes.Status200OK);
+        .Produces<BuddyStatusDto>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapPost("/buddy/{volunteerUserId:guid}:waive", async (
             Guid volunteerUserId,
@@ -53,7 +62,7 @@ public static class TrustSafetyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await trustService.WaiveBuddyAsync(
                 volunteerUserId, userId.Value, SafeguardingEndpoints.IsSafeguardingOfficer(user), request, ct);
@@ -82,7 +91,7 @@ public static class TrustSafetyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await trustService.HandoverKeyAsync(userId.Value, request, ct);
             return result.ToHttpResult("/api/v1/trust-safety/keys/" + result.Value?.Id);
@@ -99,7 +108,7 @@ public static class TrustSafetyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await trustService.ReturnKeyAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -116,7 +125,7 @@ public static class TrustSafetyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await trustService.RecordExpenseAsync(userId.Value, request, ct);
             return result.ToHttpResult("/api/v1/trust-safety/expenses/" + result.Value?.Id);
@@ -132,7 +141,7 @@ public static class TrustSafetyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await trustService.ConfirmExpenseAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -151,7 +160,7 @@ public static class TrustSafetyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await trustService.DisputeExpenseAsync(id, userId.Value, request, ct);
             return result.ToHttpResult();
@@ -168,7 +177,7 @@ public static class TrustSafetyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await trustService.BlockUserAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -180,7 +189,7 @@ public static class TrustSafetyEndpoints
         group.MapGet("/blocks", async (ClaimsPrincipal user, ITrustSafetyService trustService, CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             return (await trustService.GetMyBlocksAsync(userId.Value, ct)).ToHttpResult();
         })
         .WithName("GetMyBlocks")
@@ -190,7 +199,7 @@ public static class TrustSafetyEndpoints
             Guid blockedUserId, ClaimsPrincipal user, ITrustSafetyService trustService, CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
             var result = await trustService.UnblockUserAsync(userId.Value, blockedUserId, ct);
             return result.IsSuccess ? Results.NoContent() : result.ToHttpResult();
         })

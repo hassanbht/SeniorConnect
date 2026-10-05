@@ -17,6 +17,7 @@ class UserSummary {
     required this.primaryAuthMethod,
     required this.status,
     this.photoUrl,
+    this.canManageStaffSecurity = false,
   });
 
   factory UserSummary.fromJson(Map<String, dynamic> json) => UserSummary(
@@ -29,6 +30,9 @@ class UserSummary {
         primaryAuthMethod: json['primaryAuthMethod'] as String,
         status: json['status'] as String,
         photoUrl: json['photoUrl'] as String?,
+        // Server-decided. Absent on older servers, where the staff tools simply
+        // stay hidden; the client never infers this from primaryAuthMethod.
+        canManageStaffSecurity: json['canManageStaffSecurity'] as bool? ?? false,
       );
 
   final String id;
@@ -40,6 +44,10 @@ class UserSummary {
   final String primaryAuthMethod;
   final String status;
   final String? photoUrl;
+
+  /// Whether the server says this account may use the staff security tools.
+  /// UI-gating only — every staff action is re-checked server-side.
+  final bool canManageStaffSecurity;
 }
 
 abstract class ProfileRepository {

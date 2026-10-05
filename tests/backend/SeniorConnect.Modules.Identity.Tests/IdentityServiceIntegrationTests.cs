@@ -5,6 +5,7 @@ using SeniorConnect.Infrastructure;
 using SeniorConnect.Modules.Identity.Application;
 using SeniorConnect.Modules.Identity.Domain;
 using SeniorConnect.Modules.Identity.Infrastructure;
+using SeniorConnect.Modules.Organizations.Contracts;
 using Xunit;
 
 namespace SeniorConnect.Modules.Identity.Tests;
@@ -60,7 +61,7 @@ public sealed class IdentityServiceIntegrationTests : IDisposable
             })
             .Build();
         var photoStorage = new LocalDiskPhotoStorage(photoStorageConfig);
-
+        // ADR-029: the staff-security authorizer is absent by default here (fail closed).
         _identityService = new IdentityService(
             _dbContext,
             otpService,
@@ -74,7 +75,9 @@ public sealed class IdentityServiceIntegrationTests : IDisposable
             emailSender,
             totpService,
             smsSender,
-            photoStorage);
+            photoStorage,
+            NullLogger<IdentityService>.Instance,
+            new DelegateStaffSecurityAuthorizer(_ => true));
     }
 
     [Fact]
@@ -497,4 +500,15 @@ public sealed class IdentityServiceIntegrationTests : IDisposable
             Directory.Delete(_photoTempDir, recursive: true);
         }
     }
+}
+
+
+/// <summary>
+/// ADR-029 test double: models the membership decision under test.
+/// The real authorization model is covered by StaffTotpAuthorizationTests.
+/// </summary>
+internal sealed class DelegateStaffSecurityAuthorizer(Func<Guid, bool> decide) : IStaffSecurityAuthorizer
+{
+    public Task<bool> CanManageStaffSecurityAsync(Guid userId, CancellationToken ct = default)
+        => Task.FromResult(decide(userId));
 }

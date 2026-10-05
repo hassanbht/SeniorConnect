@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SeniorConnect.Modules.TrustSafety.Application;
 
@@ -5,8 +6,16 @@ namespace SeniorConnect.Modules.TrustSafety.Infrastructure;
 
 public static class TrustSafetyModuleExtensions
 {
-    public static IServiceCollection AddTrustSafetyModule(this IServiceCollection services)
+    public static IServiceCollection AddTrustSafetyModule(
+        this IServiceCollection services,
+        IConfiguration? configuration = null,
+        bool isDevelopment = false)
     {
+        // BR-TRUST-06: the external identity provider is off by default and can
+        // never assert a verification outside Development.
+        var idAustriaOptions = IdAustriaOptions.Resolve(configuration);
+        idAustriaOptions.EnsureSafeFor(isDevelopment);
+        services.AddSingleton(idAustriaOptions);
         services.AddScoped<IOnboardingService, OnboardingService>();
         services.AddScoped<ITrustSafetyService, TrustSafetyService>();
         services.AddScoped<ISafeguardingService, SafeguardingService>();

@@ -119,7 +119,14 @@ public sealed record UserSummaryDto(
     bool SeniorModeDefault,
     string PrimaryAuthMethod,
     string Status,
-    string? PhotoUrl);
+    string? PhotoUrl,
+    /// <summary>
+    /// Server-computed: the caller may set up staff two-factor authentication.
+    /// The client must never derive this from PrimaryAuthMethod — a password is
+    /// a legitimate method for seniors and ordinary volunteers, and TOTP
+    /// enrolment is a staff control, not an account type.
+    /// </summary>
+    bool CanManageStaffSecurity = false);
 
 public sealed record DeviceSessionDto(
     Guid Id,

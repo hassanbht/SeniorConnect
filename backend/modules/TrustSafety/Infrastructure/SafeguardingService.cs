@@ -166,6 +166,19 @@ public sealed class SafeguardingService : ISafeguardingService, ISafeguardingCas
             return Error.NotFound("SafeguardingCase");
         }
 
+        // BR-SG-02: the assignee must actually be a safeguarding officer WITHIN
+        // the case's own scope. Without this check a case could be handed to an
+        // officer of another organization (or to a non-officer at all), and
+        // VisibleCasesAsync would then grant them the case — reporter and
+        // subject included. A miss is 404: the foreign assignee learns nothing.
+        var assigneeOrgIds = await _orgReader
+            .GetSafeguardingOfficerOrganizationIdsAsync(request.AssigneeOfficerUserId, cancellationToken);
+
+        if (!IsAssigneeInCaseScope(sCase.OrganizationId, assigneeOrgIds))
+        {
+            return Error.NotFound("SafeguardingCase");
+        }
+
         var assignResult = sCase.AssignToOfficer(request.AssigneeOfficerUserId);
         if (assignResult.IsFailure)
         {
@@ -326,6 +339,22 @@ public sealed class SafeguardingService : ISafeguardingService, ISafeguardingCas
     /// them. An ordinary organization officer no longer sees org-less cases.
     /// Anything else is a 404.
     /// </summary>
+    /// <summary>
+    /// S-4 mirror of the visibility rule: an org-scoped case may only be
+    /// assigned to an officer of that same organization. An org-less case is
+    /// reserved for platform safeguarding officers, so it has no ordinary
+    /// assignee at all.
+    /// </summary>
+    private static bool IsAssigneeInCaseScope(Guid? caseOrganizationId, IReadOnlyCollection<Guid> assigneeOrgIds)
+    {
+        if (caseOrganizationId is not { } orgId)
+        {
+            return false;
+        }
+
+        return assigneeOrgIds.Contains(orgId);
+    }
+
     private async Task<IQueryable<SafeguardingCase>> VisibleCasesAsync(Guid officerUserId, CancellationToken ct)
     {
         // BR-SG-02: the org scope is the organizations where the caller is an

@@ -21,6 +21,19 @@ namespace SeniorConnect.Api.Endpoints;
 public static class ComplianceEndpoints
 {
     private const string Tag = "Legal Gate Compliance";
+    private static readonly Dictionary<string, object> PlatformAdminDeniedExtensions = new()
+    {
+        ["missing"] = new[] { "PlatformAdmin" },
+    };
+    /// <summary>
+    /// Canonical 403 with an explainable body (authorization.md §5): the client
+    /// receives a stable code and the missing capability, never a bare Forbid.
+    /// </summary>
+    private static IResult PlatformAdminRequired() =>
+        ResultExtensions.ForbiddenProblem(
+            "PLATFORM_ADMIN_REQUIRED",
+            "The platform-admin capability is required. Contact a platform administrator to request access.",
+            PlatformAdminDeniedExtensions);
 
     public static IEndpointRouteBuilder MapComplianceEndpoints(this IEndpointRouteBuilder app)
     {
@@ -35,7 +48,7 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var result = await svc.GetLegalGateStatusAsync(ct);
             return result.ToHttpResult();
         })
@@ -50,7 +63,7 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var result = await svc.GetLegalEntityProfileAsync(ct);
             return result.ToHttpResult();
         })
@@ -65,9 +78,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.UpsertLegalEntityProfileAsync(request, userId.Value, ct);
             return result.ToHttpResult();
@@ -83,9 +96,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.MarkEstablishedAsync(request.EstablishedAtUtc, userId.Value, ct);
             return result.ToHttpResult();
@@ -101,9 +114,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.RecordPrivacyPolicyReviewAsync(request.Version, request.ReviewedAtUtc, userId.Value, ct);
             return result.ToHttpResult();
@@ -119,9 +132,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.RecordTermsReviewAsync(request.Version, request.ReviewedAtUtc, userId.Value, ct);
             return result.ToHttpResult();
@@ -138,7 +151,7 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var result = await svc.ListDpasAsync(ct);
             return result.ToHttpResult();
         })
@@ -152,9 +165,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.CreateDpaAsync(request, userId.Value, ct);
             return result.ToHttpResult();
@@ -171,9 +184,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.MarkDpaSignedAsync(id, request, userId.Value, ct);
             return result.ToHttpResult();
@@ -190,7 +203,7 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var result = await svc.ListProcessingActivitiesAsync(ct);
             return result.ToHttpResult();
         })
@@ -204,9 +217,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.CreateProcessingActivityAsync(request, userId.Value, ct);
             return result.ToHttpResult();
@@ -223,7 +236,7 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var result = await svc.ListDpiasAsync(ct);
             return result.ToHttpResult();
         })
@@ -237,9 +250,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.CreateDpiaAsync(request, userId.Value, ct);
             return result.ToHttpResult();
@@ -256,9 +269,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.ApproveDpiaAsync(id, request, userId.Value, ct);
             return result.ToHttpResult();
@@ -275,7 +288,7 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var result = await svc.ListInsurancePoliciesAsync(ct);
             return result.ToHttpResult();
         })
@@ -289,9 +302,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.CreateInsurancePolicyAsync(request, userId.Value, ct);
             return result.ToHttpResult();
@@ -308,9 +321,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.RecordInsuranceWrittenConfirmationAsync(id, request, userId.Value, ct);
             return result.ToHttpResult();
@@ -327,7 +340,7 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var result = await svc.GetHostingAttestationAsync(ct);
             return result.ToHttpResult();
         })
@@ -342,9 +355,9 @@ public static class ComplianceEndpoints
             IComplianceService svc,
             CancellationToken ct) =>
         {
-            if (!user.IsPlatformAdmin()) return Results.Forbid();
+            if (!user.IsPlatformAdmin()) return PlatformAdminRequired();
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await svc.UpsertHostingAttestationAsync(request, userId.Value, ct);
             return result.ToHttpResult();

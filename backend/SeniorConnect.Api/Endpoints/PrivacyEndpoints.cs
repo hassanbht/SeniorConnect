@@ -22,7 +22,7 @@ public static class PrivacyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await privacyService.GetUserConsentsAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -34,13 +34,18 @@ public static class PrivacyEndpoints
             RecordConsentRequest request,
             ClaimsPrincipal user,
             HttpContext httpContext,
+            IIdentityHashingService hashing,
             IPrivacyService privacyService,
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
-            var ipHash = httpContext.Connection.RemoteIpAddress?.ToString();
+            // GDPR Art. 32 + backend/AGENTS.md: an IP address is stored ONLY as a
+            // hash. Writing RemoteIpAddress verbatim into consents.ip_hash would
+            // make the consent table an unmasked personal-data store and would
+            // contradict every other call site (OtpService, IdentityService).
+            var ipHash = hashing.HashIp(httpContext.GetClientIp());
             var result = await privacyService.RecordConsentAsync(userId.Value, request, ipHash, ct);
             return result.ToHttpResult();
         })
@@ -54,7 +59,7 @@ public static class PrivacyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await privacyService.WithdrawConsentAsync(userId.Value, consentType, ct);
             return result.ToHttpResult();
@@ -69,7 +74,7 @@ public static class PrivacyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await privacyService.ExportUserDataAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -83,7 +88,7 @@ public static class PrivacyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await privacyService.ExportUserDataAsync(userId.Value, ct);
             return result.ToHttpResult();
@@ -98,7 +103,7 @@ public static class PrivacyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await privacyService.RequestAccountDeletionAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -113,7 +118,7 @@ public static class PrivacyEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await privacyService.ConfirmAccountDeletionAsync(userId.Value, request, ct);
             return result.ToHttpResult();

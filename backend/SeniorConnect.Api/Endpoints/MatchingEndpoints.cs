@@ -25,7 +25,7 @@ public static class MatchingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await matchingService.GetCandidatesForCallerAsync(id, userId.Value, ct);
             return result.ToHttpResult();
@@ -46,7 +46,7 @@ public static class MatchingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await matchingService.GetVolunteerFeedAsync(userId.Value, radiusKm ?? 20.0, ct);
             return result.ToHttpResult();
@@ -62,7 +62,7 @@ public static class MatchingEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await matchingService.GetHybridProposalsForCallerAsync(request, userId.Value, ct);
             return result.ToHttpResult();

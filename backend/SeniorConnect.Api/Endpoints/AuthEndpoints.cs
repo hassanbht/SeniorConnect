@@ -185,7 +185,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var result = await identityService.GetActiveDevicesAsync(userId.Value, null, ct);
@@ -205,7 +205,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var result = await identityService.RevokeDeviceSessionAsync(userId.Value, id, ct);
@@ -227,7 +227,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var ip = httpContext.GetClientIp();
@@ -249,7 +249,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var result = await identityService.VerifyPhoneChangeAsync(userId.Value, request, ct);
@@ -275,7 +275,7 @@ public static class AuthEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var ip = httpContext.GetClientIp();
             var result = await identityService.RequestProfilePhoneVerificationAsync(userId.Value, request, ip, ct);
@@ -293,7 +293,7 @@ public static class AuthEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             var result = await identityService.VerifyProfilePhoneAsync(userId.Value, request, ct);
             return result.ToHttpResult();
@@ -317,7 +317,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var result = await identityService.GetCurrentUserAsync(userId.Value, ct);
@@ -336,7 +336,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var result = await identityService.UpdateProfileAsync(userId.Value, request, ct);
@@ -355,7 +355,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var result = await identityService.GetTrustLevelAsync(userId.Value, ct);
@@ -373,7 +373,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var result = await identityService.GetCapabilitiesAsync(userId.Value, ct);
@@ -391,7 +391,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var result = await identityService.EnrollTotpAsync(userId.Value, ct);
@@ -411,7 +411,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var result = await identityService.ConfirmTotpEnrollmentAsync(userId.Value, request, ct);
@@ -431,7 +431,7 @@ public static class AuthEndpoints
             CancellationToken ct) =>
         {
             var userId = user.GetUserId();
-            if (userId is null) return Results.Unauthorized();
+            if (userId is null) return ResultExtensions.UnauthorizedProblem();
 
             if (!httpRequest.HasFormContentType) return Results.BadRequest();
             var form = await httpRequest.ReadFormAsync(ct);
@@ -459,7 +459,7 @@ public static class AuthEndpoints
             var userId = user.GetUserId();
             if (userId is null)
             {
-                return Results.Unauthorized();
+                return ResultExtensions.UnauthorizedProblem();
             }
 
             var ip = httpContext.GetClientIp();

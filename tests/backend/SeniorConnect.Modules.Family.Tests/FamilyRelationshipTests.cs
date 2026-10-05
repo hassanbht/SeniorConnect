@@ -104,7 +104,7 @@ public sealed class FamilyRelationshipTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("INVITATION_EXPIRED");
+        result.Error!.Code.Should().Be("INVITATION_EXPIRED");
         relationship.Status.Should().Be(RelationshipStatus.Invited);
     }
 
@@ -124,7 +124,7 @@ public sealed class FamilyRelationshipTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("VALIDATION_FAILED");
+        result.Error!.Code.Should().Be("VALIDATION_FAILED");
         relationship.Status.Should().Be(RelationshipStatus.Invited);
     }
 

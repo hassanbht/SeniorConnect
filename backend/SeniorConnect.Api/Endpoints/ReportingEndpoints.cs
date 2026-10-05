@@ -29,7 +29,7 @@ public static class ReportingEndpoints
             IReportingService reportService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var auth = await guard.EnsureStaffAsync(userId, orgId, ct);
             if (auth.IsFailure) return auth.ToHttpResult();
 
@@ -53,7 +53,7 @@ public static class ReportingEndpoints
             IReportingService reportService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var auth = await guard.EnsureStaffAsync(userId, orgId, ct);
             if (auth.IsFailure) return auth.ToHttpResult();
 
@@ -79,7 +79,7 @@ public static class ReportingEndpoints
             IReportingService reportService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var auth = await guard.EnsureStaffAsync(userId, orgId, ct);
             if (auth.IsFailure) return auth.ToHttpResult();
 
@@ -105,7 +105,7 @@ public static class ReportingEndpoints
             IReportingService reportService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var auth = await guard.EnsureStaffAsync(userId, orgId, ct);
             if (auth.IsFailure) return auth.ToHttpResult();
 
@@ -131,7 +131,7 @@ public static class ReportingEndpoints
             IEsgReportingService esgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var auth = await guard.EnsureStaffAsync(userId, companyOrgId, ct);
             if (auth.IsFailure) return auth.ToHttpResult();
 
@@ -155,7 +155,7 @@ public static class ReportingEndpoints
             IEsgReportingService esgService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var auth = await guard.EnsureStaffAsync(userId, companyOrgId, ct);
             if (auth.IsFailure) return auth.ToHttpResult();
 
@@ -180,7 +180,7 @@ public static class ReportingEndpoints
             IReportingService reportService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var auth = await guard.EnsureStaffAsync(userId, orgId, ct);
             if (auth.IsFailure) return auth.ToHttpResult();
 
@@ -201,7 +201,7 @@ public static class ReportingEndpoints
             IReportingService reportService,
             CancellationToken ct) =>
         {
-            if (user.GetUserId() is not { } userId) return Results.Unauthorized();
+            if (user.GetUserId() is not { } userId) return ResultExtensions.UnauthorizedProblem();
             var auth = await guard.EnsureStaffAsync(userId, orgId, ct);
             if (auth.IsFailure) return auth.ToHttpResult();
 

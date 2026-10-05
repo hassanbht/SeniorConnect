@@ -34,6 +34,9 @@ services:
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=seniorconnect_db;Username=seniorconnect;Password=${POSTGRES_PASSWORD:-seniorconnect_dev_password}"
       # Required outside Development: the API refuses to start without a private key (>= 32 chars).
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in .env}
+      # Required outside Development: HMAC key for stored identifier hashes
+      # (OTP, phone/email, IP). Rotating it invalidates existing OTPs and sessions.
+      IDENTITY_HASH_PEPPER: ${IDENTITY_HASH_PEPPER:?Set IDENTITY_HASH_PEPPER in .env}
     ports:
       - "8080:8080"
     healthcheck:

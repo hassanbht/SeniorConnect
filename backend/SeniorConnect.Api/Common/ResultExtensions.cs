@@ -59,6 +59,35 @@ public static class ResultExtensions
         return context.Connection.RemoteIpAddress?.ToString();
     }
 
+    /// <summary>
+    /// Canonical 401. The `userId is null` guard on every endpoint must use
+    /// this — never a bare `Results.Unauthorized()` — so the client always
+    /// receives a ProblemDetails body with a stable machine-readable `code`.
+    /// </summary>
+    public static IResult UnauthorizedProblem(
+        string code = "UNAUTHENTICATED",
+        string detail = "Authentication is required.") =>
+        MapErrorToProblemDetails(new Error(code, detail, ErrorKind.Unauthenticated));
+
+    /// <summary>
+    /// Canonical 403. A bare `Results.Forbid()` carries no body, which breaks
+    /// the product rule that a refusal must say what is missing and how to fix
+    /// it (authorization.md §5). Pass the missing capability or trust facts as
+    /// extensions so the client can render its checklist.
+    /// </summary>
+    public static IResult ForbiddenProblem(
+        string code,
+        string detail,
+        IReadOnlyDictionary<string, object>? extensions = null) =>
+        MapErrorToProblemDetails(new Error(code, detail, ErrorKind.Forbidden, extensions));
+
+    /// <summary>
+    /// Canonical 404 for a tenant miss. A 403 would confirm the resource
+    /// exists; the caller learns nothing either way.
+    /// </summary>
+    public static IResult TenantNotFoundProblem(string resource = "Resource") =>
+        MapErrorToProblemDetails(Error.NotFound(resource));
+
     private static IResult MapErrorToProblemDetails(Error error)
     {
         var statusCode = error.Kind switch

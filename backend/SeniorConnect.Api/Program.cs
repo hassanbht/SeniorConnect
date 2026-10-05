@@ -99,14 +99,14 @@ builder.Services.AddScoped<INotificationsDbContext>(sp => sp.GetRequiredService<
 builder.Services.AddScoped<IGeographyDbContext>(sp => sp.GetRequiredService<SeniorConnectDbContext>());
 
 // Add Module services
-builder.Services.AddIdentityModule(builder.Environment.IsDevelopment());
+builder.Services.AddIdentityModule(builder.Environment.IsDevelopment(), builder.Configuration);
 builder.Services.AddProfilesModule();
 builder.Services.Configure<SeniorConnect.Modules.HelpRequests.Infrastructure.VisitAddressOptions>(
     builder.Configuration.GetSection(SeniorConnect.Modules.HelpRequests.Infrastructure.VisitAddressOptions.SectionName));
 builder.Services.AddOrganizationsModule();
 builder.Services.AddHelpRequestsModule();
 builder.Services.AddMatchingModule(builder.Configuration);
-builder.Services.AddTrustSafetyModule();
+builder.Services.AddTrustSafetyModule(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddReportingModule();
 builder.Services.AddCommunityModule();
 builder.Services.AddFamilyModule();
@@ -266,8 +266,11 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// API docs are not exposed in Production.
-if (!app.Environment.IsProduction())
+// API docs are an explicit opt-in, never an environment implication. A Staging
+// host must not publish the interactive surface by default, and Production
+// enables it only when an operator deliberately says so.
+var apiDocsEnabled = builder.Configuration.GetValue<bool>("ApiDocs:Enabled");
+if (apiDocsEnabled)
 {
 app.MapOpenApi();
 

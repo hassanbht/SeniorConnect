@@ -10,6 +10,7 @@ using SeniorConnect.Modules.HelpRequests.Domain;
 using SeniorConnect.Modules.HelpRequests.Infrastructure;
 using SeniorConnect.Modules.Identity.Domain;
 using SeniorConnect.Modules.Identity.Infrastructure;
+using SeniorConnect.Modules.Organizations.Contracts;
 using SeniorConnect.Modules.Organizations.Domain;
 using SeniorConnect.Modules.Organizations.Infrastructure;
 using SeniorConnect.Modules.Profiles.Application;
@@ -19,6 +20,160 @@ using SeniorConnect.Modules.TrustSafety.Infrastructure;
 using Xunit;
 
 namespace SeniorConnect.Modules.HelpRequests.Tests;
+
+/// <summary>
+/// Wave-1 negative tenant-isolation tests (BR-TENANT-03).
+///
+/// GET /api/v1/help-requests?organizationId=X must NOT treat X as an
+/// authorization: it is a client-supplied selector. Only active staff of X may
+/// narrow the list to X; everybody else gets 404 so the foreign organization is
+/// never confirmed. Without the guard, any authenticated user could enumerate
+/// another organization's open help requests — senior ids, schedule and city
+/// included.
+/// </summary>
+public sealed class HelpRequestTenantIsolationTests : IDisposable
+{
+    private readonly SeniorConnectDbContext _db;
+    private readonly TrustSafety.Infrastructure.SafeguardingDbContext _safeguarding =
+        Phase4TestSupport.NewSafeguardingDb();
+
+    private readonly Guid _orgId = Organization.Create("Sozialsprengel Test", OrganizationType.Ngo).Id;
+    private readonly Guid _otherOrgId = Organization.Create("Anderer Verein", OrganizationType.Ngo).Id;
+
+    private readonly Guid _seniorId = Guid.NewGuid();
+    private readonly Guid _coordinatorId = Guid.NewGuid();
+    private readonly Guid _strangerId = Guid.NewGuid();
+    private readonly Guid _otherOrgCoordinatorId = Guid.NewGuid();
+
+    public HelpRequestTenantIsolationTests()
+    {
+        _db = new SeniorConnectDbContext(
+            new DbContextOptionsBuilder<SeniorConnectDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options,
+            new DefaultTenantContext { IsPlatformScope = true });
+
+        AddMember(_orgId, _coordinatorId, MembershipRole.Coordinator);
+        AddMember(_otherOrgId, _otherOrgCoordinatorId, MembershipRole.Coordinator);
+        _db.SaveChanges();
+    }
+
+    public void Dispose() => _db.Dispose();
+
+    private void AddMember(Guid orgId, Guid userId, MembershipRole role)
+    {
+        var membership = OrganizationMembership.Create(orgId, userId, role);
+        membership.Activate();
+        _db.OrganizationMemberships.Add(membership);
+    }
+
+    private HelpRequestService HelpRequests(IOrganizationAccessGuard? accessGuard = null)
+    {
+        // A guard is registered unless the caller explicitly asks for the
+        // fail-closed case (an explicit flag, since null is also the default).
+        return new HelpRequestService(
+            _db,
+            new ActivitySafetyPolicy(),
+            new TrustLevelReader(_db),
+            new SafetyBoundaryReader(_db),
+            new UserContactReader(_db),
+            new VolunteerReliabilityUpdater(_db),
+            familyPermissionReader: null,
+            accessGuard: accessGuard ?? new OrganizationAccessGuard(_db),
+            locationVisibility: Phase4TestSupport.LocationVisibility(_db, _safeguarding));
+    }
+
+    /// <summary>The service with no access guard registered at all.</summary>
+    private HelpRequestService HelpRequestsWithoutGuard() => new(
+        _db,
+        new ActivitySafetyPolicy(),
+        new TrustLevelReader(_db),
+        new SafetyBoundaryReader(_db),
+        new UserContactReader(_db),
+        new VolunteerReliabilityUpdater(_db),
+        familyPermissionReader: null,
+        accessGuard: null,
+        locationVisibility: Phase4TestSupport.LocationVisibility(_db, _safeguarding));
+
+    private async Task SeedOpenRequestAsync()
+    {
+        var start = DateTimeOffset.UtcNow.AddHours(3);
+        var request = HelpRequest.Create(
+            organizationId: _orgId,
+            seniorUserId: _seniorId,
+            createdByUserId: _seniorId,
+            categoryId: Guid.NewGuid(),
+            safetyLevel: 1,
+            trustLevel: 1,
+            scheduledStartUtc: start,
+            scheduledEndUtc: start.AddHours(1),
+            durationMinutes: 60,
+            locationType: LocationType.SeniorHome,
+            address: "Maria-Theresien-Straße 7",
+            postalCode: "6020",
+            city: "Innsbruck",
+            latitude: 47.26917,
+            longitude: 11.40433).Value!;
+
+        _db.HelpRequests.Add(request);
+        await _db.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task A_coordinator_may_narrow_the_list_to_their_own_organization()
+    {
+        await SeedOpenRequestAsync();
+
+        var result = await HelpRequests().GetOpenHelpRequestsAsync(_orgId, _coordinatorId);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task A_coordinator_of_another_organization_gets_not_found_not_the_rows()
+    {
+        await SeedOpenRequestAsync();
+
+        var result = await HelpRequests().GetOpenHelpRequestsAsync(_orgId, _otherOrgCoordinatorId);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error!.Code.Should().Be("NOT_FOUND");
+    }
+
+    [Fact]
+    public async Task An_authenticated_stranger_gets_not_found()
+    {
+        await SeedOpenRequestAsync();
+
+        var result = await HelpRequests().GetOpenHelpRequestsAsync(_orgId, _strangerId);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error!.Code.Should().Be("NOT_FOUND");
+    }
+
+    [Fact]
+    public async Task It_fails_closed_when_no_access_guard_is_registered()
+    {
+        await SeedOpenRequestAsync();
+
+        var result = await HelpRequestsWithoutGuard().GetOpenHelpRequestsAsync(_orgId, _coordinatorId);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error!.Code.Should().Be("NOT_FOUND");
+    }
+
+    [Fact]
+    public async Task Discovery_without_an_organization_selector_is_unaffected()
+    {
+        await SeedOpenRequestAsync();
+
+        // The public discovery path carries no organizationId and must keep working.
+        var result = await HelpRequests().GetOpenHelpRequestsAsync(viewerUserId: _strangerId);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().ContainSingle();
+    }
+}
 
 /// <summary>
 /// Phase 3 (docs/security/location-consent-and-visibility.md): consent,
