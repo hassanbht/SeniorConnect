@@ -103,6 +103,14 @@ public static class CoordinatorEndpoints
     private const int DefaultShortlistSize = 10;
     private const int MaxShortlistSize = 50;
 
+    /// <summary>
+    /// W2-6: stable machine-readable audit code for coordinator-initiated
+    /// volunteer reactivation. The audit trail stores this code — never the
+    /// coordinator's free-text notes or any translated UI string, which stay in
+    /// the user-visible notification.
+    /// </summary>
+    public const string ReactivatedByCoordinatorAction = "REACTIVATED_BY_COORDINATOR";
+
     public static IEndpointRouteBuilder MapCoordinatorEndpoints(this IEndpointRouteBuilder app)
     {
         var coordGroup = app.MapGroup("/api/v1/coordinator")
@@ -205,6 +213,7 @@ public static class CoordinatorEndpoints
             IOrganizationAccessGuard guard,
             IOrganizationDirectory directory,
             INotificationService notificationService,
+            SeniorConnectDbContext db,
             CancellationToken ct) =>
         {
             if (await AuthorizeStaffAsync(user, guard, organizationId, ct) is { } denied) return denied;
@@ -225,9 +234,23 @@ public static class CoordinatorEndpoints
                 Title: "Wir würden uns freuen, wieder von dir zu hören",
                 Body: request.Notes ?? "Dein Koordinator lädt dich ein, wieder mitzumachen – ganz ohne Verpflichtung."), ct);
 
-            return dispatch.IsSuccess
-                ? Results.Ok(new { Message = "Reactivation invitation sent.", VolunteerUserId = volunteerUserId })
-                : Result.Failure(dispatch.Error!).ToHttpResult();
+            if (dispatch.IsFailure)
+            {
+                return Result.Failure(dispatch.Error!).ToHttpResult();
+            }
+
+            // W2-6: the audit trail records the stable code above. The
+            // coordinator's free-text notes stay in the user-visible
+            // notification; translated prose must never become audit data.
+            db.AuditEntries.Add(SeniorConnect.Modules.Reporting.Domain.AuditEntry.Create(
+                action: ReactivatedByCoordinatorAction,
+                subjectType: "User",
+                subjectId: volunteerUserId,
+                actorUserId: user.GetUserId(),
+                actorOrganizationId: organizationId));
+            await db.SaveChangesAsync(ct);
+
+            return Results.Ok(new { Message = "Reactivation invitation sent.", VolunteerUserId = volunteerUserId });
         })
         .WithName("ReactivateVolunteer")
         .Produces(StatusCodes.Status200OK)

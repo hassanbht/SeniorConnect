@@ -51,7 +51,7 @@ public sealed class MatchingLocationHotfixTests : IDisposable
     private readonly Guid _otherOrgCoordinatorId = Guid.NewGuid();
     private readonly Guid _strangerId = Guid.NewGuid();
     private readonly Guid _seniorId = Guid.NewGuid();
-    private readonly Guid _volunteerId = Guid.NewGuid();
+    private readonly Guid _volunteerId;
 
     public MatchingLocationHotfixTests()
     {
@@ -69,11 +69,22 @@ public sealed class MatchingLocationHotfixTests : IDisposable
         AddMember(_orgId, _orgVolunteerMemberId, MembershipRole.Volunteer);
         AddMember(_otherOrgId, _otherOrgCoordinatorId, MembershipRole.Coordinator);
 
+        var volunteerUser = User.CreateWithPhone("+436601112240", "Hotfix Volunteer");
+        _db.Users.Add(volunteerUser);
+        _volunteerId = volunteerUser.Id;
         var volunteer = VolunteerProfile.Create(_volunteerId, postalCode: "6020",
             latitude: VolunteerLat, longitude: VolunteerLon, maxDistanceKm: 15);
         volunteer.UpdateReliability(0.9m);
         _db.VolunteerProfiles.Add(volunteer);
-        _db.TrustLevelSnapshots.Add(TrustLevelSnapshot.Create(_volunteerId, 3, "{}"));
+        // ADR-030: effective trust comes from live verification facts, never
+        // from a snapshot row. Seed phone + email + address facts so the
+        // volunteer genuinely holds effective trust level 3.
+        foreach (var type in new[] { VerificationType.Phone, VerificationType.Email, VerificationType.Address })
+        {
+            var verification = Verification.Create(_volunteerId, type);
+            verification.Verify(Guid.NewGuid());
+            _db.Verifications.Add(verification);
+        }
 
         _db.AustrianAdministrativeUnits.Add(Geography.Domain.AustrianAdministrativeUnit.Create(
             bundeslandCode: "7", bundeslandName: "Tirol",

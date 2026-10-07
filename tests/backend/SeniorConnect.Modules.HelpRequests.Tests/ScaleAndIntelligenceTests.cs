@@ -5,6 +5,7 @@ using SeniorConnect.Infrastructure;
 using SeniorConnect.Modules.HelpRequests.Application;
 using SeniorConnect.Modules.HelpRequests.Domain;
 using SeniorConnect.Modules.HelpRequests.Infrastructure;
+using SeniorConnect.Modules.Identity.Domain;
 using SeniorConnect.Modules.Matching.Application;
 using SeniorConnect.Modules.Matching.Domain;
 using SeniorConnect.Modules.Matching.Infrastructure;
@@ -79,7 +80,18 @@ public sealed class ScaleAndIntelligenceTests
     {
         using var db = new SeniorConnectDbContext(_dbOptions, new TestTenantContext());
         var seniorUserId = Guid.CreateVersion7();
-        var volunteerUserId = Guid.CreateVersion7();
+        // ADR-030: effective trust comes from live verification facts, never
+        // from a snapshot row. Seed phone + email + address facts so the
+        // volunteer genuinely holds effective trust level 3.
+        var volunteerUser = User.CreateWithPhone("+436601112241", "Hybrid Volunteer");
+        db.Users.Add(volunteerUser);
+        var volunteerUserId = volunteerUser.Id;
+        foreach (var type in new[] { VerificationType.Phone, VerificationType.Email, VerificationType.Address })
+        {
+            var verification = Verification.Create(volunteerUserId, type);
+            verification.Verify(Guid.NewGuid());
+            db.Verifications.Add(verification);
+        }
 
         var category = (ActivityCategory)Activator.CreateInstance(typeof(ActivityCategory), nonPublic: true)!;
         typeof(Entity).GetProperty(nameof(Entity.Id))!.SetValue(category, Guid.CreateVersion7());
@@ -117,7 +129,7 @@ public sealed class ScaleAndIntelligenceTests
 
         volunteerProfile.UpdateReliability(0.95m);
         db.VolunteerProfiles.Add(volunteerProfile);
-        db.TrustLevelSnapshots.Add(SeniorConnect.Modules.Identity.Domain.TrustLevelSnapshot.Create(volunteerUserId, 3, "{}"));
+        // ADR-030: trust snapshot rows alone authorize nothing (see above).
 
         // P4-07: this test is about ADR-014's manual-approval flag, not the
         // buddy system — give the volunteer 3 completed Level-3+ visits so

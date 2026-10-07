@@ -465,13 +465,25 @@ public sealed class HelpRequestAuditFixTests
     {
         // Arrange: 4 eligible volunteers, request created through the real factory.
         using var db = CreateInMemoryDb();
-        var volunteerIds = Enumerable.Range(0, 4).Select(_ => Guid.NewGuid()).ToList();
-        foreach (var id in volunteerIds)
+        var volunteerIds = new List<Guid>();
+        var phoneSuffix = 100;
+        foreach (var _ in Enumerable.Range(0, 4))
         {
-            var profile = VolunteerProfile.Create(id, "Vol");
+            // ADR-030: effective trust comes from live verification facts,
+            // never from a snapshot row. Seed phone + email facts (level 2).
+            var user = User.CreateWithPhone($"+43660111{phoneSuffix++:0000}", "Vol");
+            db.Users.Add(user);
+            volunteerIds.Add(user.Id);
+            foreach (var type in new[] { VerificationType.Phone, VerificationType.Email })
+            {
+                var verification = Verification.Create(user.Id, type);
+                verification.Verify(Guid.NewGuid());
+                db.Verifications.Add(verification);
+            }
+
+            var profile = VolunteerProfile.Create(user.Id, "Vol");
             profile.UpdateStatus(true);
             db.VolunteerProfiles.Add(profile);
-            db.TrustLevelSnapshots.Add(TrustLevelSnapshot.Create(id, 2, "{}"));
         }
 
         var request = NewRequest(Guid.NewGuid(), DateTimeOffset.UtcNow.AddHours(5));

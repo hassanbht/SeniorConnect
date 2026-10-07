@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using SeniorConnect.Infrastructure;
 using SeniorConnect.Domain;
+using SeniorConnect.Modules.HelpRequests.Domain;
 using Xunit;
 
 namespace SeniorConnect.ArchitectureTests;
@@ -89,31 +90,86 @@ public sealed class TenantIsolationTests
     /// The filter must not exclude community rows. A filter of the shape
     /// `x.OrganizationId == tenant.OrganizationId` compiles, passes the
     /// "has a filter" test above, and silently hides every community activity.
+    ///
+    /// Verified behaviorally, not via EF expression rendering: a query under
+    /// an organization tenant must return that org's rows plus community
+    /// (null-organization) rows, and must hide other orgs' rows.
     /// </summary>
     [Fact]
-    public void Query_filters_admit_rows_with_a_null_organization()
+    public async Task Query_filters_admit_rows_with_a_null_organization()
     {
-        var model = BuildModel();
+        var orgA = Guid.NewGuid();
+        var orgB = Guid.NewGuid();
+        var senior = Guid.NewGuid();
+        var category = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
 
-        var offenders = model.GetEntityTypes()
-            .Where(e => typeof(IOrganizationScoped).IsAssignableFrom(e.ClrType))
-            .Where(e =>
-            {
-                var expression = e.GetDeclaredQueryFilters()?.ToString() ?? string.Empty;
-                return !expression.Contains("OrganizationId == null",
-                    StringComparison.Ordinal);
-            })
-            .Select(e => e.ClrType.Name)
-            .ToList();
+        HelpRequest NewHelpRequest(Guid? organizationId) =>
+            HelpRequest.Create(
+                organizationId: organizationId,
+                seniorUserId: senior,
+                createdByUserId: senior,
+                categoryId: category,
+                safetyLevel: 1,
+                trustLevel: 1,
+                scheduledStartUtc: now.AddHours(2),
+                scheduledEndUtc: now.AddHours(3),
+                durationMinutes: 60,
+                locationType: LocationType.PublicPlace).Value!;
 
-        offenders.Should().BeEmpty(
-            "the query filter must explicitly admit OrganizationId == null, "
-            + "otherwise community rows become invisible");
+        var options = new DbContextOptionsBuilder<SeniorConnectDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        using (var seed = new SeniorConnectDbContext(options, new StubTenant()))
+        {
+            seed.HelpRequests.AddRange(
+                NewHelpRequest(orgA),
+                NewHelpRequest(orgB),
+                NewHelpRequest(organizationId: null));
+            await seed.SaveChangesAsync();
+        }
+
+        // Organization tenant: own rows plus community rows, never another org's.
+        using (var db = new SeniorConnectDbContext(options, new OrgTenant(orgB)))
+        {
+            var visible = await db.HelpRequests
+                .Select(r => r.OrganizationId)
+                .ToListAsync();
+
+            visible.Should().Contain(orgB);
+            visible.Should().Contain((Guid?)null,
+                "a null OrganizationId means community scope, which stays visible");
+            visible.Should().NotContain(orgA,
+                "rows of another organization must never leak across tenants");
+        }
+
+        // Platform scope: everything is visible, including community rows.
+        using (var db = new SeniorConnectDbContext(options, new StubPlatformTenant()))
+        {
+            var visible = await db.HelpRequests
+                .Select(r => r.OrganizationId)
+                .ToListAsync();
+
+            visible.Should().HaveCount(3);
+        }
     }
 
     private sealed class StubTenant : ITenantContext
     {
         public Guid? OrganizationId => Guid.Empty;
         public bool IsPlatformScope => false;
+    }
+
+    private sealed class OrgTenant(Guid organizationId) : ITenantContext
+    {
+        public Guid? OrganizationId => organizationId;
+        public bool IsPlatformScope => false;
+    }
+
+    private sealed class StubPlatformTenant : ITenantContext
+    {
+        public Guid? OrganizationId => null;
+        public bool IsPlatformScope => true;
     }
 }

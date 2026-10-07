@@ -102,9 +102,19 @@ public sealed class HelpRequestMatchingAndSafetyTests
 
         db.HelpRequests.Add(request);
 
-        // Volunteer has Trust Level 3 but is new (0 level-3 completed, no buddy assigned)
-        var snapshot = TrustLevelSnapshot.Create(volunteerId, 3, "{\"reason\":\"police_record_check\"}");
-        db.TrustLevelSnapshots.Add(snapshot);
+        // ADR-030: effective trust comes from live verification facts, never
+        // from a snapshot row. Seed phone + email + address facts so this
+        // volunteer genuinely holds effective trust level 3.
+        var volunteerUser = User.CreateWithPhone("+436601112237", "Experienced Vol");
+        db.Users.Add(volunteerUser);
+        volunteerId = volunteerUser.Id;
+        foreach (var type in new[] { VerificationType.Phone, VerificationType.Email, VerificationType.Address })
+        {
+            var verification = Verification.Create(volunteerId, type);
+            verification.Verify(Guid.NewGuid());
+            db.Verifications.Add(verification);
+        }
+
         await db.SaveChangesAsync();
 
         var trustReader2 = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
@@ -233,6 +243,26 @@ public sealed class HelpRequestMatchingAndSafetyTests
 
         db.HelpRequests.Add(request);
 
+        // ADR-030: effective trust comes from live verification facts, never
+        // from a snapshot row. lowTrustVol holds phone only (level 1);
+        // eligibleVol holds phone + email + address (level 3).
+        var lowTrustUser = User.CreateWithPhone("+436601112238", "Low Trust Vol");
+        db.Users.Add(lowTrustUser);
+        lowTrustVolId = lowTrustUser.Id;
+        var lowTrustPhone = Verification.Create(lowTrustVolId, VerificationType.Phone);
+        lowTrustPhone.Verify(Guid.NewGuid());
+        db.Verifications.Add(lowTrustPhone);
+
+        var eligibleUser = User.CreateWithPhone("+436601112239", "Eligible Vol");
+        db.Users.Add(eligibleUser);
+        eligibleVolId = eligibleUser.Id;
+        foreach (var type in new[] { VerificationType.Phone, VerificationType.Email, VerificationType.Address })
+        {
+            var verification = Verification.Create(eligibleVolId, type);
+            verification.Verify(Guid.NewGuid());
+            db.Verifications.Add(verification);
+        }
+
         var p1 = VolunteerProfile.Create(blockedVolId, "Blocked Vol");
         p1.UpdateStatus(true);
         var p2 = VolunteerProfile.Create(lowTrustVolId, "Low Trust Vol");
@@ -245,9 +275,6 @@ public sealed class HelpRequestMatchingAndSafetyTests
         // Block record
         db.UserBlocks.Add(UserBlock.Create(seniorId, blockedVolId, "Blocked"));
 
-        // Trust levels: lowTrust = 1, eligible = 3
-        db.TrustLevelSnapshots.Add(TrustLevelSnapshot.Create(lowTrustVolId, 1, "{}"));
-        db.TrustLevelSnapshots.Add(TrustLevelSnapshot.Create(eligibleVolId, 3, "{}"));
         await db.SaveChangesAsync();
 
         var trustReader4 = new SeniorConnect.Modules.Identity.Infrastructure.TrustLevelReader(db);
