@@ -30,13 +30,15 @@
 
 | # | Finding | Status | Owner | Next action |
 |---|---|---|---|---|
-| **R-1** | **The release candidate is an UNCOMMITTED working tree.** `HEAD` `6f9c5ec` does **not** contain `20260930103345`, `20261001150947`, `VisitAddressGrant.cs`, `OperationalTask.cs`, `SmtpEmailSender.cs`, `EmailProviderOptions.cs`, `VisitAddressOptions.cs`, `AssignmentBlockEnforcement.cs`, `SafeguardingOperationalReader.cs`; the fake `EmailSender.cs` stub is still present in `HEAD`. 63 modified + 2 deleted + 98 untracked files. | **OPEN** | [Launch Owner] | Commit (or re-cut) the candidate, then re-identify it |
+| **R-1** | **The release candidate is an UNCOMMITTED working tree.** `HEAD` `6f9c5ec` does **not** contain `20260930103345`, `20261001150947`, `VisitAddressGrant.cs`, `OperationalTask.cs`, `SmtpEmailSender.cs`, `EmailProviderOptions.cs`, `VisitAddressOptions.cs`, `AssignmentBlockEnforcement.cs`, `SafeguardingOperationalReader.cs`; the fake `EmailSender.cs` stub is still present in `HEAD`. 63 modified + 2 deleted + 98 untracked files. | **RESOLVED 2026-10-07** — canonical repository created; release candidate committed and CI-verified at `9ccb5b66021a29c02ddeced4d9ae74d969c476ab` (see Addendum below) | — | was: commit the candidate |
 | **R-2** | **A further history location for the exposed keys exists** and is not in the remediation record: `cc4d451` via `refs/cline/checkpoints/session_1790935206923_azxk9/1` (same two keys, masked comparison only; not an ancestor of `main`). | **OPEN** | [Deployment Owner] | Include in rotation/purge scope; correct the remediation record |
 | **R-3** | **No backend version, no `global.json`, no `packages.lock.json`, no config schema version, no embedded build timestamp.** Floating `10.0.0-*` / `2.0.*` ranges. | **OPEN** | [Deployment Owner] | Decide whether reproducibility must be guaranteed |
-| **R-4** | **`docs/release/` is git-ignored.** `.gitignore` line 135 `[Rr]elease/` (from the .NET template) is unanchored and matches `docs/release/` as well as build outputs, so the mandatory release records cannot be committed from their current location. `docs/launch/` and `docs/product/` are unaffected. | **OPEN** | [Deployment Owner] | Anchor the build-output pattern and negate `docs/release/`; verify `bin/Release/` stays ignored |
+| **R-4** | **`docs/release/` is git-ignored.** `.gitignore` line 135 `[Rr]elease/` (from the .NET template) is unanchored and matches `docs/release/` as well as build outputs, so the mandatory release records cannot be committed from their current location. `docs/launch/` and `docs/product/` are unaffected. | **RESOLVED 2026-10-07** — narrow `!docs/release/` negation added (commit `9ccb5b6`); `bin/Release/` etc. re-verified still ignored; all 10 release records tracked | — | was: negate `docs/release/`; verify `bin/Release/` stays ignored (done) |
 
-> These are recorded, **not fixed**. Fixing them would change the candidate and
-> is an owner decision.
+> These were recorded, **not fixed**, at 2026-10-02. **Update 2026-10-07:**
+> **R-1 and R-4 are RESOLVED** (canonical repository + release commit
+> `9ccb5b6` with the narrow `!docs/release/` negation). **R-2 and R-3 remain
+> OPEN** owner decisions. No external gate status changed.
 
 ---
 
@@ -265,7 +267,7 @@ STARTED. This phase does not auto-launch.
 | J. ADR-026 | OFF | No |
 | K. Participant Readiness | NOT STARTED | No |
 | L. Launch-Owner Authorization | PENDING | No |
-| **R. Release-Candidate Integrity** | **OPEN (R-1, R-2, R-3, R-4)** | **NEW** |
+| **R. Release-Candidate Integrity** | **PARTIALLY RESOLVED — R-1 ✓, R-4 ✓ (2026-10-07, release `9ccb5b6`); R-2, R-3 OPEN** | **Updated** |
 
 ---
 
@@ -296,4 +298,62 @@ Early Access **not** launched · no participant or organization contacted ·
 `VisitAddress:RequireGrant` **not** activated · no credential rotated or
 created · Git history **not** rewritten · no force-push · no commit made ·
 no product feature added · no legal conclusion drawn.
+
+---
+
+## Addendum — Final Canonical Release Closure phase (2026-10-07)
+
+**No gate status changed.** This phase received **no new external evidence**;
+every A–L status above remains exactly as recorded. What changed is purely
+release/repository state:
+
+| Item | Verified value |
+|---|---|
+| Release SHA | `9ccb5b66021a29c02ddeced4d9ae74d969c476ab` (main; remote == local) |
+| CI | Run `37666080520`, head_sha == release SHA, success — 711/711 incl. PostgreSQL (0 skip), 909/909, analyze clean, locale gate, dependency scan clean, Docker build (push:false) |
+| Build | `dotnet build -c Release` from the release SHA → 0 warnings / 0 errors |
+| Artifact | Local DLL SHA-256 `93D32267…A461`, source SHA == release SHA; **not published** |
+| RDOCS-1 | CLOSED — 114 `docs/` files tracked (R-4 resolved) |
+| R-1 | RESOLVED — candidate committed and CI-verified |
+| ADR-026 | OFF — `VisitAddress:RequireGrant=false` the only committed definition; guard green on the exact SHA |
+| Credential rotation | still **PENDING — EXTERNAL** (no rotation evidence received; `docs/security/credential-exposure-remediation.md` checklist unticked) |
+| Early Access | **NOT STARTED** · Production deployment **NOT STARTED** |
+
+**Confirmation of non-actions (this phase):** no participant or organization
+contacted · no user onboarded · no production data created · `ADR-026` not
+activated · no credential rotated · Git history not rewritten · no
+force-push · no repository created or deleted · no infrastructure, provider,
+backup, monitoring or owner invented · no legal/GDPR claim · no product
+feature added · no architecture change · no ADR changed · artifact not
+published · Early Access not launched.
+
+---
+
+## Addendum 2 — Controlled Production Deployment & External Gate Validation
+phase (2026-10-07)
+
+Re-verified against actual evidence; **no external gate changed status**
+because no new external evidence exists (zero production activity occurred):
+
+| Gate | Status re-verified 2026-10-07 | Evidence this phase |
+|---|---|---|
+| A. Credential Security | PENDING — EXTERNAL (rotation) | remediation checklist §7 still fully unticked; no rotation evidence |
+| B. Authentication Provider | PENDING — EXTERNAL | `Email:Provider = "none"` in both committed configs at release SHA `9ccb5b6` |
+| C. Production Infrastructure | BLOCKED — NOT PROVISIONED | no host/registry/secret-store evidence exists |
+| D. Database / Migration deployment | PENDING — EXTERNAL | no production PostgreSQL exists; CI/test DBs are not production |
+| E. Backup | BLOCKED — no real target | mechanism drill ≠ operational backup (unchanged) |
+| F. Observability | BLOCKED — NOT STARTED | no monitoring/alerting platform exists |
+| G. Operational Ownership | PENDING — all 8 roles | `operational-ownership-checklist.md` re-read: every role _(not known)_ |
+| H. Safeguarding Ownership | PENDING — appointments | engineering model green on release SHA; no real officer appointed |
+| I. Data Protection / Legal | PENDING — EXTERNAL REVIEW | `docs/legal/EXTERNAL-DATA-PROTECTION-REVIEW.md`: "no evidence exists as of this phase" |
+| J. ADR-026 | OFF | `VisitAddress:RequireGrant = False` at release SHA `9ccb5b6` (re-verified this phase) |
+| K. Participant Readiness | NOT STARTED | no contact/onboarding activity |
+| L. Launch-Owner Authorization | PENDING | no authorization received |
+| R. Release integrity | R-1 ✓ R-4 ✓; R-2/R-3 OPEN | no source drift: `9ccb5b6..HEAD` source-area diff EMPTY |
+
+**Deployment / smoke test: NOT PERFORMED** — no authorized production or
+staging environment exists (HARD RULES 17/18: nothing simulated and reported
+as production). Artifact publication: PENDING (`push: false`, no registry).
+Application Release SHA remains **`9ccb5b66021a29c02ddeced4d9ae74d969c476ab`**;
+source equivalence explicitly re-established (documentation-only commits).
 

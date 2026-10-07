@@ -5,6 +5,19 @@ outputs (`bin/`, `obj/`, `.dart_tool/`, `build/`), local credentials,
 AI-agent private state (`.agents/`, `.freebuff/`, `.serena/`), and the
 disposable-test database are EXCLUDED.
 
+> **STATUS 2026-10-07 (final canonical release closure, SHA `9ccb5b6`):**
+> **Release-Critical Inventory = PASS.** The inventory matches the tracked
+> release content: classes A–E are all tracked (class D completed by
+> `b346a1d` + `9ccb5b6`, closing RDOCS-1 — 114 `docs/` files incl. all 10
+> `docs/release/` records). Classes F–G are excluded and remain ignored
+> (`.env`, `backend/.env`, `Document/`, `opencode.local.json`,
+> `.serena/project.local.yml`, `bin/`, `obj/`, `Release/` build dirs —
+> re-verified after the `.gitignore` change). Class H (`prompts/`, `skills/`,
+> `starter/`) is tracked per project policy and explicitly classified as
+> non-runtime history, not part of the application baseline. Note:
+> `.serena/project.yml` and `.serena/.gitignore` (non-secret tool config)
+> are tracked; `.serena/project.local.yml` (private state) is ignored.
+
 | Classification | Path | Reason |
 | -------------- | ---- | ------ |
 | A | `backend/SeniorConnect.Api/` (excl. `bin/`, `obj/`) | Release source (API host) |

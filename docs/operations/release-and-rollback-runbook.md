@@ -7,6 +7,16 @@
 > invented; every command below is taken from this repository's scripts,
 > compose file or CI workflow.
 
+> **Update 2026-10-07 (Controlled Production Deployment phase): ROLLBACK
+> READINESS = PENDING — EXTERNAL.** Nothing has ever been deployed, so no
+> deployment exists to roll back and no rollback has been exercised against a
+> real environment. Facts of record: application release revision =
+> `9ccb5b66021a29c02ddeced4d9ae74d969c476ab` (previous known-good source
+> ancestor `8bf2324`); mechanism-level capabilities below (redeploy previous
+> build, `.env` rollback, feature-gate reset, `scripts/restore_db.sh`) are
+> implemented but unproven in production; versioned artifacts/registry
+> remain EXTERNAL. Decision authority: [Deployment Owner] — not appointed.
+
 ## 1. Capabilities inventory
 
 | Capability | State | Source |

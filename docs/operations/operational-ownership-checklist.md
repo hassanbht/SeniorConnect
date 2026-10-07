@@ -7,6 +7,13 @@
 > Early Access. Unknown values are recorded as
 > **PENDING — EXTERNAL APPOINTMENT**.
 
+> **Re-verified 2026-10-07 (Controlled Production Deployment phase):**
+> all 8 roles still **not appointed / evidence missing** (table below read
+> unchanged; no written appointment evidence exists anywhere in the
+> repository or was received externally). Operational Ownership = PENDING;
+> Safeguarding Operational Ownership = PENDING. This checklist appoints
+> nobody.
+
 ## Deployment roles
 
 | Role | Person / Organization | Contact | Backup | Status |

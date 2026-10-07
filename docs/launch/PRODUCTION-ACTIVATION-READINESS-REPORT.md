@@ -1,5 +1,26 @@
 # SeniorConnect Production Activation Readiness Report
 
+> **Update 2026-10-07 (Controlled Production Deployment & External Gate
+> Validation):** repository re-verified — Application Release SHA still
+> `9ccb5b66021a29c02ddeced4d9ae74d969c476ab`, zero source drift, exact-SHA
+> CI evidence unchanged. **All external gates re-checked: NO STATUS CHANGED**
+> (no new external evidence exists — credential rotation, provider,
+> infrastructure, domain/TLS, production DB, backup/restore, observability,
+> ownership appointments and legal review all remain PENDING/BLOCKED as
+> recorded). Deployment and production smoke test NOT PERFORMED (no
+> authorized environment). Early Access NOT STARTED; ADR-026 OFF.
+> See `PRODUCTION-ACTIVATION-GATE.md` Addendum 2.
+>
+> **Update 2026-10-07 (Final Canonical Release Closure):** release revision
+> verified as `9ccb5b66021a29c02ddeced4d9ae74d969c476ab` with exact-SHA CI
+> run `37666080520` green (711/711 incl. PostgreSQL, 909/909, analyze clean,
+> locale gate, dependency scan, Docker build) and a mapped local Release
+> artifact (`93D32267…A461`). RDOCS-1 closed; findings R-1 and R-4 resolved.
+> **No external gate changed status** — the executive result below
+> (BLOCKED BY EXTERNAL GATES) remains current. Early Access NOT STARTED;
+> ADR-026 OFF. See `PRODUCTION-ACTIVATION-GATE.md` (final addendum) and
+> `docs/release/RELEASE-BASELINE-EVIDENCE.md`.
+>
 > **Update 2026-10-02 (Release Candidate Freeze & External Activation Evidence):**
 > superseded by `docs/launch/RELEASE-CANDIDATE-ACTIVATION-REPORT.md`. That
 > report re-verified the engineering baseline **against the actual release

@@ -23,22 +23,24 @@ RESOLVED for the new canonical repository: HEAD `8bf2324` contains the
 complete release candidate (source, tests, migrations, security controls,
 approved-policy implementation, Flutter source, CI, Docker/build config).
 
+> **FINAL UPDATE 2026-10-07 (release closure):** RDOCS-1 is now CLOSED
+> (`b346a1d` + `9ccb5b6`) and the release revision has advanced. The table
+> below reflects the current, verified state. Findings R-1 and R-4 in
+> `PRODUCTION-ACTIVATION-GATE.md` are RESOLVED; no external gate changed
+> status (no new external evidence was received).
+
 | Dimension | Status (2026-10-07 verified) |
 | --- | --- |
-| **Engineering validation** | PASS — prior local baseline (711 backend/arch, 909 Flutter, 87 architecture, PostgreSQL PASS, Security PASS) re-proven by CI on the exact release SHA |
+| **Engineering validation** | PASS — full suite re-executed by CI on the exact release SHA: 711/711 backend+architecture (0 fail, 0 skip, PostgreSQL executed), 909/909 Flutter, analyze clean, locale gate, dependency scan clean |
 | **Canonical repository** | ESTABLISHED — `https://github.com/hassanbht/SeniorConnect.git` (private), branch `main`, remote HEAD == local HEAD |
-| **Release revision** | `8bf2324b3dea26dec72111567a2d7b35f83bb543` (2026-10-07T19:21:09+02:00), working tree CLEAN, frozen in `RELEASE-CANDIDATE-FREEZE.md` |
-| **CI** | PASS — run 37658411034 on the exact SHA: backend/architecture/security 711/711 (0 fail, 0 skip), dependency scan clean, Flutter analyze + 909/909, localization gate, Docker build (push:false) |
-| **Artifact** | Local Release build hashed and mapped to the release SHA (`RELEASE-BASELINE-EVIDENCE.md` §5); NO published/retained artifact yet (external/deployment concern) |
+| **Release revision** | `9ccb5b66021a29c02ddeced4d9ae74d969c476ab` (2026-10-07T20:20:23+02:00), frozen in `RELEASE-CANDIDATE-FREEZE.md`; lineage d0201b5 → 8dbdffb → 8bf2324 → b346a1d → 9ccb5b6 |
+| **CI** | PASS — run 37666080520 head_sha == release SHA, 3/3 jobs success (prior doc commit b346a1d also green: run 37664705350) |
+| **Artifact** | Local Release build SHA-256 `93D32267…A461` mapped to the release SHA (`RELEASE-BASELINE-EVIDENCE.md` §5); NO published/retained artifact yet (external/deployment concern) |
 | **Production deployment** | **NOT DEPLOYED** |
 | **External gates** | UNCHANGED — credential rotation, auth provider, infrastructure, domain/TLS, production DB, backup/restore, observability, operational & safeguarding ownership, Data Protection/Legal, participant readiness, owner launch authorization: all still externally controlled and unevidenced |
 | **Early Access** | **NOT STARTED** |
-| **ADR-026** | **OFF** (`VisitAddress:RequireGrant=false`, only committed definition; guard green in CI) |
-
-Known gap: the `docs/` documentation tree (incl. this report's directory)
-is excluded by `.gitignore` and is NOT part of the canonical commit —
-finding RDOCS-1 in `docs/release/REPOSITORY-INTEGRITY-REPORT.md`; human
-remediation required.
+| **ADR-026** | **OFF** (`VisitAddress:RequireGrant=false`, only committed definition; guard green on the exact release SHA) |
+| **Documentation** | RDOCS-1 CLOSED — 114 `docs/` files tracked at the release SHA; provenance remains honest (historical docs NOT restored) |
 
 ---
 

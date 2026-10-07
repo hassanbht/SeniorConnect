@@ -1,5 +1,14 @@
 # SeniorConnect Final Engineering Handoff
 
+> **Update 2026-10-07 (Controlled Production Deployment phase):** release
+> identity re-verified — Application Release SHA
+> `9ccb5b66021a29c02ddeced4d9ae74d969c476ab` (local == remote), zero source
+> drift, exact-SHA CI run `37666080520` green (711/711 incl. PostgreSQL,
+> 87 architecture, 909/909 Flutter, analyze clean, locale, dependency scan,
+> Docker build). Artifact publication PENDING (`push: false`, no registry).
+> This handoff remains **not a launch authorization**; Early Access remains
+> **NOT STARTED**; all external gates unchanged (no new evidence).
+>
 > **Date:** 2026-10-02 · **Branch:** main · **Phase:** Launch Security &
 > Deployment Closure.
 > This is an engineering handoff, **not a launch authorization**. It makes no

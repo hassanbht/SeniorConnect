@@ -7,6 +7,15 @@
 > domain, certificate authority or registry is chosen or invented here.
 > Nothing in this document claims that production is deployed.
 
+> **Update 2026-10-07 (Controlled Production Deployment phase): EXECUTION
+> RESULT = STOPPED AT EXTERNAL GATES.** Deployment checklist not started —
+> prerequisites absent: no authorized environment (§infra), no registry
+> (artifact publication PENDING, CI `push: false`), no provider
+> (`Email:Provider = none`), no production database, no deployment-owner
+> approval (HARD RULES 17/18/24). Application Release SHA
+> `9ccb5b66021a29c02ddeced4d9ae74d969c476ab` re-verified with zero source
+> drift; capability matrix below unchanged and still accurate.
+
 ## 1. Capability matrix
 
 | Area | Repository state | Evidence | Infrastructure state |

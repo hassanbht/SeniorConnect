@@ -8,6 +8,11 @@
 > prove a real operational backup target. No real target exists in this
 > repository's scope, and none is invented here.
 
+> **Re-verified 2026-10-07 (Controlled Production Deployment phase):**
+> unchanged — Backup = **BLOCKED** (no real target/schedule/owner/monitoring
+> exists), Restore = **PENDING** (no authorized target; synthetic drill is
+> explicitly NOT counted). No new backup evidence of any kind was received.
+
 ## 1. Required capability
 
 | Capability | State | Evidence |
