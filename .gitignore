@@ -202,3 +202,8 @@ opencode.local.json
 
 opencode.json
 archive/*
+
+# RDOCS-1 completion (2026-10-07): canonical release documentation must be
+# tracked. Narrow re-inclusion ONLY for docs/release/ — the [Rr]elease/ build
+# rule above still applies to every other Release/ directory (build output).
+!docs/release/
