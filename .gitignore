@@ -187,7 +187,7 @@ obj/
 *.user
 *.suo
 
-docs/
+
 Document/
 backend/.env.example
 backend/publish/*
